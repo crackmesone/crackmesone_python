@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+<div class="container grid-lg wrapper">
+    {% set ns = namespace(last_time=startTime, new_day=true) %}
+    {% for notif in notifs %}
+        {% if TIMECOMPARE(ns.last_time, notif.time, 86400) %}
+            {% if not ns.new_day %}
+                </div>
+            {% endif %}
+            {% set ns.last_time = notif.time %}
+            {% set ns.new_day = true %}
+        {% endif %}
+        {% if ns.new_day %}
+            <div class="notif-day-container">
+            <div class="notif-divider divider text-center" data-content='{{ notif.time|PRETTYTIMEFORMAT("%b %d") }}'></div>
+            {% set ns.new_day = false %}
+        {% endif %}
+        <div data-id="{{ notif.hexid }}" class="text-center notif-item s-rounded{% if not notif.seen %} active{% endif %}">
+            <span>{{ notif.text }}</span>
+            <i class="icon icon-cross"></i>
+        </div>
+    {% endfor %}
+    {% if not ns.new_day %}
+        </div>
+    {% else %}
+        <div class="empty">
+            <div class="empty-icon"><i class="icon icon-message"></i></div>
+            <p class="empty-title-h5">No notifications</p>
+        </div>
+    {% endif %}
+</div>
+<script>
+let xIcons = document.querySelectorAll('.notif-item .icon-cross');
+for (const x of xIcons) {
+    x.addEventListener('click', (e) => {
+        let xmlh = new XMLHttpRequest();
+        let par = e.target.closest('.notif-item');
+        let notifId = par.dataset.id;
+        xmlh.onreadystatechange = () => {
+            if (xmlh.readyState === XMLHttpRequest.DONE) {
+                if (xmlh.status == 200) {
+                    par.remove();
+                } else {
+                    console.log(' ):  Notification deletion failed.');
+                }
+            }
+        };
+        xmlh.open('POST', '/notifications/delete', true);
+        xmlh.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xmlh.send('hexid=' + notifId + '&csrf_token=' + encodeURI('{{ csrf_token() }}'));
+        e.stopPropagation();
+    });
+}
+</script>
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

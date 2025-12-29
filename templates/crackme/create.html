@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Upload crackme{% endblock %}
+{% block page_title %}Upload crackme{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <h2>Upload a crackme</h2>
+    <p>Please provide details in the infos section. You can upload just the executable or an archive containing needed resources.</p>
+
+    <h3>Quick Rules</h3>
+    <ol>
+        <li>Submit only <b>original educational crackmes</b> - NOT game cheats/mods, NOT commercial software cracks</li>
+        <li>Maximum file size: <b>5 MB</b></li>
+        <li>Must be <b>your original work</b> that you created</li>
+        <li><b>No commercial packers/protectors</b> (Themida, VMProtect, etc.)</li>
+        <li>You must be able to <b>solve your own crackme</b></li>
+        <li>Must execute without errors, <b>no network connections</b> except localhost</li>
+        <li>Provide clear information about input/output and how to solve it</li>
+        <li>Do NOT password-protect your archive (server handles this)</li>
+    </ol>
+
+    <p>Read the full <a href="/upload/crackmerules">crackme submission rules</a> for detailed guidelines.</p>
+
+    <div class="divider"></div>
+    <form class="form-horizontal" action="/upload/crackme" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="name">Crackme name</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="text" id="name" name="name" placeholder="Name">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Difficulty</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="difficulty" name="difficulty" multiple="">
+                    <option value="1">1. Very Easy</option>
+                    <option value="2">2. Easy</option>
+                    <option value="3">3. Medium</option>
+                    <option value="4">4. Hard</option>
+                    <option value="5">5. Very Hard</option>
+                    <option value="6">6. Insane</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="lang">Language</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="lang" name="lang" multiple="">
+                    <option value="C/C++">C/C++</option>
+                    <option value="Assembler">Assembler</option>
+                    <option value="Java">Java</option>
+                    <option value="Go">Go</option>
+                    <option value="Rust">Rust</option>
+                    <option value="WebAssembly">WebAssembly</option>
+                    <option value="(Visual) Basic">(Visual) Basic</option>
+                    <option value="Borland Delphi">Borland Delphi</option>
+                    <option value="Turbo Pascal">Turbo Pascal</option>
+                    <option value=".NET">.NET</option>
+                    <option value="Unspecified/other">Unspecified/other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="arch">Arch</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="arch" name="arch" multiple="">
+                    <option value="x86">x86</option>
+                    <option value="x86-64">x86-64</option>
+                    <option value="java">java</option>
+                    <option value="ARM">ARM</option>
+                    <option value="MIPS">MIPS</option>
+                    <option value="RISC-V">RISC-V</option>
+                    <option value="other">other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="platform">Platform</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="platform" name="platform" multiple="">
+                    <option value="Mac OS X">Mac OS X</option>
+                    <option value="Multiplatform">Multiplatform</option>
+                    <option value="Unix/linux etc.">Unix/linux etc.</option>
+                    <option value="Windows">Windows</option>
+                    <option value="Android">Android</option>
+                    <option value="iOS">iOS</option>
+                    <option value="Unspecified/other">Unspecified/other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3">
+                <label class="form-label" for="input-upload">File</label>
+            </div>
+            <div class="col-9">
+                <input class="form-input upload-btn" type="file" id="file" name="file">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="info">Info</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <textarea class="form-input" id="info" name="info" placeholder="Textarea" rows="3"></textarea>
+            </div>
+        </div>
+        {% if RECAPTCHA_SITEKEY %}
+        <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
+        {% endif %}
+        </br></br></br></br>
+        <input type="submit" class="btn active float-right" value="Upload a crackme">
+    </form>
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Search a crackme{% endblock %}
+{% block page_title %}Search a crackme{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+
+<div class="container grid-lg wrapper">
+
+    <h2>Crackme search</h2>
+    <form class="form-horizontal" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <div class="col-3">Crackme name</div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="text" id="name" name="name" placeholder="Name">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3">Author</div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="text" id="author" name="author" placeholder="Author">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Difficulty between</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="difficulty-min" name="difficulty-min" style="max-width: 20%">
+                    <option selected="selected" value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+                and
+                <select class="form-select" id="difficulty-max" name="difficulty-max" style="max-width: 20%">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option selected="selected" value="6">6</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Quality between</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="quality-min" name="quality-min" style="max-width: 20%">
+                    <option selected="selected" value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+                and
+                <select class="form-select" id="quality-max" name="quality-max" style="max-width: 20%">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option selected="selected" value="6">6</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="lang">Language</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="lang" name="lang" multiple="">
+                    <option value="C/C++">C/C++</option>
+                    <option value="Assembler">Assembler</option>
+                    <option value="Java">Java</option>
+                    <option value="Go">Go</option>
+                    <option value="Rust">Rust</option>
+                    <option value="WebAssembly">WebAssembly</option>
+                    <option value="(Visual) Basic">(Visual) Basic</option>
+                    <option value="Borland Delphi">Borland Delphi</option>
+                    <option value="Turbo Pascal">Turbo Pascal</option>
+                    <option value=".NET">.NET</option>
+                    <option value="Unspecified/other">Unspecified/other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="arch">Arch</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="arch" name="arch" multiple="">
+                    <option value="x86">x86</option>
+                    <option value="x86-64">x86-64</option>
+                    <option value="java">java</option>
+                    <option value="ARM">ARM</option>
+                    <option value="MIPS">MIPS</option>
+                    <option value="RISC-V">RISC-V</option>
+                    <option value="other">other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="platform">Platform</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="platform" name="platform" multiple="">
+                    <option value="DOS">DOS</option>
+                    <option value="Mac OS X">Mac OS X</option>
+                    <option value="Multiplatform">Multiplatform</option>
+                    <option value="Unix/linux etc.">Unix/linux etc.</option>
+                    <option value="Windows">Windows</option>
+                    <option value="Windows 2000/XP only">Windows 2000/XP only</option>
+                    <option value="Windows 7 Only">Windows 7 Only</option>
+                    <option value="Windows Vista Only">Windows Vista Only</option>
+                    <option value="Android">Android</option>
+                    <option value="iOS">iOS</option>
+                    <option value="Unspecified/other">Unspecified/other</option>
+                </select>
+            </div>
+        </div>
+        <input type="submit" class="btn active float-right" value="Search">
+    </form>
+    <table class="table table-striped">
+        <thead>
+            <tr style="text-align: center;">
+                <th style="width: 20%;">Name</th>
+                <th style="width: 20%;">Author</th>
+                <th style="width: 9%;">Language</th>
+                <th style="width: 9%;">Arch</th>
+                <th style="width: 4%;">Difficulty</th>
+                <th style="width: 4%;">Quality</th>
+                <th style="width: 9%;">Platform</th>
+                <th style="width: 9%;">Date</th>
+                <th style="width: 4%;">Writeups</th>
+                <th style="width: 4%;">Comments</th>
+            </tr>
+        </thead>
+        <tbody id="content-list">
+            {% for crackme in crackmes %}
+            <tr class="text-center">
+                <td> <a href="/crackme/{{ crackme.hexid }}">{{ crackme.name }}</a></td>
+                <td> <a href="/user/{{ crackme.author }}">{{ crackme.author }}</a> </td>
+                <td> {{ crackme.lang }} </td>
+                <td> {{ crackme.arch }} </td>
+                <td> {{ "%.1f"|format(crackme.difficulty) }} </td>
+                <td> {{ "%.1f"|format(crackme.quality) }} </td>
+                <td> {{ crackme.platform }} </td>
+                <td> {{ crackme.created_at|PRETTYTIME }} </td>
+                <td> {{ crackme.nbsolutions }} </td>
+                <td> {{ crackme.nbcomments }} </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Crackmes.one{% endblock %}
+{% block page_title %}Crackmes.one{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+<div class="container grid-lg wrapper">
+    <h3>Welcome!</h3>
+    <p>This is a simple place where you can download crackmes to improve your reverse engineering skills. If you want to submit a crackme or a solution to one of them, you must register. But before that, I strongly recommend you to read the <a href="/faq">FAQ</a>. If you have any kind of question regarding the website, a crackme, feel free to join the <a href="https://discord.gg/2pPV3yq">discord chat</a>.</p>
+
+    <div class="toast" style="margin: 20px 0;">
+        <p><strong>🏆 Crackmes.one CTF Competition</strong></p>
+        <p>Join our upcoming Capture The Flag competition starting <strong>February 14th, 2026</strong> and test your reverse engineering skills against other experts! Visit <a href="https://crackmesone.ctfd.io/" target="_blank" style="color: #9acc14; font-weight: bold;">crackmesone.ctfd.io</a> for more information.</p>
+    </div>
+    <div class="columns">
+        <div class="column col-4">
+            <div class="column col-12 panel-background">
+                <p>Number of users: </p>
+                <h2 class="text-center"> {{ nbusers }}</h2><br>
+            </div>
+        </div>
+        <div class="column col-4">
+            <div class="column col-12 panel-background">
+                <p>Number of crackmes: </p>
+                <h2 class="text-center"> {{ nbcrackmes }}</h2><br>
+            </div>
+        </div>
+        <div class="column col-4">
+            <div class="column col-12 panel-background">
+                <p>Number of writeups:  </p>
+                <h2 class="text-center"> {{ nbsolutions }}</h2><br>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'partial/winner.html' %}
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

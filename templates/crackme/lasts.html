@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Latest crackmes{% endblock %}
+{% block page_title %}Latest crackmes{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div style="max-width: 80%" class="container d-flex-row wrapper">
+
+    <h2>Latest Crackmes <a href="/rss/crackme"><img src="/static/img/rss.svg" width="16" height="16" /></a></h2>
+    <table class="table table-striped">
+        <thead>
+            <tr style="text-align: center;">
+                <th style="width: 20%;">Name</th>
+                <th style="width: 20%;">Author</th>
+                <th style="width: 9%;">Language</th>
+                <th style="width: 9%;">Arch</th>
+                <th style="width: 4%;">Difficulty</th>
+                <th style="width: 4%;">Quality</th>
+                <th style="width: 9%;">Platform</th>
+                <th style="width: 9%;">Date</th>
+                <th style="width: 4%;">Writeups</th>
+                <th style="width: 4%;">Comments</th>
+            </tr>
+        </thead>
+        <tbody id="content-list">
+            {% for crackme in crackmes %}
+            <tr class="text-center">
+                <td> <a href="/crackme/{{ crackme.hexid }}">{{ crackme.name }}</a></td>
+                <td> <a href="/user/{{ crackme.author }}">{{ crackme.author }}</a> </td>
+                <td> {{ crackme.lang }} </td>
+                <td> {{ crackme.arch }} </td>
+                <td> {{ "%.1f"|format(crackme.difficulty) }} </td>
+                <td> {{ "%.1f"|format(crackme.quality) }} </td>
+                <td> {{ crackme.platform }} </td>
+                <td> {{ crackme.created_at|PRETTYTIME }} </td>
+                <td> {{ crackme.nbsolutions }} </td>
+                <td> {{ crackme.nbcomments }} </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="text-center">
+        <a href="/lasts/{{ prec }}">&lt;</a>
+
+    <a href="/lasts/{{ next }}">&gt;</a>
+    </div>
+
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

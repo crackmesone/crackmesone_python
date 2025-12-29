@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block page_title %}Profile{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+<script language="javascript" type="text/javascript">
+    function changeTab1(id1, id2, id3) {
+        document.getElementById(id3).style.display = 'none';
+        document.getElementById(id2).style.display = 'none';
+        document.getElementById(id1).style.display = 'block';
+    }
+</script>
+<div class="container grid-lg wrapper">
+    <h3><a href="">{{ username }}</a>'s profile</h3>
+    <div class="columns col-12 ">
+        <div class="column col-4">
+            <div class="column col-12 panel-background">
+                <p>Number of crackmes: </p>
+                <h2 class="text-center"> {{ NbCrackmes }}</h2><br>
+            </div>
+        </div>
+        <div class="column col-4">
+            <div class="column col-12 panel-background">
+                <p>Number of writeups: </p>
+                <h2 class="text-center"> {{ NbSolutions }}</h2><br>
+            </div>
+        </div>
+        <div class="column col-4">
+            <div class="column col-12 panel-background">
+                <p>Comments: </p>
+                <h2 class="text-center"> {{ NbComments }}</h2><br>
+            </div>
+        </div>
+    </div><br>
+    <div class="container grid-lg wrapper">
+        <div class="column col-4" style="margin-bottom:20px;">
+            <ul class="tab tab-block" style="border-bottom: .05rem solid transparent;">
+                <li class="tab-item">
+                    <a onclick="changeTab1('crackmes', 'comments', 'solutions')">Crackmes</a>
+                </li>
+                <li class="tab-item">
+                    <a onclick="changeTab1('solutions', 'comments', 'crackmes')">Writeups</a>
+                </li>
+                <li class="tab-item">
+                    <a onclick="changeTab1('comments', 'solutions', 'crackmes')">Comments</a>
+                </li>
+            </ul>
+        </div>
+        <div class="divider"></div>
+        <div class="columns col-12" id="crackmes">
+            <h3>Crackmes</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr style="text-align: center;">
+                    <th style="width: 20%;">Name</th>
+                    <th style="width: 20%;">Author</th>
+                    <th style="width: 9%;">Language</th>
+                    <th style="width: 9%;">Arch</th>
+                    <th style="width: 4%;">Difficulty</th>
+                    <th style="width: 4%;">Quality</th>
+                    <th style="width: 9%;">Platform</th>
+                    <th style="width: 9%;">Date</th>
+                    <th style="width: 4%;">Writeups</th>
+                    <th style="width: 4%;">Comments</th>
+                    </tr>
+                </thead>
+                <tbody id="content-list">
+                    {% for crackme in crackmes %}
+                    <tr class="text-center">
+                        <td> <a href="/crackme/{{ crackme.hexid }}">{{ crackme.name }}</a></td>
+                        <td> <a href="/user/{{ crackme.author }}">{{ crackme.author }}</a> </td>
+                        <td> {{ crackme.lang }} </td>
+                        <td> {{ crackme.arch }} </td>
+                        <td> {{ "%.1f"|format(crackme.difficulty) }} </td>
+                        <td> {{ "%.1f"|format(crackme.quality) }} </td>
+                        <td> {{ crackme.platform }} </td>
+                        <td> {{ crackme.created_at|PRETTYTIME }} </td>
+                        <td> {{ crackme.nbsolutions }} </td>
+                        <td> {{ crackme.nbcomments }} </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+        <div class="columns col-12" id="solutions" style="display: none">
+            <h3>Writeups</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr style="text-align: center;">
+                        <th style="width: 40%;">Crackme</th>
+                        <th style="width: 20%;">Date</th>
+                        <th style="width: 40%;">Infos</th>
+                    </tr>
+                </thead>
+                <tbody id="content-list">
+                    {% for sol in solutions %}
+                    <tr class="text-center">
+                        <td><a href="/crackme/{{ sol.crackmeshexid }}">{{ sol.crackmename }}</a></td>
+                        <td>{{ sol.solution.created_at|PRETTYTIME }}</td>
+                        <td> <span style="white-space: pre-line">{{ sol.solution.info }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="columns col-12 " id="comments" style="display: none">
+            <h3>Comments</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr style="text-align: center;">
+                        <th style="width: 70%;">Comment</th>
+                        <th style="width: 20%;">Date</th>
+                        <th style="width: 10%;">Link</th>
+                    </tr>
+                </thead>
+                <tbody id="content-list">
+                    {% for comment in comments %}
+                    <tr class="text-center">
+                        <td> <span style="white-space: pre-line">{{ comment.content }}</span> </td>
+                        <td>{{ comment.created_at|PRETTYTIME }}</td>
+                        <td> <a href="/crackme/{{ comment.crackmehexid }}">==></a> </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div><br/>
+
+    {% if viewingOwnPage %}
+        <div class="text-center" style="margin-top: 20px;">
+            <a href="/change-password">Change Password</a>
+        </div>
+    {% endif %}
+
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

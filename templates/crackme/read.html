@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}{{ username }}'s {{ name }}{% endblock %}
+{% block page_title %}{{ username }}'s {{ name }}{% endblock %}
+{% block head %}
+<meta property="og:description" content="{{ info }}"/>
+{% endblock %}
+{% block content %}
+<script language="javascript" type="text/javascript">
+    function changeTab1(id1, id2) {
+        document.getElementById(id1).style.display = 'none';
+        document.getElementById(id2).style.display = 'block';
+    }
+</script>
+<div class="container grid-lg wrapper">
+    <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
+    <div class="columns panel-background">
+        <div class="column col-3">
+            <p>Author:<br> <a href="/user/{{ username }}">{{ username }}</a></p>
+        </div>
+        <div class="column col-3">
+            <p>Language:<br> {{ lang }}</p>
+        </div>
+        <div class="column col-3">
+            <p>Upload:<br> {{ createdat|PRETTYTIME }}</p>
+        </div>
+        <div class="column col-1">
+        </div>
+        <div class="column col-2" style="padding-right: 0rem">
+            <a href="/static/crackme/{{ hexid }}.zip" class="btn active btn-lg btn-download">Download</a>
+        </div>
+
+        <div class="column col-3">
+            <p>Platform<br>
+            {{ platform }}</p>
+        </div>
+        <div class="column col-3">
+            <p>Difficulty:<br> {{ difficulty }}
+            {% if AuthLevel == "auth" %}
+            <a href="#rate-diff">Rate!</a></p>
+            {% endif %}
+        </div>
+        <div class="column col-3">
+            <p>Quality:<br> {{ quality }}
+            {% if AuthLevel == "auth" %}
+            <a href="#rate-qual">Rate!</a></p>
+            {% endif %}
+        </div>
+        <div class="column col-3">
+            <p>Arch:<br> {{ arch }}</p>
+        </div>
+
+        <div class="column col-12">
+            <div class="divider"></div>
+        </div>
+
+        <div class="column col-12">
+            <p><b>Description</b></p>
+            <p><span style="white-space: pre-line">{{ info }}</span></p>
+            <div class="divider"></div>
+        </div>
+
+        <div class="column col-4" style="margin-bottom:20px;">
+            <ul class="tab tab-block" style="border-bottom: .05rem solid transparent;">
+                <li class="tab-item">
+                    <a onclick="changeTab1('solutions', 'comments')">Comments ({{ nbcomments }})</a>
+                </li>
+                <li class="tab-item">
+                    <a onclick="changeTab1('comments', 'solutions')">Writeups ({{ nbsolutions }})</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="column col-12" id="comments" style="display:none">
+            {% if AuthLevel == "auth" %}
+            <a href="#modal-comment" class="btn active float-right" style="margin-top:-65px;">Post a comment</a>
+            {% else %}
+            <p>You must be logged in to post a comment</p>
+            {% endif %}
+            {% for comment in comments %}
+            <p><a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}: <span style="white-space: pre-line">{{ comment.info }}</span></p>
+            {% endfor %}
+        </div>
+        <div class="column col-12" id="solutions" style="display:none">
+            {% if AuthLevel == "auth" %}
+            <p>You want to share your writeup ? Please follow this <b><a href="/upload/solution/{{ hexid }}">link</a></b> and check the instructions !</p>
+            {% else %}
+            <p>You must be logged in to submit a writeup</p>
+            {% endif %}
+            <div class="columns">
+                {% for solution in solutions %}
+                <div class="column col-9">
+                    <p>Solution by <a href="/user/{{ solution.author }}">{{ solution.author }}</a> on {{ solution.created_at|PRETTYTIME }}:<br/><span style="white-space: pre-line">{{ solution.info }}</span></p>
+                </div>
+                <div class="column col-3">
+                    <a href="/static/solution/{{ solution.hexid }}.zip">Download</a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-comment">
+        <a href="#close" class="modal-overlay" aria-label="Close"></a>
+        <div class="modal-container">
+            <div class="modal-header">
+                <a href="#close" class="btn btn-clear float-right" aria-label="Close"></a>
+                <div class="modal-title h5">Write a comment</div>
+            </div>
+            <div class="modal-body">
+                <div class="content">
+                    <p>Share how awesome the crack me was or where you struggle to finish it! Stay polite and do not spoil the solution/flag!</p>
+                    <form action="/comment/{{ hexid }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <textarea name="comment" id="comment" placeholder="An awesome comment" style="width: 100%;" rows="5"></textarea>
+                        <input type="submit" class="btn active float-right" value="Post a comment">
+                        {% if RECAPTCHA_SITEKEY %}
+                        <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="rate-diff">
+        <a href="#close" class="modal-overlay" aria-label="Close"></a>
+        <div class="modal-container">
+            <div class="modal-header">
+                <a href="#close" class="btn btn-clear float-right" aria-label="Close"></a>
+                <div class="modal-title h5">Rate the difficulty</div>
+            </div>
+            <div class="modal-body">
+                <div class="content">
+                    <p>How would you rate the difficulty of this crackme ?</p>
+                    <form action="/crackme/rate-diff/{{ hexid }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <select class="form-select" id="difficulty" name="difficulty" multiple="">
+                            <option value="1">1. Very Easy</option>
+                            <option value="2">2. Easy</option>
+                            <option value="3">3. Medium</option>
+                            <option value="4">4. Hard</option>
+                            <option value="5">5. Very Hard</option>
+                            <option value="6">6. Insane</option>
+                        </select>
+                        <input type="submit" class="btn active float-right" value="Rate!">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="rate-qual">
+    <a href="#close" class="modal-overlay" aria-label="Close"></a>
+    <div class="modal-container">
+        <div class="modal-header">
+            <a href="#close" class="btn btn-clear float-right" aria-label="Close"></a>
+            <div class="modal-title h5">Rate the quality</div>
+        </div>
+        <div class="modal-body">
+            <div class="content">
+                <p>How would you rate the quality of this crackme ?</p>
+                <form action="/crackme/rate-qual/{{ hexid }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select class="form-select" id="quality" name="quality" multiple="">
+                        <option value="1">1. Very bad</option>
+                        <option value="2">2. Bad</option>
+                        <option value="3">3. Medium</option>
+                        <option value="4">4. Good</option>
+                        <option value="5">5. Very good</option>
+                        <option value="6">6. Excellent</option>
+                    </select>
+                    <input type="submit" class="btn active float-right" value="Rate!">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

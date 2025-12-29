@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Crackme Submission Rules{% endblock %}
+{% block page_title %}Crackme Submission Rules{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+
+        <h2>Crackme Submission Rules</h2>
+        <p>Follow these guidelines to ensure your submission is accepted and provides value to the community.</p>
+
+        <div class="divider" style="margin: 1rem 0;"></div>
+        <p style="padding: 1rem; margin-bottom: 1.5rem;">
+            <b>&#9888;&#65039; Important:</b> This site is for <b>educational reverse engineering challenges only</b>.
+            Do NOT submit game cheats, game trainers, game mods, cracks for commercial software, or keygens for paid programs.
+            Such submissions will be immediately rejected.
+        </p>
+        <div class="divider" style="margin: 1rem 0;"></div>
+
+        <h3>Requirements</h3>
+        <p>Your crackme <b>will be rejected</b> if it violates any of these rules:</p>
+        <ol>
+            <li><b>Must be your original work.</b> Only submit crackmes you created, or have explicit permission to share.</li>
+
+            <li><b>Educational purpose only.</b> Your crackme must be created specifically for reverse engineering education. NOT allowed: game cheats/trainers/mods, cracks for commercial software, keygens for paid programs, or DRM circumvention tools.</li>
+
+            <li><b>No malware or harmful code.</b> No trojans, ransomware, adware, or destructive code. Simulated malware behavior for educational purposes must be clearly labeled in the description.</li>
+
+            <li><b>No commercial packers/protectors.</b> Do not use Themida, VMProtect, ASProtect, or similar commercial tools. Custom protection is encouraged.</li>
+
+            <li><b>Must be solvable by you.</b> You must have a working solution and be able to demonstrate it.</li>
+
+            <li><b>Must execute without errors.</b> No crashes, missing dependencies, or internal errors. Test on a clean system before submitting.</li>
+
+            <li><b>No external network connections.</b> Only localhost (127.0.0.1) connections allowed. No phone-home, license servers, or remote validation.</li>
+
+            <li><b>Clear input/output.</b> Make it obvious how to provide input (CLI args, stdin, GUI, file) and give clear feedback on correct/incorrect solutions.</li>
+
+            <li><b>No excessive guessing or brute-forcing.</b> Solution must be obtainable through reverse engineering, not brute-forcing 2^128 possibilities.</li>
+
+            <li><b>Solvable in reasonable time.</b> Optimal solution should complete in seconds/minutes, not hours/days.</li>
+
+            <li><b>No hardware-specific identifiers.</b> Don't use CPU IDs, MAC addresses, or hard drive serials in your algorithm.</li>
+
+            <li><b>Don't stack unrelated protections.</b> Each protection layer should serve a purpose and contribute to learning.</li>
+
+            <li><b>Educational purpose only.</b> No cracks/keygens for commercial software, game trainers, or DRM circumvention tools.</li>
+
+            <li><b>Maximum file size: 5 MB.</b> Compress multiple files into a single archive. Do NOT password-protect it (server handles this).</li>
+
+            <li><b>English language.</b> Display text and upload description must be in English.</li>
+        </ol>
+
+        <h3>Submission Details</h3>
+        <p>When uploading, provide clear information in the "Info" field:</p>
+        <ul>
+            <li>Goal: What should be solved? (find password, generate keygen, bypass auth, etc.)</li>
+            <li>Instructions: How to run it, any special requirements</li>
+            <li>Dependencies: Any required libraries or runtime environments</li>
+        </ul>
+
+        <p>Select accurate metadata:</p>
+        <ul>
+            <li><b>Difficulty:</b> Rate honestly (see guide below)</li>
+            <li><b>Language:</b> Programming language used</li>
+            <li><b>Architecture:</b> x86, x86-64, ARM, etc.</li>
+            <li><b>Platform:</b> Windows, Linux, macOS, etc.</li>
+        </ul>
+
+        <h3>Difficulty Rating Guide</h3>
+        <ul>
+            <li><b>1 - Very Easy:</b> Plaintext strings, no obfuscation, simple comparisons</li>
+            <li><b>2 - Easy:</b> Basic encoding, simple algorithms, minimal anti-debugging</li>
+            <li><b>3 - Medium:</b> Custom algorithms, some obfuscation, moderate protection</li>
+            <li><b>4 - Hard:</b> Complex algorithms, anti-debugging, code obfuscation</li>
+            <li><b>5 - Very Hard:</b> Advanced techniques, virtualization, packing, multiple layers</li>
+            <li><b>6 - Insane:</b> Extremely complex, custom VM, heavy obfuscation, advanced anti-analysis</li>
+        </ul>
+
+        <h3>Best Practices</h3>
+        <ul>
+            <li>Include a README file with challenge description and hints</li>
+            <li>Create something original - add your own twist to classic techniques</li>
+            <li>Test thoroughly before submitting</li>
+        </ul>
+
+        <h3>Review Process</h3>
+        <p>All submissions are reviewed before appearing on the site:</p>
+        <ul>
+            <li>Tested for safety and functionality</li>
+            <li>Checked against these rules</li>
+            <li>Review takes a few hours to a few days</li>
+            <li>You'll be notified when approved or if changes are needed</li>
+            <li>If rejected, fix issues and resubmit</li>
+        </ul>
+
+        <div class="divider"></div>
+        <p><b>Questions?</b> Check the <a href="/faq">FAQ</a> or contact us at crackmesone@gmail.com</p>
+        <p><b>Ready to submit?</b> <a href="/upload/crackme">Upload your crackme here</a></p>
+</div>
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}{% endblock %}

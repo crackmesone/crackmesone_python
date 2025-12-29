@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block page_title %}Login{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="columns" style=" justify-content: center;">
+        <div class="column col-6 col-xs-12 panel-input">
+            <form class="form-horizontal" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="name">Username</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="text" id="name" name="name" placeholder="Name">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="input-example-5">Password</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="password" id="password" name="password" placeholder="password">
+                        <a href="/faq#reset-password" style="display: block; text-align: right; margin-top: 0.3rem;">Forgot password?</a>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                    <a href="/register" class="btn active">Register</a>
+                    <input type="submit" value="Login" class="btn active">
+                </div>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}{% endblock %}
