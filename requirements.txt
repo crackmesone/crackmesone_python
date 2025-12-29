@@ -7,3 +7,8 @@ python-dotenv==1.0.0
 bleach==6.1.0
 requests==2.31.0
 Werkzeug==3.0.1
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+mongomock==4.1.2
