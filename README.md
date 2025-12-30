@@ -26,27 +26,85 @@ pip install -r requirements.txt
    - Configure reCAPTCHA if needed (set `Enabled: true`)
    - Set a secure `SecretKey` for sessions
 
-4. Create upload directories:
-```bash
-mkdir -p tmp/crackme tmp/solution static/crackme static/solution
-```
-
-5. Copy static assets from the original project:
-```bash
-cp -r /path/to/crackmes.one/static/* static/
-```
-
 ## Running
 
-Development:
+### Development
+
 ```bash
 python run.py
 ```
 
-Production (with gunicorn):
+### Production Deployment
+
+#### First-time setup
+
+1. Clone the repository on your server:
 ```bash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 'app:create_app()'
+cd /home/crackmesone
+git clone <repo-url> crackmesone_python
+cd crackmesone_python
+```
+
+2. Run the setup script:
+```bash
+chmod +x deploy/setup.sh
+./deploy/setup.sh
+```
+
+3. Configure the application:
+```bash
+cp config/config.json.example config/config.json
+nano config/config.json  # Edit with your settings
+```
+
+4. Update nginx to proxy to the Python app:
+```nginx
+upstream python_backend {
+    server 127.0.0.1:8081;
+}
+
+location / {
+    proxy_pass http://python_backend;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+5. Start the service:
+```bash
+sudo systemctl start crackmesone
+sudo systemctl status crackmesone
+```
+
+#### Subsequent deployments
+
+```bash
+./deploy/deploy.sh
+```
+
+Or manually:
+```bash
+git pull
+source venv/bin/activate
+pip install -r requirements.txt --quiet
+deactivate
+sudo systemctl reload crackmesone
+```
+
+#### Useful commands
+
+```bash
+# Check status
+sudo systemctl status crackmesone
+
+# View logs
+sudo journalctl -u crackmesone -f
+tail -f /var/log/gunicorn/error.log
+
+# Restart (if reload doesn't work)
+sudo systemctl restart crackmesone
 ```
 
 ## Project Structure
@@ -60,6 +118,11 @@ crackmesone_python/
 │   └── services/            # Shared services
 ├── config/
 │   └── config.json          # Configuration file
+├── deploy/
+│   ├── gunicorn.conf.py     # Gunicorn configuration
+│   ├── crackmesone.service  # Systemd service file
+│   ├── setup.sh             # First-time setup script
+│   └── deploy.sh            # Deployment script
 ├── templates/               # Jinja2 templates
 ├── static/                  # Static files (CSS, JS, images)
 ├── tmp/                     # Upload staging area
@@ -83,13 +146,15 @@ crackmesone_python/
 
 Edit `config/config.json`:
 
-- **Database.MongoDB.URL**: MongoDB connection string
-- **Database.MongoDB.Database**: Database name
+- **Database.URL**: MongoDB connection string (default: `mongodb://127.0.0.1:27017`)
+- **Database.Name**: Database name (default: `crackmesone`)
+- **Server.Host**: Host to bind to (default: `127.0.0.1`)
+- **Server.Port**: Port to run on (default: `8081`)
+- **Session.SecretKey**: Secret key for session signing (change in production!)
+- **Session.CookieName**: Session cookie name
 - **Recaptcha.Enabled**: Enable/disable reCAPTCHA
 - **Recaptcha.SiteKey**: Your reCAPTCHA site key
 - **Recaptcha.Secret**: Your reCAPTCHA secret key
-- **Session.SecretKey**: Secret key for session encryption (change in production!)
-- **Server.HTTPPort**: Port to run on
 
 ## Migration from Go
 

@@ -1,0 +1,16 @@
+[Unit]
+Description=crackmes.one Flask App
+After=network.target mongodb.service
+
+[Service]
+User=crackmesone
+Group=crackmesone
+WorkingDirectory=/home/crackmesone/crackmesone_python
+Environment="PATH=/home/crackmesone/crackmesone_python/venv/bin"
+ExecStart=/home/crackmesone/crackmesone_python/venv/bin/gunicorn -c gunicorn.conf.py 'app:create_app()'
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
