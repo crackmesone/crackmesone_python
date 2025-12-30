@@ -128,6 +128,8 @@ def solution_create(info, username, crackme_hexid):
         'hexid': str(obj_id),
         'info': info,
         'crackmeid': crackme['_id'],
+        'crackmehexid': crackme['hexid'],
+        'crackmename': crackme['name'],
         'created_at': datetime.utcnow(),
         'author': username,
         'visible': False,

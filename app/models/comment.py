@@ -63,6 +63,10 @@ def comment_create(content, username, crackme_hexid):
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
+    # Get the crackme to store its name
+    from app.models.crackme import crackme_by_hexid
+    crackme = crackme_by_hexid(crackme_hexid)
+
     collection = get_collection('comment')
     obj_id = ObjectId()
 
@@ -71,6 +75,7 @@ def comment_create(content, username, crackme_hexid):
         'info': content,  # 'info' field matches Go model's bson tag
         'author': username,
         'crackmehexid': crackme_hexid,
+        'crackmename': crackme['name'],
         'created_at': datetime.utcnow(),
         'visible': True,
         'deleted': False
