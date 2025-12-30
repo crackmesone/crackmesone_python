@@ -19,6 +19,7 @@ def create_app(config_path=None):
     app = Flask(__name__,
                 template_folder='../templates',
                 static_folder='../static')
+    app.url_map.strict_slashes = False
 
     # Load configuration
     if config_path is None:
