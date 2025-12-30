@@ -72,14 +72,17 @@ def register_filters(app):
     @app.template_filter('PRETTYTIME')
     def pretty_time(dt):
         """Format datetime in a human-readable way."""
-        if dt is None:
+        if dt is None or (hasattr(dt, '_undefined_name')):
             return ''
         if isinstance(dt, str):
             try:
                 dt = datetime.fromisoformat(dt)
             except ValueError:
                 return dt
-        return dt.strftime('%Y-%m-%d %H:%M')
+        try:
+            return dt.strftime('%Y-%m-%d %H:%M')
+        except AttributeError:
+            return ''
 
     @app.template_filter('TIMECOMPARE')
     def time_compare(dt1, dt2):

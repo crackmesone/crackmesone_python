@@ -63,8 +63,16 @@ def solutions_by_user(username):
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('solution')
-    return list(collection.find({'author': username, 'visible': True})
-                .sort('created_at', DESCENDING))
+    solutions = list(collection.find({'author': username, 'visible': True}))
+
+    # Extract created_at from ObjectId if not present
+    for sol in solutions:
+        if 'created_at' not in sol:
+            sol['created_at'] = sol['_id'].generation_time
+
+    # Sort by created_at descending
+    solutions.sort(key=lambda x: x.get('created_at') or x['_id'].generation_time, reverse=True)
+    return solutions
 
 
 def solutions_by_user_and_crackme(username, crackme_hexid):
