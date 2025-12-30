@@ -37,10 +37,17 @@ env/
 Thumbs.db
 
 # Project specific
-tmp/
-static/crackme/
-static/solution/
+tmp/crackme/*
+tmp/solution/*
+!tmp/crackme/.gitkeep
+!tmp/solution/.gitkeep
+static/crackme/*
+static/solution/*
+!static/crackme/.gitkeep
+!static/solution/.gitkeep
 config/config.json
+users.json
+.env
 
 # Testing
 .pytest_cache/
