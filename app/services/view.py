@@ -91,6 +91,32 @@ def register_filters(app):
             return False
         return dt1 > dt2
 
+    @app.template_filter('PRETTYTIMEFORMAT')
+    def pretty_time_format(dt, fmt):
+        """Format datetime with custom format string."""
+        if dt is None or (hasattr(dt, '_undefined_name')):
+            return ''
+        if isinstance(dt, str):
+            try:
+                dt = datetime.fromisoformat(dt)
+            except ValueError:
+                return dt
+        try:
+            return dt.strftime(fmt)
+        except AttributeError:
+            return ''
+
+    @app.template_global('TIMECOMPARE')
+    def time_compare_global(dt1, dt2, seconds_threshold):
+        """Compare if two datetimes differ by more than threshold seconds."""
+        if dt1 is None or dt2 is None:
+            return True
+        try:
+            diff = abs((dt2 - dt1).total_seconds())
+            return diff > seconds_threshold
+        except (TypeError, AttributeError):
+            return True
+
     @app.template_filter('noescape')
     def no_escape(value):
         """Mark a value as safe (no HTML escaping)."""
