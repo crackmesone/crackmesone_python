@@ -7,7 +7,7 @@ from flask import session as flask_session
 
 def init_session(app, config):
     """Initialize session configuration."""
-    app.config['SESSION_COOKIE_NAME'] = config.get('Name', 'crackmesone')
+    app.config['SESSION_COOKIE_NAME'] = config.get('CookieName', 'crackmesone')
     app.config['SECRET_KEY'] = config.get('SecretKey', 'change-me-in-production')
     # Session options can be extended here
 

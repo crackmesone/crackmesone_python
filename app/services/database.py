@@ -15,8 +15,8 @@ def init_db(app, config):
     global mongo_client, db
 
     try:
-        mongo_url = config['MongoDB'].get('URL', 'mongodb://127.0.0.1:27017')
-        database_name = config['MongoDB'].get('Database', 'crackmes')
+        mongo_url = config.get('URL', 'mongodb://127.0.0.1:27017')
+        database_name = config.get('Name', 'crackmesone')
 
         mongo_client = MongoClient(mongo_url)
         # Verify connection

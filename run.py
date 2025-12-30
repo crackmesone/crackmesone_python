@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
 Main entry point for crackmes.one Flask application.
+
+For production, use gunicorn:
+    gunicorn -w 4 -b 127.0.0.1:8001 'app:create_app()'
 """
 
 import os
@@ -14,23 +17,11 @@ from app import create_app
 app = create_app()
 
 if __name__ == '__main__':
-    # Get configuration
     config = app.config.get('APP_CONFIG', {})
     server_config = config.get('Server', {})
 
-    host = server_config.get('Hostname', '0.0.0.0')
-    port = server_config.get('HTTPPort', 5000)
-    use_https = server_config.get('UseHTTPS', False)
+    host = server_config.get('Host', '127.0.0.1')
+    port = server_config.get('Port', 8001)
 
     print(f"Starting crackmes.one on http://{host}:{port}")
-
-    if use_https:
-        cert_file = server_config.get('CertFile', '')
-        key_file = server_config.get('KeyFile', '')
-        if cert_file and key_file:
-            app.run(host=host, port=port, ssl_context=(cert_file, key_file), debug=True)
-        else:
-            print("Warning: HTTPS enabled but cert/key files not specified")
-            app.run(host=host, port=port, debug=True)
-    else:
-        app.run(host=host, port=port, debug=True)
+    app.run(host=host, port=port, debug=True)

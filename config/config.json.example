@@ -1,26 +1,19 @@
 {
     "Database": {
-        "MongoDB": {
-            "URL": "mongodb://localhost:27017",
-            "Database": "crackmesone"
-        }
+        "URL": "mongodb://127.0.0.1:27017",
+        "Name": "crackmesone"
+    },
+    "Server": {
+        "Host": "127.0.0.1",
+        "Port": 8081
+    },
+    "Session": {
+        "SecretKey": "change-this-to-a-secure-random-string",
+        "CookieName": "crackmesone"
     },
     "Recaptcha": {
         "Enabled": false,
-        "SiteKey": "your-site-key",
-        "Secret": "your-secret-key"
-    },
-    "Session": {
-        "SecretKey": "change-this-to-a-secure-random-string"
-    },
-    "Server": {
-        "HTTPPort": 8080
-    },
-    "Email": {
-        "SMTPHost": "smtp.example.com",
-        "SMTPPort": 587,
-        "Username": "your-email@example.com",
-        "Password": "your-password",
-        "FromAddress": "noreply@crackmes.one"
+        "SiteKey": "your-recaptcha-site-key",
+        "Secret": "your-recaptcha-secret"
     }
 }
