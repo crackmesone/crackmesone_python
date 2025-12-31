@@ -27,11 +27,10 @@
         </div>
         <div class="column col-2" style="padding-right: 0rem">
             <a href="/download/crackme/{{ hexid }}" class="btn active btn-lg btn-download">Download</a>
-            <p style="text-align: center; margin-top: 5px; font-size: 0.8em;">{{ nbdownloads }} downloads</p>
         </div>
 
         <div class="column col-3">
-            <p>Platform<br>
+            <p>Platform:<br>
             {{ platform }}</p>
         </div>
         <div class="column col-3">
@@ -48,6 +47,18 @@
         </div>
         <div class="column col-3">
             <p>Arch:<br> {{ arch }}</p>
+        </div>
+
+        <div class="column col-3">
+            <p>Downloads:<br> {{ nbdownloads }}</p>
+        </div>
+        <div class="column col-3">
+            <p>Writeups:<br> {{ nbsolutions }}</p>
+        </div>
+        <div class="column col-3">
+            <p>Comments:<br> {{ nbcomments }}</p>
+        </div>
+        <div class="column col-3">
         </div>
 
         <div class="column col-12">
