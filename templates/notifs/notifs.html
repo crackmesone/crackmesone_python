@@ -20,7 +20,7 @@
         {% endif %}
         <div data-id="{{ notif.hexid }}" class="text-center notif-item s-rounded{% if not notif.seen %} active{% endif %}">
             <span>{{ notif.text }}</span>
-            <i class="icon icon-cross"></i>
+            <i class="icon {% if not notif.seen %}icon-check notif-mark-read{% else %}icon-cross notif-delete{% endif %}"></i>
         </div>
     {% endfor %}
     {% if not ns.new_day %}
@@ -33,27 +33,62 @@
     {% endif %}
 </div>
 <script>
-let xIcons = document.querySelectorAll('.notif-item .icon-cross');
-for (const x of xIcons) {
-    x.addEventListener('click', (e) => {
+// Handle mark-as-read (checkmark icon)
+document.querySelectorAll('.notif-item .notif-mark-read').forEach(icon => {
+    icon.addEventListener('click', (e) => {
         let xmlh = new XMLHttpRequest();
         let par = e.target.closest('.notif-item');
         let notifId = par.dataset.id;
+
+        xmlh.onreadystatechange = () => {
+            if (xmlh.readyState === XMLHttpRequest.DONE) {
+                if (xmlh.status == 200) {
+                    // Mark as read: dim it and change icon to X
+                    par.classList.remove('active');
+                    let iconEl = par.querySelector('.icon');
+                    iconEl.classList.remove('icon-check', 'notif-mark-read');
+                    iconEl.classList.add('icon-cross', 'notif-delete');
+                    // Re-attach delete handler
+                    attachDeleteHandler(iconEl);
+                } else {
+                    console.log('Failed to mark notification as read.');
+                }
+            }
+        };
+
+        xmlh.open('POST', '/notifications/mark-seen', true);
+        xmlh.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xmlh.send('hexid=' + notifId + '&csrf_token=' + encodeURI('{{ csrf_token() }}'));
+        e.stopPropagation();
+    });
+});
+
+// Handle delete (X icon)
+function attachDeleteHandler(icon) {
+    icon.addEventListener('click', (e) => {
+        let xmlh = new XMLHttpRequest();
+        let par = e.target.closest('.notif-item');
+        let notifId = par.dataset.id;
+
         xmlh.onreadystatechange = () => {
             if (xmlh.readyState === XMLHttpRequest.DONE) {
                 if (xmlh.status == 200) {
                     par.remove();
                 } else {
-                    console.log(' ):  Notification deletion failed.');
+                    console.log('Failed to delete notification.');
                 }
             }
         };
+
         xmlh.open('POST', '/notifications/delete', true);
         xmlh.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xmlh.send('hexid=' + notifId + '&csrf_token=' + encodeURI('{{ csrf_token() }}'));
         e.stopPropagation();
     });
 }
+
+// Attach delete handlers to existing X icons
+document.querySelectorAll('.notif-item .notif-delete').forEach(attachDeleteHandler);
 </script>
 {% include 'partial/footer.html' %}
 {% endblock %}

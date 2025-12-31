@@ -4,7 +4,7 @@ Notifications controller - User notifications.
 
 from datetime import datetime
 from flask import Blueprint, render_template, request, session
-from app.models.notification import notifications_by_user, notifications_set_seen, notification_remove
+from app.models.notification import notifications_by_user, notification_remove, notification_mark_seen_single
 from app.controllers.decorators import login_required
 
 notifications_bp = Blueprint('notifications', __name__)
@@ -18,13 +18,6 @@ def notifications_get():
 
     try:
         notifs = notifications_by_user(username)
-
-        # Mark notifications as seen
-        for notif in notifs:
-            if not notif.get('seen'):
-                notifications_set_seen(notifs)
-                break
-
     except Exception as e:
         print(f"Error getting notifications: {e}")
         notifs = []
@@ -37,6 +30,24 @@ def notifications_get():
                            startTime=start_time)
 
 
+@notifications_bp.route('/notifications/mark-seen', methods=['POST'])
+@login_required
+def notifications_mark_seen():
+    """Mark a single notification as seen."""
+    username = session.get('name')
+    hexid = request.form.get('hexid', '')
+
+    if not hexid:
+        return '', 400
+
+    try:
+        notification_mark_seen_single(username, hexid)
+        return '', 200
+    except Exception as e:
+        print(f"Error marking notification as seen: {e}")
+        return '', 500
+
+
 @notifications_bp.route('/notifications/delete', methods=['POST'])
 @login_required
 def notifications_delete():
@@ -45,7 +56,7 @@ def notifications_delete():
     hexid = request.form.get('hexid', '')
 
     if not hexid:
-        return '', 500
+        return '', 400
 
     try:
         notification_remove(username, hexid)

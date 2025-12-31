@@ -167,3 +167,64 @@ def update_user_password(username, hashed_password):
 
     if result.matched_count == 0:
         raise ErrNoResult("No user found with the provided username")
+
+
+def user_get_unread_notifications(username):
+    """Get the count of unread notifications for a user.
+
+    Args:
+        username: The username (exact match)
+
+    Returns:
+        Number of unread notifications (0 if user not found or field missing)
+    """
+    if not check_connection():
+        return 0
+
+    try:
+        collection = get_collection('user')
+        user = collection.find_one({'name': username}, {'unread_notifications': 1})
+        if user:
+            return user.get('unread_notifications', 0)
+        return 0
+    except Exception:
+        return 0
+
+
+def user_increment_unread_notifications(username):
+    """Increment the unread notification count for a user.
+
+    Args:
+        username: The username (exact match)
+    """
+    if not check_connection():
+        return
+
+    collection = get_collection('user')
+    collection.update_one(
+        {'name': username},
+        {'$inc': {'unread_notifications': 1}}
+    )
+
+
+def user_decrement_unread_notifications(username, count=1):
+    """Decrement the unread notification count for a user.
+
+    Args:
+        username: The username (exact match)
+        count: Number to decrement by (default 1)
+    """
+    if not check_connection():
+        return
+
+    collection = get_collection('user')
+
+    # First get current count to avoid going negative
+    user = collection.find_one({'name': username}, {'unread_notifications': 1})
+    if user:
+        current = user.get('unread_notifications', 0)
+        new_count = max(0, current - count)
+        collection.update_one(
+            {'name': username},
+            {'$set': {'unread_notifications': new_count}}
+        )
