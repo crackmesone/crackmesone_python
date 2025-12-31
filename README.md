@@ -24,6 +24,7 @@ pip install -r requirements.txt
    - Edit `config/config.json` with your settings
    - Set up MongoDB connection details
    - Configure reCAPTCHA if needed (set `Enabled: true`)
+   - Configure Discord webhook for notifications (optional)
    - Set a secure `SecretKey` for sessions
 
 ## Running
