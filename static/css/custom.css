@@ -281,3 +281,21 @@ h3:hover .anchor-link {
     opacity: 0.5;
     border-color: #6b6b6b;
 }
+
+/* NOTIFICATION ACTION ICONS */
+.notif-item .notif-mark-read {
+    color: #9acc14;
+    cursor: pointer;
+}
+
+.notif-item .notif-mark-read:hover {
+    color: #b8f016;
+}
+
+.notif-item .notif-delete {
+    cursor: pointer;
+}
+
+.notif-item .notif-delete:hover {
+    color: #e74c3c;
+}

@@ -4,7 +4,7 @@ Notifications controller - User notifications.
 
 from datetime import datetime
 from flask import Blueprint, render_template, request, session
-from app.models.notification import notifications_by_user, notifications_set_seen, notification_remove, notification_mark_seen_single
+from app.models.notification import notifications_by_user, notification_remove, notification_mark_seen_single
 from app.controllers.decorators import login_required
 
 notifications_bp = Blueprint('notifications', __name__)
@@ -18,13 +18,6 @@ def notifications_get():
 
     try:
         notifs = notifications_by_user(username)
-
-        # Mark notifications as seen
-        for notif in notifs:
-            if not notif.get('seen'):
-                notifications_set_seen(username, notifs)
-                break
-
     except Exception as e:
         print(f"Error getting notifications: {e}")
         notifs = []
