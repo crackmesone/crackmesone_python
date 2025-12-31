@@ -15,6 +15,16 @@
         <h3 id="what-is-writeup">What is a writeup? <a href="#what-is-writeup" class="anchor-link">#</a></h3>
         <p>A writeup is a detailed explanation of how you solved a crackme. It should document your thought process, the tools you used, the techniques you applied, and the steps you took to find the solution. A good writeup helps others learn from your approach and demonstrates your understanding of reverse engineering concepts. Writeups can be in text, markdown, HTML, PDF, or even video format. Simply providing a keygen script without explanation is not considered a valid writeup.</p>
         <div class="divider"></div>
+        <h3 id="what-is-keygen">What is a keygen? <a href="#what-is-keygen" class="anchor-link">#</a></h3>
+        <p>A <b>keygen</b> (short for "key generator") is a program or script that generates valid serial numbers, passwords, or license keys for a crackme. Unlike patching (modifying the binary), a keygen works by understanding and reimplementing the validation algorithm to produce inputs that the crackme will accept as correct.</p>
+        <p><b>Why write a keygen?</b></p>
+        <ul>
+            <li><b>Demonstrates deep understanding:</b> To write a keygen, you must fully reverse engineer the validation algorithm, understand the mathematical relationships, and reimplement them correctly.</li>
+            <li><b>Educational value:</b> The process of creating a keygen teaches you about cryptography, algorithm analysis, and programming.</li>
+            <li><b>Reusable solution:</b> A keygen can generate unlimited valid keys, while a patched binary or single discovered password only works for that specific case.</li>
+        </ul>
+        <p>A keygen can be written in any programming language (Python, C, JavaScript, etc.) and should be accompanied by a writeup explaining how you derived the algorithm.</p>
+        <div class="divider"></div>
         <h3 id="what-tools">What tools do I need to solve crackmes? <a href="#what-tools" class="anchor-link">#</a></h3>
         <p>You will need reverse engineering tools to analyze and solve crackmes. Here are some commonly used tools:</p>
         <p><b>Disassemblers/Decompilers:</b></p>
@@ -136,6 +146,23 @@
         <div class="divider"></div>
         <h3 id="discord-verify">I cannot speak or see most channels on Discord. <a href="#discord-verify" class="anchor-link">#</a></h3>
         <p>If you cannot speak or see most of the channels on our Discord server, this is because you have not verified your account yet. Please check the <b>#verify</b> channel and follow the verification steps.</p>
+        <div class="divider"></div>
+        <h3 id="are-crackmes-safe">Are the crackmes safe to run? <a href="#are-crackmes-safe" class="anchor-link">#</a></h3>
+        <p>We manually review every crackme and solution submission before it appears on the website to prevent malware and viruses. However, there is always a small chance that something could be missed. For your safety, we strongly recommend:</p>
+        <ul>
+            <li><b>Use a virtual machine (VM):</b> Always run crackmes in an isolated environment like VirtualBox, VMware, or Hyper-V. This protects your main system from any potential harm.</li>
+            <li><b>Take snapshots:</b> Before running a crackme, take a VM snapshot so you can easily restore to a clean state.</li>
+            <li><b>Disable network access:</b> Consider disabling network access in your VM when running crackmes to prevent any unexpected network activity.</li>
+            <li><b>Check the crackme details:</b> Read the description and comments from other users before running a crackme.</li>
+        </ul>
+        <p><b>Note about antivirus detections:</b> Some crackmes may trigger antivirus warnings or have many detections on sites like <a href="https://www.virustotal.com/">VirusTotal</a>. This is <b>completely normal</b> and expected! Crackmes often use techniques that are similar to those found in malware, such as:</p>
+        <ul>
+            <li>Anti-debugging and anti-VM techniques</li>
+            <li>Code obfuscation and packing</li>
+            <li>Self-modifying code</li>
+            <li>Unusual API calls or system interactions</li>
+        </ul>
+        <p>These are legitimate reverse engineering challenges, not actual malware. However, if you genuinely believe a crackme contains real malware or is otherwise inappropriate, please <a href="#report-crackme">report it to us</a> immediately.</p>
         <div class="divider"></div>
         <h3 id="report-crackme">I found a broken or malicious crackme. How do I report it? <a href="#report-crackme" class="anchor-link">#</a></h3>
         <p>If you encounter a crackme that is broken, contains actual malware (not simulated educational malware), or violates the site's rules, please report it immediately. You can:</p>
