@@ -4,10 +4,12 @@ Apply pre-calculated download counts to the database.
 
 Usage:
     cd /path/to/crackmesone_python/script
-    python apply_download_counts.py [--dry-run]
+    python apply_download_counts.py          # Dry run (default)
+    python apply_download_counts.py --apply  # Actually apply changes
 
 This script reads download_counts.json and updates the nbdownloads field
-for each crackme in the database.
+for each crackme in the database. Only updates if the new count is larger
+than the existing count.
 """
 
 import json
@@ -21,7 +23,8 @@ from pymongo import MongoClient
 
 
 def main():
-    dry_run = '--dry-run' in sys.argv
+    apply_changes = '--apply' in sys.argv
+    dry_run = not apply_changes
 
     # Load config
     config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config', 'config.json')
@@ -47,7 +50,8 @@ def main():
     print(f"\nConnected to MongoDB: {db_name}")
 
     if dry_run:
-        print("\n[DRY RUN MODE - No changes will be made]\n")
+        print("\n[DRY RUN MODE - No changes will be made]")
+        print("[Use --apply to actually apply changes]\n")
 
     updated = 0
     not_found = 0
@@ -59,29 +63,30 @@ def main():
         if crackme:
             current = crackme.get('nbdownloads', 0)
 
-            if current > 0:
-                # Already has downloads, skip to avoid double-counting
+            if count <= current:
+                # New count is not larger, skip
                 skipped += 1
                 continue
 
             if dry_run:
-                print(f"  Would set {hexid}: 0 -> {count}")
+                print(f"  Would set {hexid}: {current} -> {count}")
             else:
                 collection.update_one(
                     {'hexid': hexid},
                     {'$set': {'nbdownloads': count}}
                 )
+                print(f"  Updated {hexid}: {current} -> {count}")
             updated += 1
         else:
             not_found += 1
 
     print(f"\nResults:")
     print(f"  Updated: {updated}")
-    print(f"  Skipped (already has downloads): {skipped}")
+    print(f"  Skipped (existing count >= new count): {skipped}")
     print(f"  Not found in database: {not_found}")
 
     if dry_run:
-        print("\nThis was a dry run. Run without --dry-run to apply changes.")
+        print("\nThis was a dry run. Use --apply to actually apply changes.")
 
     client.close()
 
