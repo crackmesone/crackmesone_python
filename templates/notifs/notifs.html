@@ -39,16 +39,27 @@ for (const x of xIcons) {
         let xmlh = new XMLHttpRequest();
         let par = e.target.closest('.notif-item');
         let notifId = par.dataset.id;
+        let isUnread = par.classList.contains('active');
+
         xmlh.onreadystatechange = () => {
             if (xmlh.readyState === XMLHttpRequest.DONE) {
                 if (xmlh.status == 200) {
-                    par.remove();
+                    if (isUnread) {
+                        // Mark as read: remove active class to dim it
+                        par.classList.remove('active');
+                    } else {
+                        // Already read: delete it
+                        par.remove();
+                    }
                 } else {
-                    console.log(' ):  Notification deletion failed.');
+                    console.log('Notification action failed.');
                 }
             }
         };
-        xmlh.open('POST', '/notifications/delete', true);
+
+        // Use different endpoint based on read status
+        let endpoint = isUnread ? '/notifications/mark-seen' : '/notifications/delete';
+        xmlh.open('POST', endpoint, true);
         xmlh.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xmlh.send('hexid=' + notifId + '&csrf_token=' + encodeURI('{{ csrf_token() }}'));
         e.stopPropagation();

@@ -78,6 +78,37 @@ def notification_add(username, text):
     return notif
 
 
+def notification_mark_seen_single(username, hexid):
+    """Mark a single notification as seen and update user's unread count.
+
+    Returns:
+        True if notification was marked as seen, False if already seen or not found
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('notifications')
+
+    # Check if notification exists and is unseen
+    notif = collection.find_one({'user': username, 'hexid': hexid})
+    if not notif:
+        return False
+
+    if notif.get('seen'):
+        return False  # Already seen
+
+    # Mark as seen
+    collection.update_one(
+        {'user': username, 'hexid': hexid},
+        {'$set': {'seen': True}}
+    )
+
+    # Decrement user's unread count
+    user_decrement_unread_notifications(username, 1)
+
+    return True
+
+
 def notification_remove(username, hexid):
     """Remove a notification."""
     if not check_connection():
