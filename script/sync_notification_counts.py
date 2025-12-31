@@ -54,7 +54,7 @@ def main():
 
     for user in users:
         username = user['name']
-        current_count = user.get('unread_notifications', 0)
+        current_count = user.get('unread_notifications')  # None if missing
 
         # Count actual unseen notifications
         actual_count = notifs_collection.count_documents({
@@ -62,15 +62,17 @@ def main():
             'seen': False
         })
 
+        # Update if count differs OR if field is missing (ensure all users have the field)
         if actual_count != current_count:
+            current_display = current_count if current_count is not None else 0
             if dry_run:
-                print(f"  Would update {username}: {current_count} -> {actual_count}")
+                print(f"  Would update {username}: {current_display} -> {actual_count}")
             else:
                 users_collection.update_one(
                     {'_id': user['_id']},
                     {'$set': {'unread_notifications': actual_count}}
                 )
-                print(f"  Updated {username}: {current_count} -> {actual_count}")
+                print(f"  Updated {username}: {current_display} -> {actual_count}")
             updated += 1
         else:
             unchanged += 1
