@@ -18,6 +18,7 @@ from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
+from app.services.archive import is_archive_password_protected
 from app.controllers.decorators import login_required
 
 crackme_bp = Blueprint('crackme', __name__)
@@ -141,6 +142,13 @@ def upload_crackme_post():
 
     if file_size > MAX_FILE_SIZE:
         flash('This file is too large!', FLASH_ERROR)
+        return render_template('crackme/create.html')
+
+    # Read file data and check for password protection
+    file_data = file.read()
+    file.seek(0)  # Reset for later save
+    if is_archive_password_protected(file_data):
+        flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
         return render_template('crackme/create.html')
 
     # Check for duplicate pending submission
