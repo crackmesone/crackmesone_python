@@ -56,10 +56,18 @@ def create_app(config_path=None):
     @app.context_processor
     def inject_globals():
         from flask import session
+        from app.models.user import user_get_unread_notifications
+
+        username = session.get('name', '')
+        unread_notifs = 0
+        if username:
+            unread_notifs = user_get_unread_notifications(username)
+
         return {
             'BaseURI': '/',
-            'AuthLevel': 'auth' if session.get('name') else 'anon',
-            'usersess': session.get('name', ''),
+            'AuthLevel': 'auth' if username else 'anon',
+            'usersess': username,
+            'unread_notifications': unread_notifs,
             'RECAPTCHA_SITEKEY': config['Recaptcha'].get('SiteKey', '') if config['Recaptcha'].get('Enabled') else ''
         }
 

@@ -22,7 +22,7 @@ def notifications_get():
         # Mark notifications as seen
         for notif in notifs:
             if not notif.get('seen'):
-                notifications_set_seen(notifs)
+                notifications_set_seen(username, notifs)
                 break
 
     except Exception as e:

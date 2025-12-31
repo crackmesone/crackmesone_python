@@ -7,6 +7,7 @@ from bson import ObjectId
 from pymongo import DESCENDING
 from app.services.database import get_collection, check_connection
 from app.models.errors import ErrNoResult, ErrUnavailable
+from app.models.user import user_increment_unread_notifications, user_decrement_unread_notifications
 
 
 def notifications_by_user(username):
@@ -19,13 +20,14 @@ def notifications_by_user(username):
                 .sort('time', DESCENDING))
 
 
-def notifications_set_seen(notifications):
-    """Mark notifications as seen."""
+def notifications_set_seen(username, notifications):
+    """Mark notifications as seen and update user's unread count."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('notifications')
 
+    unseen_count = 0
     for notif in notifications:
         if notif.get('seen'):
             continue
@@ -34,6 +36,11 @@ def notifications_set_seen(notifications):
             {'hexid': notif['hexid']},
             {'$set': {'seen': True}}
         )
+        unseen_count += 1
+
+    # Decrement user's unread notification count
+    if unseen_count > 0:
+        user_decrement_unread_notifications(username, unseen_count)
 
 
 def notifications_has_unseen(username):
@@ -64,6 +71,10 @@ def notification_add(username, text):
     }
 
     collection.insert_one(notif)
+
+    # Increment user's unread notification count
+    user_increment_unread_notifications(username)
+
     return notif
 
 
