@@ -224,7 +224,7 @@ tbody tr:first-child td .tile .tile-content:before {
     background-color: #3b512073;
 }
 
-.notif-item .icon-cross {
+.notif-item .icon {
     float: right;
 }
 
