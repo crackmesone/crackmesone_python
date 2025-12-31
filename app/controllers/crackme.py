@@ -19,6 +19,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.services.archive import is_archive_password_protected
+from app.services.discord import notify_new_crackme
 from app.controllers.decorators import login_required
 
 crackme_bp = Blueprint('crackme', __name__)
@@ -210,6 +211,12 @@ def upload_crackme_post():
         notification_add(username, f"Crackme '{crackme['name']}' added, waiting for approval!")
     except Exception as e:
         print(f"Notification error: {e}")
+
+    # Send Discord notification
+    try:
+        notify_new_crackme(username, crackme['name'])
+    except Exception as e:
+        print(f"Discord notification error: {e}")
 
     flash('Crackme uploaded! Should be available soon.', FLASH_SUCCESS)
     return redirect(f'/user/{username}')

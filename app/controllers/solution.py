@@ -13,6 +13,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS
 from app.services.archive import is_archive_password_protected
+from app.services.discord import notify_new_solution
 from app.controllers.decorators import login_required
 
 solution_bp = Blueprint('solution', __name__)
@@ -118,6 +119,8 @@ def upload_solution_post(hexidcrackme):
     try:
         crackme = crackme_by_hexid(hexidcrackme)
         notification_add(username, f"Your solution for '{crackme['name']}' is waiting approval!")
+        # Send Discord notification
+        notify_new_solution(username, crackme['name'])
     except Exception as e:
         print(f"Notification error: {e}")
 

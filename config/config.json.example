@@ -15,5 +15,9 @@
         "Enabled": false,
         "SiteKey": "your-recaptcha-site-key",
         "Secret": "your-recaptcha-secret"
+    },
+    "Discord": {
+        "Enabled": false,
+        "WebhookURL": "your-discord-webhook-url"
     }
 }
