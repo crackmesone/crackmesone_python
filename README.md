@@ -155,6 +155,8 @@ Edit `config/config.json`:
 - **Recaptcha.Enabled**: Enable/disable reCAPTCHA
 - **Recaptcha.SiteKey**: Your reCAPTCHA site key
 - **Recaptcha.Secret**: Your reCAPTCHA secret key
+- **Discord.Enabled**: Enable/disable Discord notifications for new submissions
+- **Discord.WebhookURL**: Your Discord webhook URL (get from Discord channel settings → Integrations → Webhooks)
 
 ## Migration from Go
 
