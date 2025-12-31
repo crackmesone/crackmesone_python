@@ -102,6 +102,18 @@ def crackme_decrement_comments(crackme_hexid):
     )
 
 
+def crackme_increment_downloads(crackme_hexid):
+    """Increment download count for a crackme."""
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('crackme')
+    collection.update_one(
+        {'hexid': crackme_hexid},
+        {'$inc': {'nbdownloads': 1}}
+    )
+
+
 def search_crackme(name='', author='', lang='', arch='', platform='',
                    difficulty_min=0, difficulty_max=6,
                    quality_min=0, quality_max=6):
@@ -210,6 +222,7 @@ def crackme_create(name, info, username, lang, arch, platform):
         'quality': 0.0,
         'nbsolutions': 0,
         'nbcomments': 0,
+        'nbdownloads': 0,
         'platform': platform
     }
 
@@ -239,6 +252,7 @@ def crackme_create_prepare(name, info, username, lang, arch, platform):
         'quality': 0.0,
         'nbsolutions': 0,
         'nbcomments': 0,
+        'nbdownloads': 0,
         'platform': platform
     }
 
