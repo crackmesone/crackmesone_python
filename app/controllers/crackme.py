@@ -9,7 +9,7 @@ import bleach
 from app.models.crackme import (
     crackme_by_hexid, last_crackmes, crackme_create_prepare,
     crackme_insert, crackme_delete_by_hexid, crackme_by_user_and_name,
-    crackme_update_difficulty, crackme_update_quality
+    crackme_update_difficulty, crackme_update_quality, crackme_increment_downloads
 )
 from app.models.solution import solutions_by_crackme
 from app.models.comment import comments_by_crackme
@@ -60,6 +60,7 @@ def crackme_view(hexid):
                            comments=comments,
                            nbsolutions=crackme.get('nbsolutions', 0),
                            nbcomments=crackme.get('nbcomments', 0),
+                           nbdownloads=crackme.get('nbdownloads', 0),
                            difficulty=f"{crackme.get('difficulty', 0):.1f}",
                            quality=f"{crackme.get('quality', 0):.1f}")
 
@@ -83,6 +84,29 @@ def last_crackmes_page(page):
                            crackmes=crackmes,
                            prec=prec,
                            next=next_page)
+
+
+@crackme_bp.route('/download/crackme/<hexid>')
+def download_crackme(hexid):
+    """Handle crackme download and track download count."""
+    # Verify crackme exists
+    try:
+        crackme_by_hexid(hexid)
+    except ErrNoResult:
+        abort(404)
+    except Exception as e:
+        print(f"Error getting crackme: {e}")
+        abort(500)
+
+    # Increment download count
+    try:
+        crackme_increment_downloads(hexid)
+    except Exception as e:
+        print(f"Error incrementing download count: {e}")
+        # Continue with download even if count fails
+
+    # Redirect to static file
+    return redirect(f'/static/crackme/{hexid}.zip')
 
 
 @crackme_bp.route('/upload/crackme', methods=['GET'])
