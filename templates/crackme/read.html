@@ -94,7 +94,7 @@
         </div>
         <div class="column col-12" id="solutions" style="display:none">
             {% if AuthLevel == "auth" %}
-            <p>You want to share your writeup ? Please follow this <b><a href="/upload/solution/{{ hexid }}">link</a></b> and check the instructions !</p>
+            <a href="/upload/solution/{{ hexid }}" class="btn active float-right" style="margin-top:-65px;">Submit a writeup</a>
             {% else %}
             <p>You must be logged in to submit a writeup</p>
             {% endif %}
