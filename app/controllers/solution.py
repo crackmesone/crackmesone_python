@@ -12,6 +12,7 @@ from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS
+from app.services.archive import is_archive_password_protected
 from app.controllers.decorators import login_required
 
 solution_bp = Blueprint('solution', __name__)
@@ -84,6 +85,11 @@ def upload_solution_post(hexidcrackme):
     except Exception as e:
         print(f"Error reading file: {e}")
         abort(500)
+
+    # Check for password-protected archives
+    if is_archive_password_protected(data):
+        flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
+        return redirect(f'/upload/solution/{hexidcrackme}')
 
     # Create solution
     try:
