@@ -135,9 +135,7 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
     }
 
     if downloads_min > 0 or downloads_max is not None:
-        downloads_query = {}
-        if downloads_min > 0:
-            downloads_query['$gte'] = downloads_min
+        downloads_query = {'$gte': downloads_min}
         if downloads_max is not None:
             downloads_query['$lte'] = downloads_max
         query['nbdownloads'] = downloads_query
