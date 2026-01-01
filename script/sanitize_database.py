@@ -48,7 +48,7 @@ from bson.errors import InvalidId
 # Load environment variables
 load_dotenv()
 
-CRACKMESONE_DIR = os.getenv("CRACKMESONE_DIR")
+CRACKMESONE_DIR = os.getenv("CRACKMESONE_DIR", "/home/crackmesone/crackmesone_python")
 DEFAULT_MONGODB_HOST = os.getenv("MONGODB_HOST", "127.0.0.1")
 DEFAULT_MONGODB_PORT = int(os.getenv("MONGODB_PORT", "27017"))
 DEFAULT_DATABASE_NAME = os.getenv("DATABASE_NAME", "crackmesone")
