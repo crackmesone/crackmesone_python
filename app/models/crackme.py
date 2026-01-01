@@ -117,7 +117,7 @@ def crackme_increment_downloads(crackme_hexid):
 def search_crackme(name='', author='', lang='', arch='', platform='',
                    difficulty_min=0, difficulty_max=6,
                    quality_min=0, quality_max=6,
-                   downloads_min=0,
+                   downloads_min=0, downloads_max=None,
                    page=1, per_page=50):
     """Search crackmes with filters and pagination.
 
@@ -134,8 +134,13 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
         'quality': {'$gte': quality_min, '$lte': quality_max}
     }
 
-    if downloads_min > 0:
-        query['nbdownloads'] = {'$gte': downloads_min}
+    if downloads_min > 0 or downloads_max is not None:
+        downloads_query = {}
+        if downloads_min > 0:
+            downloads_query['$gte'] = downloads_min
+        if downloads_max is not None:
+            downloads_query['$lte'] = downloads_max
+        query['nbdownloads'] = downloads_query
 
     if name:
         query['name'] = {'$regex': name, '$options': 'i'}
