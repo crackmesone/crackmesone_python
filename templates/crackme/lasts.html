@@ -43,15 +43,15 @@
     </table>
     <div class="pagination-controls">
         {% if page > 1 %}
-        <a href="/lasts/{{ page - 1 }}" class="btn active">&lt;</a>
+        <a href="/lasts/{{ page - 1 }}" class="btn active">Previous</a>
         {% else %}
-        <button class="btn" disabled>&lt;</button>
+        <button class="btn" disabled>Previous</button>
         {% endif %}
         <span class="pagination-info">Page {{ page }}</span>
         {% if has_more %}
-        <a href="/lasts/{{ page + 1 }}" class="btn active">&gt;</a>
+        <a href="/lasts/{{ page + 1 }}" class="btn active">Next</a>
         {% else %}
-        <button class="btn" disabled>&gt;</button>
+        <button class="btn" disabled>Next</button>
         {% endif %}
     </div>
 
