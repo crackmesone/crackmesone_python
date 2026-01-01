@@ -70,6 +70,7 @@ else:
 if send_notif:
     print("[+] Sending " + type_object + " rejection notification!")
     notif_coll = db.notifications
+    users_coll = db.user
     author_name = db_object["author"]
     if type_object == "solution":
         crackme_obj = db.crackme.find_one({'_id': db_object["crackmeid"]})
@@ -94,3 +95,4 @@ if send_notif:
         }).inserted_id
     # Set HexId here
     notif_coll.find_one_and_update({'_id': ins_id}, {'$set': {'hexid': str(ins_id)}})
+    users_coll.update_one({'name': author_name}, {'$inc': {'unread_notifications': 1}})

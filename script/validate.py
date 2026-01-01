@@ -69,6 +69,7 @@ if send_notif:
     print("[+] Sending " + type_object + " approval notification!")
     notif_coll = db.notifications
     author_name = db_object["author"]
+    users_coll = db.user
     if type_object == "solution":
         crackme_obj = db.crackme.find_one({'_id': db_object["crackmeid"]})
         ins_id = notif_coll.insert_one({
@@ -79,13 +80,17 @@ if send_notif:
         }).inserted_id
         # Set HexId here too for this case
         notif_coll.find_one_and_update({'_id': ins_id}, {'$set': {'hexid': str(ins_id)}})
+        users_coll.update_one({'name': author_name}, {'$inc': {'unread_notifications': 1}})
         # Notify crackme author about new solution
+        crackme_author = crackme_obj["author"]
         ins_id = notif_coll.insert_one({
-            "user": crackme_obj["author"],
+            "user": crackme_author,
             "time": datetime.datetime.now(datetime.timezone.utc),
             "seen": False,
             "text": "A new solution for your crackme '" + crackme_obj["name"] + "' has been submitted by: " + author_name
         }).inserted_id
+        notif_coll.find_one_and_update({'_id': ins_id}, {'$set': {'hexid': str(ins_id)}})
+        users_coll.update_one({'name': crackme_author}, {'$inc': {'unread_notifications': 1}})
     elif type_object == "crackme":
         ins_id = notif_coll.insert_one({
             "user": author_name,
@@ -93,5 +98,6 @@ if send_notif:
             "seen": False,
             "text": "Your crackme '" + db_object["name"] + "' has been accepted!"
         }).inserted_id
-    # Set HexId here
-    notif_coll.find_one_and_update({'_id': ins_id}, {'$set': {'hexid': str(ins_id)}})
+        # Set HexId here
+        notif_coll.find_one_and_update({'_id': ins_id}, {'$set': {'hexid': str(ins_id)}})
+        users_coll.update_one({'name': author_name}, {'$inc': {'unread_notifications': 1}})
