@@ -13,13 +13,13 @@
         <div class="form-group">
             <div class="col-3">Crackme name</div>
             <div class="col-9 col-sm-12">
-                <input class="form-input" type="text" id="name" name="name" placeholder="Name">
+                <input class="form-input" type="text" id="name" name="name" placeholder="Name" value="{{ search_params.name }}">
             </div>
         </div>
         <div class="form-group">
             <div class="col-3">Author</div>
             <div class="col-9 col-sm-12">
-                <input class="form-input" type="text" id="author" name="author" placeholder="Author">
+                <input class="form-input" type="text" id="author" name="author" placeholder="Author" value="{{ search_params.author }}">
             </div>
         </div>
         <div class="form-group">
@@ -28,21 +28,15 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="difficulty-min" name="difficulty-min" style="max-width: 20%">
-                    <option selected="selected" value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
+                    {% for i in range(1, 7) %}
+                    <option value="{{ i }}" {{ 'selected' if search_params.get('difficulty-min', 1) == i else '' }}>{{ i }}</option>
+                    {% endfor %}
                 </select>
                 and
                 <select class="form-select" id="difficulty-max" name="difficulty-max" style="max-width: 20%">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option selected="selected" value="6">6</option>
+                    {% for i in range(1, 7) %}
+                    <option value="{{ i }}" {{ 'selected' if search_params.get('difficulty-max', 6) == i else '' }}>{{ i }}</option>
+                    {% endfor %}
                 </select>
             </div>
         </div>
@@ -52,21 +46,15 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="quality-min" name="quality-min" style="max-width: 20%">
-                    <option selected="selected" value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
+                    {% for i in range(1, 7) %}
+                    <option value="{{ i }}" {{ 'selected' if search_params.get('quality-min', 1) == i else '' }}>{{ i }}</option>
+                    {% endfor %}
                 </select>
                 and
                 <select class="form-select" id="quality-max" name="quality-max" style="max-width: 20%">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option selected="selected" value="6">6</option>
+                    {% for i in range(1, 7) %}
+                    <option value="{{ i }}" {{ 'selected' if search_params.get('quality-max', 6) == i else '' }}>{{ i }}</option>
+                    {% endfor %}
                 </select>
             </div>
         </div>
@@ -75,9 +63,9 @@
                 <label class="form-label">Downloads between</label>
             </div>
             <div class="col-9 col-sm-12">
-                <input class="form-input" type="number" id="downloads-min" name="downloads-min" min="0" value="0" style="width: 20%; display: inline-block;">
+                <input class="form-input" type="number" id="downloads-min" name="downloads-min" min="0" value="{{ search_params.get('downloads-min', 0) }}" style="width: 20%; display: inline-block;">
                 and
-                <input class="form-input" type="number" id="downloads-max" name="downloads-max" min="0" placeholder="any" style="width: 20%; display: inline-block;">
+                <input class="form-input" type="number" id="downloads-max" name="downloads-max" min="0" placeholder="any" value="{{ search_params.get('downloads-max', '') }}" style="width: 20%; display: inline-block;">
             </div>
         </div>
         <div class="form-group">
@@ -85,9 +73,9 @@
                 <label class="form-label">Writeups between</label>
             </div>
             <div class="col-9 col-sm-12">
-                <input class="form-input" type="number" id="solutions-min" name="solutions-min" min="0" value="0" style="width: 20%; display: inline-block;">
+                <input class="form-input" type="number" id="solutions-min" name="solutions-min" min="0" value="{{ search_params.get('solutions-min', 0) }}" style="width: 20%; display: inline-block;">
                 and
-                <input class="form-input" type="number" id="solutions-max" name="solutions-max" min="0" placeholder="any" style="width: 20%; display: inline-block;">
+                <input class="form-input" type="number" id="solutions-max" name="solutions-max" min="0" placeholder="any" value="{{ search_params.get('solutions-max', '') }}" style="width: 20%; display: inline-block;">
             </div>
         </div>
         <div class="form-group">
@@ -95,9 +83,9 @@
                 <label class="form-label">Comments between</label>
             </div>
             <div class="col-9 col-sm-12">
-                <input class="form-input" type="number" id="comments-min" name="comments-min" min="0" value="0" style="width: 20%; display: inline-block;">
+                <input class="form-input" type="number" id="comments-min" name="comments-min" min="0" value="{{ search_params.get('comments-min', 0) }}" style="width: 20%; display: inline-block;">
                 and
-                <input class="form-input" type="number" id="comments-max" name="comments-max" min="0" placeholder="any" style="width: 20%; display: inline-block;">
+                <input class="form-input" type="number" id="comments-max" name="comments-max" min="0" placeholder="any" value="{{ search_params.get('comments-max', '') }}" style="width: 20%; display: inline-block;">
             </div>
         </div>
         <div class="form-group">
@@ -106,17 +94,17 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="lang" name="lang" multiple="">
-                    <option value="C/C++">C/C++</option>
-                    <option value="Assembler">Assembler</option>
-                    <option value="Java">Java</option>
-                    <option value="Go">Go</option>
-                    <option value="Rust">Rust</option>
-                    <option value="WebAssembly">WebAssembly</option>
-                    <option value="(Visual) Basic">(Visual) Basic</option>
-                    <option value="Borland Delphi">Borland Delphi</option>
-                    <option value="Turbo Pascal">Turbo Pascal</option>
-                    <option value=".NET">.NET</option>
-                    <option value="Unspecified/other">Unspecified/other</option>
+                    <option value="C/C++" {{ 'selected' if search_params.lang == 'C/C++' else '' }}>C/C++</option>
+                    <option value="Assembler" {{ 'selected' if search_params.lang == 'Assembler' else '' }}>Assembler</option>
+                    <option value="Java" {{ 'selected' if search_params.lang == 'Java' else '' }}>Java</option>
+                    <option value="Go" {{ 'selected' if search_params.lang == 'Go' else '' }}>Go</option>
+                    <option value="Rust" {{ 'selected' if search_params.lang == 'Rust' else '' }}>Rust</option>
+                    <option value="WebAssembly" {{ 'selected' if search_params.lang == 'WebAssembly' else '' }}>WebAssembly</option>
+                    <option value="(Visual) Basic" {{ 'selected' if search_params.lang == '(Visual) Basic' else '' }}>(Visual) Basic</option>
+                    <option value="Borland Delphi" {{ 'selected' if search_params.lang == 'Borland Delphi' else '' }}>Borland Delphi</option>
+                    <option value="Turbo Pascal" {{ 'selected' if search_params.lang == 'Turbo Pascal' else '' }}>Turbo Pascal</option>
+                    <option value=".NET" {{ 'selected' if search_params.lang == '.NET' else '' }}>.NET</option>
+                    <option value="Unspecified/other" {{ 'selected' if search_params.lang == 'Unspecified/other' else '' }}>Unspecified/other</option>
                 </select>
             </div>
         </div>
@@ -126,13 +114,13 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="arch" name="arch" multiple="">
-                    <option value="x86">x86</option>
-                    <option value="x86-64">x86-64</option>
-                    <option value="java">java</option>
-                    <option value="ARM">ARM</option>
-                    <option value="MIPS">MIPS</option>
-                    <option value="RISC-V">RISC-V</option>
-                    <option value="other">other</option>
+                    <option value="x86" {{ 'selected' if search_params.arch == 'x86' else '' }}>x86</option>
+                    <option value="x86-64" {{ 'selected' if search_params.arch == 'x86-64' else '' }}>x86-64</option>
+                    <option value="java" {{ 'selected' if search_params.arch == 'java' else '' }}>java</option>
+                    <option value="ARM" {{ 'selected' if search_params.arch == 'ARM' else '' }}>ARM</option>
+                    <option value="MIPS" {{ 'selected' if search_params.arch == 'MIPS' else '' }}>MIPS</option>
+                    <option value="RISC-V" {{ 'selected' if search_params.arch == 'RISC-V' else '' }}>RISC-V</option>
+                    <option value="other" {{ 'selected' if search_params.arch == 'other' else '' }}>other</option>
                 </select>
             </div>
         </div>
@@ -142,17 +130,17 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="platform" name="platform" multiple="">
-                    <option value="DOS">DOS</option>
-                    <option value="Mac OS X">Mac OS X</option>
-                    <option value="Multiplatform">Multiplatform</option>
-                    <option value="Unix/linux etc.">Unix/linux etc.</option>
-                    <option value="Windows">Windows</option>
-                    <option value="Windows 2000/XP only">Windows 2000/XP only</option>
-                    <option value="Windows 7 Only">Windows 7 Only</option>
-                    <option value="Windows Vista Only">Windows Vista Only</option>
-                    <option value="Android">Android</option>
-                    <option value="iOS">iOS</option>
-                    <option value="Unspecified/other">Unspecified/other</option>
+                    <option value="DOS" {{ 'selected' if search_params.platform == 'DOS' else '' }}>DOS</option>
+                    <option value="Mac OS X" {{ 'selected' if search_params.platform == 'Mac OS X' else '' }}>Mac OS X</option>
+                    <option value="Multiplatform" {{ 'selected' if search_params.platform == 'Multiplatform' else '' }}>Multiplatform</option>
+                    <option value="Unix/linux etc." {{ 'selected' if search_params.platform == 'Unix/linux etc.' else '' }}>Unix/linux etc.</option>
+                    <option value="Windows" {{ 'selected' if search_params.platform == 'Windows' else '' }}>Windows</option>
+                    <option value="Windows 2000/XP only" {{ 'selected' if search_params.platform == 'Windows 2000/XP only' else '' }}>Windows 2000/XP only</option>
+                    <option value="Windows 7 Only" {{ 'selected' if search_params.platform == 'Windows 7 Only' else '' }}>Windows 7 Only</option>
+                    <option value="Windows Vista Only" {{ 'selected' if search_params.platform == 'Windows Vista Only' else '' }}>Windows Vista Only</option>
+                    <option value="Android" {{ 'selected' if search_params.platform == 'Android' else '' }}>Android</option>
+                    <option value="iOS" {{ 'selected' if search_params.platform == 'iOS' else '' }}>iOS</option>
+                    <option value="Unspecified/other" {{ 'selected' if search_params.platform == 'Unspecified/other' else '' }}>Unspecified/other</option>
                 </select>
             </div>
         </div>
