@@ -13,6 +13,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS
 from app.services.archive import is_archive_password_protected
+from app.services.pe_detector import is_pe_file
 from app.services.discord import notify_new_solution
 from app.controllers.decorators import login_required
 
@@ -90,6 +91,11 @@ def upload_solution_post(hexidcrackme):
     # Check for password-protected archives
     if is_archive_password_protected(data):
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
+        return redirect(f'/upload/solution/{hexidcrackme}')
+
+    # Check for PE files (patched binaries)
+    if is_pe_file(data, file.filename):
+        flash('PE files (executables/DLLs) are not allowed. Please do not submit patched binaries. Instead, analyze the algorithm and submit a writeup that includes your analysis.', FLASH_ERROR)
         return redirect(f'/upload/solution/{hexidcrackme}')
 
     # Create solution
