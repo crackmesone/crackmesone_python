@@ -163,8 +163,39 @@
             {% endfor %}
         </tbody>
     </table>
-    {% if crackmes|length > 0 or page > 1 %}
+    {% if has_more or page > 1 or show_all %}
     <div class="pagination-controls">
+        {% if show_all %}
+        <form method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="name" value="{{ search_params.name }}">
+            <input type="hidden" name="author" value="{{ search_params.author }}">
+            <input type="hidden" name="lang" value="{{ search_params.lang }}">
+            <input type="hidden" name="arch" value="{{ search_params.arch }}">
+            <input type="hidden" name="platform" value="{{ search_params.platform }}">
+            <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
+            <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
+            <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
+            <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
+            <input type="hidden" name="page" value="1">
+            <button type="submit" class="btn active">Show Pages</button>
+        </form>
+        <span class="pagination-info">Showing all {{ crackmes|length }} results</span>
+        {% else %}
+        <form method="post" style="display: inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="name" value="{{ search_params.name }}">
+            <input type="hidden" name="author" value="{{ search_params.author }}">
+            <input type="hidden" name="lang" value="{{ search_params.lang }}">
+            <input type="hidden" name="arch" value="{{ search_params.arch }}">
+            <input type="hidden" name="platform" value="{{ search_params.platform }}">
+            <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
+            <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
+            <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
+            <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
+            <input type="hidden" name="show_all" value="1">
+            <button type="submit" class="btn active">Show All</button>
+        </form>
         {% if page > 1 %}
         <form method="post" style="display: inline;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -202,21 +233,6 @@
         {% else %}
         <button class="btn" disabled>Next</button>
         {% endif %}
-        {% if not show_all %}
-        <form method="post" style="display: inline; margin-left: 20px;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="name" value="{{ search_params.name }}">
-            <input type="hidden" name="author" value="{{ search_params.author }}">
-            <input type="hidden" name="lang" value="{{ search_params.lang }}">
-            <input type="hidden" name="arch" value="{{ search_params.arch }}">
-            <input type="hidden" name="platform" value="{{ search_params.platform }}">
-            <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
-            <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
-            <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
-            <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
-            <input type="hidden" name="show_all" value="1">
-            <button type="submit" class="btn">Show All</button>
-        </form>
         {% endif %}
     </div>
     {% endif %}
