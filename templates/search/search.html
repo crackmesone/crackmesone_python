@@ -163,7 +163,7 @@
             {% endfor %}
         </tbody>
     </table>
-    {% if has_more or page > 1 or show_all %}
+    {% if crackmes|length > 0 %}
     <div class="pagination-controls">
         {% if show_all %}
         <form method="post" style="display: inline;">
@@ -180,6 +180,8 @@
             <input type="hidden" name="page" value="1">
             <button type="submit" class="btn active">Show Pages</button>
         </form>
+        <span class="pagination-info">Showing all {{ crackmes|length }} results</span>
+        {% elif not has_more and page == 1 %}
         <span class="pagination-info">Showing all {{ crackmes|length }} results</span>
         {% else %}
         <form method="post" style="display: inline;">
