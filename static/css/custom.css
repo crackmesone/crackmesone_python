@@ -304,3 +304,29 @@ h3:hover .anchor-link {
 .notif-item .notif-delete:hover {
     color: #e74c3c;
 }
+
+/* PAGINATION */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.pagination-controls .btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.pagination-controls .btn-sm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    color: #9acc14;
+    font-size: 14px;
+    min-width: 120px;
+    text-align: center;
+}
