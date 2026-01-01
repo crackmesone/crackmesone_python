@@ -46,6 +46,14 @@ def search_post():
     except (ValueError, TypeError):
         quality_max = 6
 
+    # Get minimum downloads
+    try:
+        downloads_min = int(request.form.get('downloads-min', 0))
+        if downloads_min < 0:
+            downloads_min = 0
+    except (ValueError, TypeError):
+        downloads_min = 0
+
     # Get page number and show_all flag
     try:
         page = int(request.form.get('page', 1))
@@ -66,7 +74,8 @@ def search_post():
         'difficulty-min': difficulty_min,
         'difficulty-max': difficulty_max,
         'quality-min': quality_min,
-        'quality-max': quality_max
+        'quality-max': quality_max,
+        'downloads-min': downloads_min
     }
 
     try:
@@ -81,6 +90,7 @@ def search_post():
                 difficulty_max=difficulty_max,
                 quality_min=quality_min,
                 quality_max=quality_max,
+                downloads_min=downloads_min,
                 page=1,
                 per_page=10000
             )
@@ -96,6 +106,7 @@ def search_post():
                 difficulty_max=difficulty_max,
                 quality_min=quality_min,
                 quality_max=quality_max,
+                downloads_min=downloads_min,
                 page=page
             )
     except Exception as e:

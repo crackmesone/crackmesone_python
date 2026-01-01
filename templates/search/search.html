@@ -72,6 +72,14 @@
         </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
+                <label class="form-label">Minimum downloads</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="number" id="downloads-min" name="downloads-min" min="0" value="0" style="max-width: 20%">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
                 <label class="form-label" for="lang">Language</label>
             </div>
             <div class="col-9 col-sm-12">
@@ -177,6 +185,7 @@
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
+            <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="page" value="1">
             <button type="submit" class="btn active">Show Pages</button>
         </form>
@@ -195,6 +204,7 @@
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
+            <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="show_all" value="1">
             <button type="submit" class="btn active">Show All</button>
         </form>
@@ -210,6 +220,7 @@
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
+            <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="page" value="{{ page - 1 }}">
             <button type="submit" class="btn active">Previous</button>
         </form>
@@ -229,6 +240,7 @@
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
+            <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="page" value="{{ page + 1 }}">
             <button type="submit" class="btn active">Next</button>
         </form>
