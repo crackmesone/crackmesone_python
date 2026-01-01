@@ -3,6 +3,7 @@ Unit tests for PE file detection.
 """
 import pytest
 from app.services.pe_detector import is_pe_file
+from tests.test_utils import create_minimal_pe_file
 
 
 class TestPEDetector:
@@ -26,17 +27,7 @@ class TestPEDetector:
 
     def test_pe_file_with_valid_headers(self):
         """Test detection of valid PE file by header."""
-        # Create minimal PE file structure
-        # DOS header with MZ signature
-        dos_header = b'MZ' + b'\x00' * 58  # DOS stub (60 bytes)
-        dos_header += b'\x40\x00\x00\x00'  # PE offset at 0x40 (64 bytes)
-        
-        # PE signature at offset 0x40
-        pe_signature = b'PE\x00\x00'
-        
-        # Combine
-        pe_file = dos_header + pe_signature + b'\x00' * 100
-        
+        pe_file = create_minimal_pe_file()
         result = is_pe_file(pe_file, 'test.bin')
         assert result is True
 
@@ -97,10 +88,6 @@ class TestPEDetector:
 
     def test_no_filename_with_pe_content(self):
         """Test PE detection without filename but with valid PE content."""
-        dos_header = b'MZ' + b'\x00' * 58
-        dos_header += b'\x40\x00\x00\x00'
-        pe_signature = b'PE\x00\x00'
-        pe_file = dos_header + pe_signature + b'\x00' * 100
-        
+        pe_file = create_minimal_pe_file()
         result = is_pe_file(pe_file)
         assert result is True
