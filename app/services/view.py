@@ -117,6 +117,16 @@ def register_filters(app):
         except (TypeError, AttributeError):
             return True
 
+    @app.template_global('DIFFERENT_DATE')
+    def different_date(dt1, dt2):
+        """Check if two datetimes are on different calendar dates."""
+        if dt1 is None or dt2 is None:
+            return True
+        try:
+            return dt1.date() != dt2.date()
+        except (TypeError, AttributeError):
+            return True
+
     @app.template_filter('noescape')
     def no_escape(value):
         """Mark a value as safe (no HTML escaping)."""
