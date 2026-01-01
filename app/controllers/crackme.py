@@ -72,18 +72,15 @@ def last_crackmes_page(page):
         page = 1
 
     try:
-        crackmes = last_crackmes(page)
+        crackmes, has_more = last_crackmes(page)
     except Exception as e:
         print(f"Error getting crackmes: {e}")
         abort(500)
 
-    prec = 1 if page == 1 else page - 1
-    next_page = page + 1
-
     return render_template('crackme/lasts.html',
                            crackmes=crackmes,
-                           prec=prec,
-                           next=next_page)
+                           page=page,
+                           has_more=has_more)
 
 
 @crackme_bp.route('/download/crackme/<hexid>')

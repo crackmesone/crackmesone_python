@@ -41,10 +41,18 @@
             {% endfor %}
         </tbody>
     </table>
-    <div class="text-center">
-        <a href="/lasts/{{ prec }}">&lt;</a>
-
-    <a href="/lasts/{{ next }}">&gt;</a>
+    <div class="pagination-controls">
+        {% if page > 1 %}
+        <a href="/lasts/{{ page - 1 }}" class="btn active">&lt;</a>
+        {% else %}
+        <button class="btn" disabled>&lt;</button>
+        {% endif %}
+        <span class="pagination-info">Page {{ page }}</span>
+        {% if has_more %}
+        <a href="/lasts/{{ page + 1 }}" class="btn active">&gt;</a>
+        {% else %}
+        <button class="btn" disabled>&gt;</button>
+        {% endif %}
     </div>
 
 </div>

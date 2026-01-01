@@ -178,10 +178,10 @@
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
             <input type="hidden" name="page" value="{{ page - 1 }}">
-            <button type="submit" class="btn btn-sm">Previous</button>
+            <button type="submit" class="btn active">&lt;</button>
         </form>
         {% else %}
-        <button class="btn btn-sm" disabled>Previous</button>
+        <button class="btn" disabled>&lt;</button>
         {% endif %}
         <span class="pagination-info">Page {{ page }}</span>
         {% if has_more %}
@@ -197,10 +197,10 @@
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
             <input type="hidden" name="page" value="{{ page + 1 }}">
-            <button type="submit" class="btn btn-sm">Next</button>
+            <button type="submit" class="btn active">&gt;</button>
         </form>
         {% else %}
-        <button class="btn btn-sm" disabled>Next</button>
+        <button class="btn" disabled>&gt;</button>
         {% endif %}
     </div>
     {% endif %}
