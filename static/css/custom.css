@@ -220,6 +220,11 @@ tbody tr:first-child td .tile .tile-content:before {
     border-radius: 6px;
 }
 
+.notif-time {
+    margin-right: 10px;
+    font-size: 0.85em;
+}
+
 .notif-item.active {
     background-color: #3b512073;
 }

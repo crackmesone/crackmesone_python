@@ -19,6 +19,7 @@
             {% set ns.new_day = false %}
         {% endif %}
         <div data-id="{{ notif.hexid }}" class="text-center notif-item s-rounded{% if not notif.seen %} active{% endif %}">
+            <span class="notif-time text-gray">{{ notif.time|PRETTYTIMEFORMAT("%H:%M") }}</span>
             <span>{{ notif.text }}</span>
             <i class="icon {% if not notif.seen %}icon-check notif-mark-read{% else %}icon-cross notif-delete{% endif %}"></i>
         </div>
