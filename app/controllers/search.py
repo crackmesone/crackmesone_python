@@ -12,7 +12,7 @@ search_bp = Blueprint('search', __name__)
 @search_bp.route('/search', methods=['GET'])
 def search_get():
     """Display the search page."""
-    return render_template('search/search.html', crackmes=[], page=1, has_more=False, search_params={})
+    return render_template('search/search.html', crackmes=[], page=1, has_more=False, show_all=False, search_params={})
 
 
 @search_bp.route('/search', methods=['POST'])
@@ -46,13 +46,15 @@ def search_post():
     except (ValueError, TypeError):
         quality_max = 6
 
-    # Get page number
+    # Get page number and show_all flag
     try:
         page = int(request.form.get('page', 1))
         if page < 1:
             page = 1
     except (ValueError, TypeError):
         page = 1
+
+    show_all = request.form.get('show_all') == '1'
 
     # Store search params for pagination
     search_params = {
@@ -68,18 +70,34 @@ def search_post():
     }
 
     try:
-        crackmes, has_more = search_crackme(
-            name=name,
-            author=author,
-            lang=lang,
-            arch=arch,
-            platform=platform,
-            difficulty_min=difficulty_min,
-            difficulty_max=difficulty_max,
-            quality_min=quality_min,
-            quality_max=quality_max,
-            page=page
-        )
+        if show_all:
+            crackmes, _ = search_crackme(
+                name=name,
+                author=author,
+                lang=lang,
+                arch=arch,
+                platform=platform,
+                difficulty_min=difficulty_min,
+                difficulty_max=difficulty_max,
+                quality_min=quality_min,
+                quality_max=quality_max,
+                page=1,
+                per_page=10000
+            )
+            has_more = False
+        else:
+            crackmes, has_more = search_crackme(
+                name=name,
+                author=author,
+                lang=lang,
+                arch=arch,
+                platform=platform,
+                difficulty_min=difficulty_min,
+                difficulty_max=difficulty_max,
+                quality_min=quality_min,
+                quality_max=quality_max,
+                page=page
+            )
     except Exception as e:
         print(f"Search error: {e}")
         crackmes = []
@@ -89,6 +107,7 @@ def search_post():
                            crackmes=crackmes,
                            page=page,
                            has_more=has_more,
+                           show_all=show_all,
                            search_params=search_params)
 
 
