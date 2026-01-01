@@ -6,7 +6,7 @@
 <div class="container grid-lg wrapper">
     {% set ns = namespace(last_time=startTime, new_day=true) %}
     {% for notif in notifs %}
-        {% if TIMECOMPARE(ns.last_time, notif.time, 86400) %}
+        {% if DIFFERENT_DATE(ns.last_time, notif.time) %}
             {% if not ns.new_day %}
                 </div>
             {% endif %}
