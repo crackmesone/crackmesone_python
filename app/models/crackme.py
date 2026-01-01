@@ -138,7 +138,15 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
         downloads_query = {'$gte': downloads_min}
         if downloads_max is not None:
             downloads_query['$lte'] = downloads_max
-        query['nbdownloads'] = downloads_query
+        # Some older crackmes may not have nbdownloads field (treat as 0)
+        if downloads_min == 0:
+            query['$or'] = [
+                {'nbdownloads': downloads_query},
+                {'nbdownloads': {'$exists': False}},
+                {'nbdownloads': None}
+            ]
+        else:
+            query['nbdownloads'] = downloads_query
 
     if name:
         query['name'] = {'$regex': name, '$options': 'i'}
