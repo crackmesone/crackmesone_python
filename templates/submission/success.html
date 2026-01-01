@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Submission Successful{% endblock %}
+{% block page_title %}Submission Successful{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="empty">
+        <div class="empty-icon">
+            <i class="icon icon-check" style="font-size: 3rem; color: #32b643;"></i>
+        </div>
+        <p class="empty-title h3">{{ submission_type }} Uploaded Successfully!</p>
+        <p class="empty-subtitle">
+            Your {{ submission_type|lower }} <strong>"{{ name }}"</strong> has been submitted.<br>
+            It will be reviewed by our team before becoming publicly available.
+        </p>
+        <div class="empty-action">
+            <a href="/user/{{ username }}" class="btn btn-primary">View Your Profile</a>
+            {% if submission_type == 'Crackme' %}
+            <a href="/upload/crackme" class="btn btn-primary">Upload Another Crackme</a>
+            {% else %}
+            <a href="/lasts/1" class="btn btn-primary">Browse Crackmes</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}

@@ -124,5 +124,7 @@ def upload_solution_post(hexidcrackme):
     except Exception as e:
         print(f"Notification error: {e}")
 
-    flash('Solution uploaded! Should be available soon.', FLASH_SUCCESS)
-    return redirect(f'/user/{username}')
+    return render_template('submission/success.html',
+                           submission_type='Writeup',
+                           name=crackme['name'],
+                           username=username)

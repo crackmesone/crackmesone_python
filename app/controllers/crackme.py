@@ -65,6 +65,12 @@ def crackme_view(hexid):
                            quality=f"{crackme.get('quality', 0):.1f}")
 
 
+@crackme_bp.route('/lasts')
+def last_crackmes_redirect():
+    """Redirect /lasts to /lasts/1."""
+    return redirect('/lasts/1')
+
+
 @crackme_bp.route('/lasts/<int:page>')
 def last_crackmes_page(page):
     """Display latest crackmes with pagination."""
@@ -239,5 +245,7 @@ def upload_crackme_post():
     except Exception as e:
         print(f"Discord notification error: {e}")
 
-    flash('Crackme uploaded! Should be available soon.', FLASH_SUCCESS)
-    return redirect(f'/user/{username}')
+    return render_template('submission/success.html',
+                           submission_type='Crackme',
+                           name=crackme['name'],
+                           username=username)
