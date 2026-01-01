@@ -18,8 +18,10 @@ def get_session():
 
 
 def clear_session():
-    """Clear all session values."""
-    flask_session.clear()
+    """Clear main site auth session keys only."""
+    flask_session.pop('name', None)
+    flask_session.pop('email', None)
+    flask_session.pop('login_attempt', None)
 
 
 def get_username():

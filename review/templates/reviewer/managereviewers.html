@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Manage Reviewers</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        .reviewer-table {
+            margin: 20px 0;
+        }
+        .reviewer-row {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .reviewer-username {
+            flex: 1;
+            font-weight: bold;
+        }
+        .reviewer-badge {
+            margin-left: 10px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+        }
+        .admin-badge {
+            background-color: #e85600;
+            color: white;
+        }
+        .current-user-badge {
+            background-color: #5755d9;
+            color: white;
+        }
+        .reviewer-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .add-section {
+            border: 2px solid #5755d9;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .section-header {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #5755d9;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 400px;
+            max-width: 500px;
+            background: #383838;
+        }
+        .modal-header {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        {% if message %}
+        <div class="text-center notif-item s-rounded">
+            <span>{{ message }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Add New Reviewer Section -->
+        <div class="add-section">
+            <div class="section-header">Add New Reviewer</div>
+            <form method="post" class="form-horizontal">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="add">
+                <div class="form-group">
+                    <div class="col-3">Username</div>
+                    <div class="col-9 col-sm-12">
+                        <input class="form-input" type="text" name="new_username" placeholder="Enter username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-3">Password</div>
+                    <div class="col-9 col-sm-12">
+                        <input class="form-input" type="password" name="new_password" placeholder="Enter password" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-3"></div>
+                    <div class="col-9 col-sm-12">
+                        <label class="form-checkbox">
+                            <input type="checkbox" name="is_admin">
+                            <i class="form-icon"></i> Make this reviewer an admin
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-3"></div>
+                    <div class="col-9 col-sm-12">
+                        <input type="submit" class="btn btn-primary" value="Add Reviewer">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Reviewers List -->
+        <div class="section-header">All Reviewers ({{ reviewers|length }})</div>
+        <div class="reviewer-table">
+            {% for reviewer in reviewers %}
+            <div class="reviewer-row">
+                <div class="reviewer-username">
+                    {{ reviewer.username }}
+                    {% if reviewer.is_admin %}
+                    <span class="reviewer-badge admin-badge">ADMIN</span>
+                    {% endif %}
+                    {% if reviewer.is_current_user %}
+                    <span class="reviewer-badge current-user-badge">YOU</span>
+                    {% endif %}
+                </div>
+                <div class="reviewer-actions">
+                    {% if not reviewer.is_current_user %}
+                    <button class="btn btn-sm" onclick="toggleAdmin('{{ reviewer.username }}', {{ 'true' if reviewer.is_admin else 'false' }})">
+                        {% if reviewer.is_admin %}
+                        Remove Admin
+                        {% else %}
+                        Make Admin
+                        {% endif %}
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="showChangePasswordModal('{{ reviewer.username }}')">
+                        Change Password
+                    </button>
+                    <button class="btn btn-sm btn-error" onclick="confirmDelete('{{ reviewer.username }}')">
+                        Delete
+                    </button>
+                    {% else %}
+                    <button class="btn btn-sm btn-primary" onclick="showChangePasswordModal('{{ reviewer.username }}')">
+                        Change My Password
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Hidden forms for actions -->
+    <form id="toggleAdminForm" method="post" style="display: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="toggle_admin">
+        <input type="hidden" name="username_to_toggle" id="username_to_toggle">
+    </form>
+
+    <form id="deleteForm" method="post" style="display: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="username_to_delete" id="username_to_delete">
+    </form>
+
+    <!-- Change Password Modal -->
+    <div id="passwordModal" class="modal-overlay" onclick="closePasswordModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">Change Password</div>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="change_password">
+                <input type="hidden" name="username_to_change" id="username_to_change">
+                <div class="form-group">
+                    <label class="form-label">New Password for <strong id="change_username_display"></strong></label>
+                    <input class="form-input" type="password" name="change_password" id="change_password" placeholder="Enter new password" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn" onclick="closePasswordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleAdmin(username, isCurrentlyAdmin) {
+            const action = isCurrentlyAdmin ? 'remove admin status from' : 'make admin';
+            if (confirm(`Are you sure you want to ${action} '${username}'?`)) {
+                document.getElementById('username_to_toggle').value = username;
+                document.getElementById('toggleAdminForm').submit();
+            }
+        }
+
+        function confirmDelete(username) {
+            if (confirm(`Are you sure you want to DELETE reviewer '${username}'?\n\nThis action cannot be undone!`)) {
+                const confirmText = prompt(`Type "DELETE" (without quotes) to confirm deletion of '${username}':`);
+                if (confirmText === "DELETE") {
+                    document.getElementById('username_to_delete').value = username;
+                    document.getElementById('deleteForm').submit();
+                } else {
+                    alert('Deletion cancelled.');
+                }
+            }
+        }
+
+        function showChangePasswordModal(username) {
+            document.getElementById('username_to_change').value = username;
+            document.getElementById('change_username_display').textContent = username;
+            document.getElementById('change_password').value = '';
+            document.getElementById('passwordModal').style.display = 'block';
+        }
+
+        function closePasswordModal(event) {
+            if (!event || event.target.id === 'passwordModal') {
+                document.getElementById('passwordModal').style.display = 'none';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePasswordModal();
+            }
+        });
+    </script>
+</body>
+
+</html>

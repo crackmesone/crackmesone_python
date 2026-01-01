@@ -12,6 +12,13 @@ from app.controllers.decorators import anonymous_required
 login_bp = Blueprint('login', __name__)
 
 
+def clear_main_auth():
+    """Clear main site auth session keys only."""
+    session.pop('name', None)
+    session.pop('email', None)
+    session.pop('login_attempt', None)
+
+
 @login_bp.route('/login', methods=['GET'])
 @anonymous_required
 def login_get():
@@ -46,7 +53,7 @@ def login_post():
         # Check password
         if match_string(user['password'], password):
             # Login successful
-            session.clear()
+            clear_main_auth()
             session['email'] = user['email']
             session['name'] = user['name']
             flash('Login successful!', FLASH_SUCCESS)
@@ -72,7 +79,7 @@ def login_post():
 def logout():
     """Log out the user."""
     if session.get('name'):
-        session.clear()
+        clear_main_auth()
         flash('Goodbye!', 'alert-info')
 
     return redirect('/')

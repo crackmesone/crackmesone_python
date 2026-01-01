@@ -48,6 +48,8 @@ static/solution/*
 config/config.json
 users.json
 .env
+review/review_operations.log
+review/users.json
 
 # Testing
 .pytest_cache/

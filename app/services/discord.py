@@ -1,5 +1,9 @@
 """
 Discord webhook notification service.
+
+Two webhooks are supported:
+- WebhookPublic: Public channel for approved crackmes/solutions notifications
+- WebhookPrivate: Private/admin channel for pending submissions and reviewer logs
 """
 
 import requests
@@ -20,24 +24,26 @@ def is_enabled():
     return discord_config.get('Enabled', False)
 
 
-def get_webhook_url():
-    """Get the Discord webhook URL."""
-    return discord_config.get('WebhookURL', '')
+def get_public_webhook():
+    """Get the public Discord webhook URL (for approved items)."""
+    return discord_config.get('WebhookPublic', '')
 
 
-def send_notification(message: str) -> bool:
-    """Send a notification to Discord via webhook.
+def get_private_webhook():
+    """Get the private Discord webhook URL (for pending items and logs)."""
+    return discord_config.get('WebhookPrivate', '')
+
+
+def send_to_webhook(webhook_url: str, message: str) -> bool:
+    """Send a message to a specific Discord webhook.
 
     Args:
+        webhook_url: The webhook URL to send to
         message: The message to send
 
     Returns:
         True if the notification was sent successfully, False otherwise
     """
-    if not is_enabled():
-        return True
-
-    webhook_url = get_webhook_url()
     if not webhook_url:
         return False
 
@@ -52,8 +58,38 @@ def send_notification(message: str) -> bool:
         return False
 
 
+def send_public_notification(message: str) -> bool:
+    """Send a notification to the public Discord channel.
+
+    Args:
+        message: The message to send
+
+    Returns:
+        True if the notification was sent successfully, False otherwise
+    """
+    if not is_enabled():
+        return True
+    return send_to_webhook(get_public_webhook(), message)
+
+
+def send_private_notification(message: str) -> bool:
+    """Send a notification to the private/admin Discord channel.
+
+    Args:
+        message: The message to send
+
+    Returns:
+        True if the notification was sent successfully, False otherwise
+    """
+    if not is_enabled():
+        return True
+    return send_to_webhook(get_private_webhook(), message)
+
+
 def notify_new_crackme(username: str, crackme_name: str) -> bool:
-    """Send notification for a new crackme submission.
+    """Send notification for a new crackme submission (pending review).
+
+    Sent to PRIVATE channel - only admins/reviewers need to see this.
 
     Args:
         username: The user who submitted the crackme
@@ -63,11 +99,13 @@ def notify_new_crackme(username: str, crackme_name: str) -> bool:
         True if notification was sent successfully
     """
     message = f"New crackme submission awaiting review: **{crackme_name}** by **{username}**"
-    return send_notification(message)
+    return send_private_notification(message)
 
 
 def notify_new_solution(username: str, crackme_name: str) -> bool:
-    """Send notification for a new solution submission.
+    """Send notification for a new solution submission (pending review).
+
+    Sent to PRIVATE channel - only admins/reviewers need to see this.
 
     Args:
         username: The user who submitted the solution
@@ -77,4 +115,4 @@ def notify_new_solution(username: str, crackme_name: str) -> bool:
         True if notification was sent successfully
     """
     message = f"New solution submission awaiting review: Solution for **{crackme_name}** by **{username}**"
-    return send_notification(message)
+    return send_private_notification(message)

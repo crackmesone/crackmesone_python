@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Review solutions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        {% if message %}
+        <div class="text-center notif-item s-rounded">
+            <span>{{ message }}</span>
+        </div>
+        {% endif %}
+
+        <table class="table table-striped">
+            <thead>
+                <tr style="text-align: center;">
+                    <th style="width: 50%;">Challenge name</th>
+                    <th style="width: 20%;">Date</th>
+                    <th style="width: 20%;">Solution by</th>
+                    <th style="width: 10%;">Go review</th>
+                </tr>
+            </thead>
+
+            {% if solutions %}
+            <tbody id="content-list">
+                {% for solution in solutions %}
+                <tr class="text-center">
+                    <td> <a href="https://crackmes.one/crackme/{{solution.crackme_uuid}}">{{solution.crackme_name}}</a></td>
+                    <td> <span style="white-space: pre-line">{{ solution.date.strftime('%Y-%m-%d %H:%M:%S') }}</span></td>
+                    <td> <a href="https://crackmes.one/user/{{solution.solution_author}}">{{solution.solution_author}}</a></td>
+                    <td> <a href="{{ url_for('reviewer.viewsolution', solution_uuid=solution.solution_uuid) }}">==></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            {% endif %}
+        </table>
+    </div>
+</body>
