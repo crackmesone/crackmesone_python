@@ -1,6 +1,6 @@
-# Crackmes.one - Python/Flask Port
+# Crackmes.one
 
-A Python Flask port of the crackmes.one platform for sharing and solving reverse engineering challenges.
+The source code for [crackmes.one](https://crackmes.one), a platform for sharing and solving reverse engineering challenges. Built with Python and Flask.
 
 ## Requirements
 
@@ -159,10 +159,6 @@ Edit `config/config.json`:
 - **Discord.Enabled**: Enable/disable Discord notifications for new submissions
 - **Discord.WebhookURL**: Your Discord webhook URL (get from Discord channel settings → Integrations → Webhooks)
 
-## Migration from Go
+## Previous Codebase
 
-This is a direct port of the Go codebase with equivalent functionality:
-- MongoDB operations use pymongo
-- Templates converted from Go templates to Jinja2
-- bcrypt password hashing preserved (compatible with existing data)
-- Same database schema (works with existing MongoDB data)
+The site was originally written in Go. The old codebase is archived at [crackmesone/crackmes.one](https://github.com/crackmesone/crackmes.one).
