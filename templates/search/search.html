@@ -82,6 +82,26 @@
         </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
+                <label class="form-label">Solutions between</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="number" id="solutions-min" name="solutions-min" min="0" value="0" style="width: 20%; display: inline-block;">
+                and
+                <input class="form-input" type="number" id="solutions-max" name="solutions-max" min="0" placeholder="any" style="width: 20%; display: inline-block;">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Comments between</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="number" id="comments-min" name="comments-min" min="0" value="0" style="width: 20%; display: inline-block;">
+                and
+                <input class="form-input" type="number" id="comments-max" name="comments-max" min="0" placeholder="any" style="width: 20%; display: inline-block;">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
                 <label class="form-label" for="lang">Language</label>
             </div>
             <div class="col-9 col-sm-12">
@@ -189,6 +209,10 @@
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
             <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="downloads-max" value="{{ search_params['downloads-max'] }}">
+            <input type="hidden" name="solutions-min" value="{{ search_params['solutions-min'] }}">
+            <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
+            <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
+            <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
             <input type="hidden" name="page" value="1">
             <button type="submit" class="btn active">Show Pages</button>
         </form>
@@ -209,6 +233,10 @@
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
             <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="downloads-max" value="{{ search_params['downloads-max'] }}">
+            <input type="hidden" name="solutions-min" value="{{ search_params['solutions-min'] }}">
+            <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
+            <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
+            <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
             <input type="hidden" name="show_all" value="1">
             <button type="submit" class="btn active">Show All</button>
         </form>
@@ -226,6 +254,10 @@
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
             <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="downloads-max" value="{{ search_params['downloads-max'] }}">
+            <input type="hidden" name="solutions-min" value="{{ search_params['solutions-min'] }}">
+            <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
+            <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
+            <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
             <input type="hidden" name="page" value="{{ page - 1 }}">
             <button type="submit" class="btn active">Previous</button>
         </form>
@@ -247,6 +279,10 @@
             <input type="hidden" name="quality-max" value="{{ search_params['quality-max'] }}">
             <input type="hidden" name="downloads-min" value="{{ search_params['downloads-min'] }}">
             <input type="hidden" name="downloads-max" value="{{ search_params['downloads-max'] }}">
+            <input type="hidden" name="solutions-min" value="{{ search_params['solutions-min'] }}">
+            <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
+            <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
+            <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
             <input type="hidden" name="page" value="{{ page + 1 }}">
             <button type="submit" class="btn active">Next</button>
         </form>
