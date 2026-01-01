@@ -65,6 +65,44 @@ def search_post():
         except (ValueError, TypeError):
             downloads_max = None
 
+    # Get solutions range
+    try:
+        solutions_min = int(request.form.get('solutions-min', 0))
+        if solutions_min < 0:
+            solutions_min = 0
+    except (ValueError, TypeError):
+        solutions_min = 0
+
+    solutions_max_str = request.form.get('solutions-max', '')
+    if solutions_max_str == '' or solutions_max_str.lower() == 'any':
+        solutions_max = None
+    else:
+        try:
+            solutions_max = int(solutions_max_str)
+            if solutions_max < 0:
+                solutions_max = None
+        except (ValueError, TypeError):
+            solutions_max = None
+
+    # Get comments range
+    try:
+        comments_min = int(request.form.get('comments-min', 0))
+        if comments_min < 0:
+            comments_min = 0
+    except (ValueError, TypeError):
+        comments_min = 0
+
+    comments_max_str = request.form.get('comments-max', '')
+    if comments_max_str == '' or comments_max_str.lower() == 'any':
+        comments_max = None
+    else:
+        try:
+            comments_max = int(comments_max_str)
+            if comments_max < 0:
+                comments_max = None
+        except (ValueError, TypeError):
+            comments_max = None
+
     # Get page number and show_all flag
     try:
         page = int(request.form.get('page', 1))
@@ -87,7 +125,11 @@ def search_post():
         'quality-min': quality_min,
         'quality-max': quality_max,
         'downloads-min': downloads_min,
-        'downloads-max': downloads_max if downloads_max is not None else ''
+        'downloads-max': downloads_max if downloads_max is not None else '',
+        'solutions-min': solutions_min,
+        'solutions-max': solutions_max if solutions_max is not None else '',
+        'comments-min': comments_min,
+        'comments-max': comments_max if comments_max is not None else ''
     }
 
     try:
@@ -104,6 +146,10 @@ def search_post():
                 quality_max=quality_max,
                 downloads_min=downloads_min,
                 downloads_max=downloads_max,
+                solutions_min=solutions_min,
+                solutions_max=solutions_max,
+                comments_min=comments_min,
+                comments_max=comments_max,
                 page=1,
                 per_page=10000
             )
@@ -121,6 +167,10 @@ def search_post():
                 quality_max=quality_max,
                 downloads_min=downloads_min,
                 downloads_max=downloads_max,
+                solutions_min=solutions_min,
+                solutions_max=solutions_max,
+                comments_min=comments_min,
+                comments_max=comments_max,
                 page=page
             )
     except Exception as e:

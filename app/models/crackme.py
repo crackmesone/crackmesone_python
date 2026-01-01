@@ -118,6 +118,8 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
                    difficulty_min=0, difficulty_max=6,
                    quality_min=0, quality_max=6,
                    downloads_min=0, downloads_max=None,
+                   solutions_min=0, solutions_max=None,
+                   comments_min=0, comments_max=None,
                    page=1, per_page=50):
     """Search crackmes with filters and pagination.
 
@@ -139,6 +141,18 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
         if downloads_max is not None:
             downloads_query['$lte'] = downloads_max
         query['nbdownloads'] = downloads_query
+
+    if solutions_min > 0 or solutions_max is not None:
+        solutions_query = {'$gte': solutions_min}
+        if solutions_max is not None:
+            solutions_query['$lte'] = solutions_max
+        query['nbsolutions'] = solutions_query
+
+    if comments_min > 0 or comments_max is not None:
+        comments_query = {'$gte': comments_min}
+        if comments_max is not None:
+            comments_query['$lte'] = comments_max
+        query['nbcomments'] = comments_query
 
     if name:
         query['name'] = {'$regex': name, '$options': 'i'}
