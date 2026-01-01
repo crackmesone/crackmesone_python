@@ -116,8 +116,12 @@ def crackme_increment_downloads(crackme_hexid):
 
 def search_crackme(name='', author='', lang='', arch='', platform='',
                    difficulty_min=0, difficulty_max=6,
-                   quality_min=0, quality_max=6):
-    """Search crackmes with filters."""
+                   quality_min=0, quality_max=6,
+                   page=1, per_page=50):
+    """Search crackmes with filters and pagination.
+
+    Returns (results, has_more) where has_more indicates if there are more pages.
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
@@ -140,21 +144,42 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
     if platform:
         query['platform'] = {'$regex': platform, '$options': 'i'}
 
-    return list(collection.find(query).sort('created_at', DESCENDING).limit(150))
+    skip = (page - 1) * per_page
+    # Fetch one extra to check if there are more results
+    results = list(collection.find(query)
+                   .sort('created_at', DESCENDING)
+                   .skip(skip)
+                   .limit(per_page + 1))
+
+    has_more = len(results) > per_page
+    if has_more:
+        results = results[:per_page]
+
+    return results, has_more
 
 
 def last_crackmes(page=1):
-    """Get latest crackmes with pagination."""
+    """Get latest crackmes with pagination.
+
+    Returns (results, has_more) where has_more indicates if there are more pages.
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('crackme')
     skip = (page - 1) * 50
 
-    return list(collection.find({'visible': True})
-                .sort('created_at', DESCENDING)
-                .skip(skip)
-                .limit(50))
+    # Fetch one extra to check if there are more results
+    results = list(collection.find({'visible': True})
+                   .sort('created_at', DESCENDING)
+                   .skip(skip)
+                   .limit(51))
+
+    has_more = len(results) > 50
+    if has_more:
+        results = results[:50]
+
+    return results, has_more
 
 
 def crackme_by_hexid(hexid):
