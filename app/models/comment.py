@@ -52,13 +52,14 @@ def comments_by_crackme(crackme_hexid):
     }).sort('created_at', ASCENDING))
 
 
-def comment_create(content, username, crackme_hexid):
+def comment_create(content, username, crackme_hexid, spoiler=False):
     """Create a new comment.
 
     Args:
         content: Comment text
         username: Author username
         crackme_hexid: Hex ID of the crackme
+        spoiler: Whether the comment contains spoilers (default: False)
     """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -79,7 +80,7 @@ def comment_create(content, username, crackme_hexid):
         'created_at': datetime.utcnow(),
         'visible': True,
         'deleted': False,
-        'spoiler': False
+        'spoiler': spoiler
     }
 
     collection.insert_one(comment)

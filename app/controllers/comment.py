@@ -34,10 +34,11 @@ def leave_comment(hexid):
         return redirect(f'/crackme/{hexid}')
 
     comment_text = bleach.clean(request.form.get('comment', ''))
+    is_spoiler = request.form.get('spoiler') == 'on'
 
     # Create comment
     try:
-        comment_create(comment_text, username, hexid)
+        comment_create(comment_text, username, hexid, spoiler=is_spoiler)
     except Exception as e:
         print(f"Error creating comment: {e}")
         flash('Comment creation failed. Please try again later.', FLASH_ERROR)
@@ -69,7 +70,12 @@ def leave_comment(hexid):
 @comment_bp.route('/comment/<comment_id>/spoiler', methods=['POST'])
 @login_required
 def toggle_spoiler(comment_id):
-    """Toggle spoiler status on a comment. Only crackme author can do this."""
+    """Toggle spoiler status on a comment.
+
+    Permissions:
+    - Crackme author: can mark and unmark any comment on their crackme
+    - Comment author: can only mark their own comment (cannot unmark)
+    """
     username = session.get('name')
 
     # Get the comment
@@ -80,20 +86,30 @@ def toggle_spoiler(comment_id):
         return redirect('/')
 
     crackme_hexid = comment.get('crackmehexid')
+    comment_author = comment.get('author')
+    current_spoiler = comment.get('spoiler', False)
 
-    # Get the crackme and verify ownership
+    # Get the crackme
     try:
         crackme = crackme_by_hexid(crackme_hexid)
     except ErrNoResult:
         flash('Crackme not found.', FLASH_ERROR)
         return redirect('/')
 
-    if crackme.get('author') != username:
-        flash('You can only mark comments as spoilers on your own crackmes.', FLASH_ERROR)
+    is_crackme_author = crackme.get('author') == username
+    is_comment_author = comment_author == username
+
+    # Check permissions
+    if not is_crackme_author and not is_comment_author:
+        flash('You can only mark comments as spoilers on your own crackmes or your own comments.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}')
+
+    # Comment author can only mark, not unmark (unless they're also crackme author)
+    if is_comment_author and not is_crackme_author and current_spoiler:
+        flash('You cannot remove the spoiler mark from your own comment. Contact the crackme author.', FLASH_ERROR)
         return redirect(f'/crackme/{crackme_hexid}')
 
     # Toggle spoiler status
-    current_spoiler = comment.get('spoiler', False)
     new_spoiler = not current_spoiler
 
     try:
