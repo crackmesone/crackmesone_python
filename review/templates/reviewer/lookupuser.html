@@ -114,7 +114,13 @@
 
             <div class="info-row">
                 <div class="info-label">Account Created:</div>
-                <div class="info-value">{{ user_info.created_at }}</div>
+                <div class="info-value">
+                    {% if user_info.registration_time %}
+                    {{ user_info.registration_time.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+                    {% else %}
+                    Unknown
+                    {% endif %}
+                </div>
             </div>
 
             <hr style="margin: 20px 0;">

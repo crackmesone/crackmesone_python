@@ -1945,11 +1945,20 @@ def lookupuser(current_user):
             if user:
                 username = user.get("name")
                 db = g_crackmesone_db
+
+                # Extract registration time from ObjectId
+                registration_time = None
+                if user.get("_id"):
+                    try:
+                        registration_time = user["_id"].generation_time
+                    except Exception:
+                        pass
+
                 user_info = {
                     'username': username,
                     'email': user.get("email"),
                     'is_admin': user.get("is_admin", False),
-                    'created_at': user.get("created_at", "Unknown"),
+                    'registration_time': registration_time,
                     'crackmes_count': db.crackme.count_documents({"author": username}),
                     'solutions_count': db.solution.count_documents({"author": username}),
                     'comments_count': db.comment.count_documents({"author": username}),
