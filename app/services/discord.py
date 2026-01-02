@@ -6,6 +6,8 @@ Two webhooks are supported:
 - WebhookPrivate: Private/admin channel for pending submissions and reviewer logs
 """
 
+import datetime
+from datetime import timezone
 import requests
 
 # Global Discord configuration
@@ -34,12 +36,13 @@ def get_private_webhook():
     return discord_config.get('WebhookPrivate', '')
 
 
-def send_to_webhook(webhook_url: str, message: str) -> bool:
+def send_to_webhook(webhook_url: str, message: str = None, embed: dict = None) -> bool:
     """Send a message to a specific Discord webhook.
 
     Args:
         webhook_url: The webhook URL to send to
-        message: The message to send
+        message: The text message to send (optional if embed provided)
+        embed: The embed object to send (optional if message provided)
 
     Returns:
         True if the notification was sent successfully, False otherwise
@@ -48,9 +51,12 @@ def send_to_webhook(webhook_url: str, message: str) -> bool:
         return False
 
     try:
-        payload = {
-            'content': message
-        }
+        payload = {}
+        if message:
+            payload['content'] = message
+        if embed:
+            payload['embeds'] = [embed]
+
         response = requests.post(webhook_url, json=payload, timeout=10)
         return response.status_code in (200, 204)
     except Exception as e:
@@ -72,18 +78,58 @@ def send_public_notification(message: str) -> bool:
     return send_to_webhook(get_public_webhook(), message)
 
 
-def send_private_notification(message: str) -> bool:
+def send_private_notification(message: str = None, embed: dict = None) -> bool:
     """Send a notification to the private/admin Discord channel.
 
     Args:
-        message: The message to send
+        message: The text message to send (optional if embed provided)
+        embed: The embed object to send (optional if message provided)
 
     Returns:
         True if the notification was sent successfully, False otherwise
     """
     if not is_enabled():
         return True
-    return send_to_webhook(get_private_webhook(), message)
+    return send_to_webhook(get_private_webhook(), message=message, embed=embed)
+
+
+def _create_pending_embed(title: str, submission_type: str, details: dict) -> dict:
+    """Create a Discord embed for pending submissions.
+
+    Args:
+        title: The embed title
+        submission_type: Type of submission ('crackme' or 'solution')
+        details: Dictionary of field name -> value pairs
+
+    Returns:
+        Discord embed dictionary
+    """
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+
+    # Yellow/gold color for pending items
+    color = 16776960
+
+    # Format details as fields
+    fields = [
+        {"name": key, "value": str(value), "inline": True}
+        for key, value in details.items()
+    ]
+
+    return {
+        "title": title,
+        "description": f"New {submission_type} awaiting review",
+        "color": color,
+        "fields": fields,
+        "footer": {
+            "text": "CrackMes.One Reviewer Tool",
+        },
+        "timestamp": timestamp,
+    }
 
 
 def notify_new_crackme(username: str, crackme_name: str) -> bool:
@@ -98,8 +144,15 @@ def notify_new_crackme(username: str, crackme_name: str) -> bool:
     Returns:
         True if notification was sent successfully
     """
-    message = f"New crackme submission awaiting review: **{crackme_name}** by **{username}**"
-    return send_private_notification(message)
+    embed = _create_pending_embed(
+        title="Pending Crackme Submission",
+        submission_type="crackme",
+        details={
+            "Challenge": crackme_name,
+            "Author": username,
+        }
+    )
+    return send_private_notification(embed=embed)
 
 
 def notify_new_solution(username: str, crackme_name: str) -> bool:
@@ -114,5 +167,12 @@ def notify_new_solution(username: str, crackme_name: str) -> bool:
     Returns:
         True if notification was sent successfully
     """
-    message = f"New solution submission awaiting review: Solution for **{crackme_name}** by **{username}**"
-    return send_private_notification(message)
+    embed = _create_pending_embed(
+        title="Pending Solution Submission",
+        submission_type="solution",
+        details={
+            "Challenge": crackme_name,
+            "Author": username,
+        }
+    )
+    return send_private_notification(embed=embed)
