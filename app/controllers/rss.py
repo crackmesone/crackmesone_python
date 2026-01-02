@@ -15,7 +15,7 @@ DIFFICULTY_NAMES = ["Very Easy", "Easy", "Medium", "Hard", "Very Hard", "Insane"
 def rss_crackmes():
     """Generate RSS feed for latest crackmes."""
     try:
-        crackmes = last_crackmes(1)
+        crackmes, _ = last_crackmes(1)
     except Exception as e:
         print(f"Error getting crackmes: {e}")
         return Response("Error generating RSS feed", status=500)
