@@ -3,6 +3,7 @@ Solution controller - Solution uploading.
 """
 
 import os
+from html import escape as html_escape
 from flask import Blueprint, render_template, request, redirect, flash, session, abort
 from werkzeug.utils import secure_filename
 import bleach
@@ -126,7 +127,7 @@ def upload_solution_post(hexidcrackme):
     # Send notification
     try:
         crackme = crackme_by_hexid(hexidcrackme)
-        notification_add(username, f"Your solution for '{crackme['name']}' is waiting approval!")
+        notification_add(username, f"Your solution for '{html_escape(crackme['name'])}' is waiting approval!")
         # Send Discord notification
         notify_new_solution(username, crackme['name'])
     except Exception as e:
