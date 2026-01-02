@@ -1934,10 +1934,13 @@ def lookupuser(current_user):
     """Look up main site user information (admin only)."""
     user_info = None
     message = None
+    show_all = False
+    all_data = None
 
     if request.method == 'POST':
         validate_csrf_token()
         search_query = request.form.get('search_query', '').strip()
+        show_all = request.form.get('show_all') == '1'
 
         if search_query:
             user = find_user_by_email_or_name(search_query)
@@ -1973,9 +1976,14 @@ def lookupuser(current_user):
                     })
                 }
 
+                # Fetch all detailed data if requested
+                if show_all:
+                    all_data = _fetch_all_user_data(db, username)
+
                 log_reviewer_operation(
                     "lookup_user", current_user['username'],
-                    {"search_query": search_query, "found_user": username},
+                    {"search_query": search_query, "found_user": username,
+                     "show_all": show_all},
                     True
                 )
             else:
@@ -1993,8 +2001,129 @@ def lookupuser(current_user):
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         user_info=user_info,
-        message=message
+        message=message,
+        show_all=show_all,
+        all_data=all_data
     )
+
+
+def _fetch_all_user_data(db, username):
+    """Fetch all detailed data for a user.
+
+    Args:
+        db: Database connection
+        username: Username to fetch data for
+
+    Returns:
+        Dictionary containing all user data with URLs
+    """
+    # Fetch crackmes
+    crackmes_raw = list(db.crackme.find(
+        {"author": username},
+        {"hexid": 1, "name": 1, "visible": 1, "created_at": 1}
+    ).sort("created_at", -1))
+
+    crackmes = []
+    for cm in crackmes_raw:
+        crackmes.append({
+            "hexid": cm.get("hexid"),
+            "name": cm.get("name"),
+            "visible": cm.get("visible", False),
+            "date": cm.get("created_at")
+        })
+
+    # Fetch solutions with crackme info
+    solutions_raw = list(db.solution.find(
+        {"author": username},
+        {"hexid": 1, "crackmeid": 1, "visible": 1, "created_at": 1}
+    ).sort("created_at", -1))
+
+    solutions = []
+    for sol in solutions_raw:
+        crackme = db.crackme.find_one(
+            {"_id": sol.get("crackmeid")},
+            {"hexid": 1, "name": 1}
+        )
+        solutions.append({
+            "hexid": sol.get("hexid"),
+            "crackme_hexid": crackme.get("hexid") if crackme else None,
+            "crackme_name": crackme.get("name") if crackme else "Unknown",
+            "visible": sol.get("visible", False),
+            "date": sol.get("created_at")
+        })
+
+    # Fetch comments with crackme info
+    comments_raw = list(db.comment.find(
+        {"author": username},
+        {"crackmehexid": 1, "info": 1, "created_at": 1}
+    ).sort("created_at", -1))
+
+    comments = []
+    for comm in comments_raw:
+        crackme = db.crackme.find_one(
+            {"hexid": comm.get("crackmehexid")},
+            {"name": 1}
+        )
+        comment_text = comm.get("info", "")
+        comments.append({
+            "crackme_hexid": comm.get("crackmehexid"),
+            "crackme_name": crackme.get("name") if crackme else "Unknown",
+            "comment": comment_text[:100] + ("..." if len(comment_text) > 100 else ""),
+            "date": comm.get("created_at")
+        })
+
+    # Fetch difficulty ratings with crackme info
+    diff_ratings_raw = list(db.rating_difficulty.find(
+        {"author": username},
+        {"crackmehexid": 1, "rating": 1, "created_at": 1}
+    ).sort("created_at", -1))
+
+    diff_ratings = []
+    for rating in diff_ratings_raw:
+        crackme = db.crackme.find_one(
+            {"hexid": rating.get("crackmehexid")},
+            {"name": 1}
+        )
+        diff_ratings.append({
+            "crackme_hexid": rating.get("crackmehexid"),
+            "crackme_name": crackme.get("name") if crackme else "Unknown",
+            "value": rating.get("rating"),
+            "date": rating.get("created_at")
+        })
+
+    # Fetch quality ratings with crackme info
+    qual_ratings_raw = list(db.rating_quality.find(
+        {"author": username},
+        {"crackmehexid": 1, "rating": 1, "created_at": 1}
+    ).sort("created_at", -1))
+
+    qual_ratings = []
+    for rating in qual_ratings_raw:
+        crackme = db.crackme.find_one(
+            {"hexid": rating.get("crackmehexid")},
+            {"name": 1}
+        )
+        qual_ratings.append({
+            "crackme_hexid": rating.get("crackmehexid"),
+            "crackme_name": crackme.get("name") if crackme else "Unknown",
+            "value": rating.get("rating"),
+            "date": rating.get("created_at")
+        })
+
+    # Fetch all notifications (no limit)
+    notifications = list(db.notifications.find(
+        {"user": username},
+        {"text": 1, "time": 1, "seen": 1}
+    ).sort("time", -1))
+
+    return {
+        "crackmes": crackmes,
+        "solutions": solutions,
+        "comments": comments,
+        "difficulty_ratings": diff_ratings,
+        "quality_ratings": qual_ratings,
+        "notifications": notifications
+    }
 
 
 @reviewer_bp.route('/deleteuser', methods=['GET', 'POST'])
