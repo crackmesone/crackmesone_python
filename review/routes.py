@@ -967,9 +967,8 @@ def delete_approved_solution(solution_uuid):
         get_static_dir('solution'),
         f"{solution_uuid}.zip"
     )
-    was_approved = os.path.exists(zip_path)
 
-    # Delete zip file
+    # Delete zip file (if exists)
     try:
         os.remove(zip_path)
     except Exception:
@@ -978,8 +977,8 @@ def delete_approved_solution(solution_uuid):
     # Delete from database
     g_crackmesone_db.solution.delete_one({"_id": ObjectId(solution_uuid)})
 
-    # Decrement crackme solution count if was approved
-    if crackme_id and was_approved:
+    # Decrement crackme solution count (always, as long as solution was in database)
+    if crackme_id:
         try:
             g_crackmesone_db.crackme.update_one(
                 {"_id": crackme_id},
