@@ -368,10 +368,12 @@
             e.preventDefault();
             selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
             items.forEach(function(it, i) { it.classList.toggle('selected', i === selectedIndex); });
+            if (items[selectedIndex]) items[selectedIndex].scrollIntoView({ block: 'nearest' });
         } else if (e.key === 'ArrowUp') {
             e.preventDefault();
             selectedIndex = Math.max(selectedIndex - 1, 0);
             items.forEach(function(it, i) { it.classList.toggle('selected', i === selectedIndex); });
+            if (items[selectedIndex]) items[selectedIndex].scrollIntoView({ block: 'nearest' });
         } else if (e.key === 'Enter' || e.key === 'Tab') {
             if (selectedIndex >= 0 && items[selectedIndex]) {
                 e.preventDefault();
@@ -387,6 +389,15 @@
     textarea.addEventListener('blur', function() {
         setTimeout(function() { dropdown.classList.remove('active'); }, 150);
     });
+
+    // Auto-focus textarea when comment modal opens
+    function checkModalFocus() {
+        if (window.location.hash === '#modal-comment') {
+            setTimeout(function() { textarea.focus(); }, 100);
+        }
+    }
+    window.addEventListener('hashchange', checkModalFocus);
+    checkModalFocus(); // Check on page load
 })();
 </script>
 {% endblock %}
