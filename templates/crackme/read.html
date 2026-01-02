@@ -32,19 +32,6 @@
     .spoiler-hidden:hover {
         background-color: #555;
     }
-    .spoiler-btn {
-        font-size: 0.8em;
-        padding: 2px 8px;
-        margin-left: 8px;
-        background-color: #32b643;
-        color: white;
-        border: none;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-    .spoiler-btn:hover {
-        background-color: #2a9d3a;
-    }
 </style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
@@ -133,11 +120,9 @@
                 <span style="white-space: pre-line">{{ comment.info }}</span>
                 {% endif %}
                 {% if usersess == username %}
-                <form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline;">
+                <form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline; margin-left: 8px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="spoiler-btn" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}">
-                        {% if comment.spoiler %}Unspoiler{% else %}Spoiler{% endif %}
-                    </button>
+                    <button type="submit" class="btn btn-sm active" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}">{% if comment.spoiler %}Unspoiler{% else %}Spoiler{% endif %}</button>
                 </form>
                 {% endif %}
             </p>
