@@ -1929,7 +1929,7 @@ def editcrackme(current_user):
                                 change_summary += f" and {len(changes) - 3} more"
                             send_user_notification(
                                 crackme_obj['author'],
-                                f"Your crackme '{crackme_obj.get('name')}' has been updated by an admin: {change_summary}"
+                                f"Your crackme '<a href=\"/crackme/{crackme_obj.get('hexid')}\">{html_escape(crackme_obj.get('name'))}</a>' has been updated by an admin: {html_escape(change_summary)}"
                             )
                         except Exception as e:
                             print(f"Notification error: {e}")
