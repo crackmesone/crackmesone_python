@@ -255,6 +255,13 @@
 <script>
 (function() {
     var mentionTargets = {{ mention_targets|tojson }};
+    var currentUser = {{ usersess|tojson }};
+    // Filter out current user from mention targets (can't mention yourself)
+    if (currentUser) {
+        mentionTargets = mentionTargets.filter(function(name) {
+            return name !== currentUser;
+        });
+    }
     var textarea = document.getElementById('comment');
     var dropdown = document.getElementById('mention-dropdown');
     if (!textarea || !dropdown || mentionTargets.length === 0) return;
