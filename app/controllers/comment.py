@@ -4,7 +4,7 @@ Comment controller - Posting comments.
 
 from flask import Blueprint, request, redirect, flash, session
 import bleach
-from app.models.comment import comment_create
+from app.models.comment import comment_create, comment_by_id, comment_set_spoiler
 from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
@@ -64,3 +64,48 @@ def leave_comment(hexid):
 
     flash('Comment uploaded!', FLASH_SUCCESS)
     return redirect(f'/crackme/{hexid}')
+
+
+@comment_bp.route('/comment/<comment_id>/spoiler', methods=['POST'])
+@login_required
+def toggle_spoiler(comment_id):
+    """Toggle spoiler status on a comment. Only crackme author can do this."""
+    username = session.get('name')
+
+    # Get the comment
+    try:
+        comment = comment_by_id(comment_id)
+    except ErrNoResult:
+        flash('Comment not found.', FLASH_ERROR)
+        return redirect('/')
+
+    crackme_hexid = comment.get('crackmehexid')
+
+    # Get the crackme and verify ownership
+    try:
+        crackme = crackme_by_hexid(crackme_hexid)
+    except ErrNoResult:
+        flash('Crackme not found.', FLASH_ERROR)
+        return redirect('/')
+
+    if crackme.get('author') != username:
+        flash('You can only mark comments as spoilers on your own crackmes.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}')
+
+    # Toggle spoiler status
+    current_spoiler = comment.get('spoiler', False)
+    new_spoiler = not current_spoiler
+
+    try:
+        comment_set_spoiler(comment_id, new_spoiler)
+    except Exception as e:
+        print(f"Error toggling spoiler: {e}")
+        flash('Failed to update spoiler status.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}')
+
+    if new_spoiler:
+        flash('Comment marked as spoiler.', FLASH_SUCCESS)
+    else:
+        flash('Spoiler marking removed.', FLASH_SUCCESS)
+
+    return redirect(f'/crackme/{crackme_hexid}')

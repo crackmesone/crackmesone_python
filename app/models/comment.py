@@ -4,7 +4,7 @@ Comment model for database operations.
 
 from datetime import datetime
 from bson import ObjectId
-from pymongo import ASCENDING, DESCENDING
+from pymongo import ASCENDING, DESCENDING, ReturnDocument
 from app.services.database import get_collection, check_connection
 from app.models.errors import ErrNoResult, ErrUnavailable
 
@@ -78,8 +78,69 @@ def comment_create(content, username, crackme_hexid):
         'crackmename': crackme['name'],
         'created_at': datetime.utcnow(),
         'visible': True,
-        'deleted': False
+        'deleted': False,
+        'spoiler': False
     }
 
     collection.insert_one(comment)
     return comment
+
+
+def comment_by_id(comment_id):
+    """Get a comment by its ID.
+
+    Args:
+        comment_id: The comment's ObjectId (string or ObjectId)
+
+    Returns:
+        Comment document
+
+    Raises:
+        ErrNoResult: If comment not found
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('comment')
+
+    if isinstance(comment_id, str):
+        comment_id = ObjectId(comment_id)
+
+    comment = collection.find_one({'_id': comment_id})
+    if not comment:
+        raise ErrNoResult("Comment not found")
+
+    return comment
+
+
+def comment_set_spoiler(comment_id, is_spoiler):
+    """Set the spoiler status of a comment.
+
+    Args:
+        comment_id: The comment's ObjectId (string or ObjectId)
+        is_spoiler: Boolean indicating if comment is a spoiler
+
+    Returns:
+        Updated comment document
+
+    Raises:
+        ErrNoResult: If comment not found
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('comment')
+
+    if isinstance(comment_id, str):
+        comment_id = ObjectId(comment_id)
+
+    result = collection.find_one_and_update(
+        {'_id': comment_id},
+        {'$set': {'spoiler': is_spoiler}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    if not result:
+        raise ErrNoResult("Comment not found")
+
+    return result

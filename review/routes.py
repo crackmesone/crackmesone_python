@@ -1861,6 +1861,32 @@ def delcomment(current_user):
 
             if not result.deleted_count:
                 error = "Failed to delete comment"
+
+        elif action == 'toggle_spoiler' and comment_uuid:
+            comment = g_crackmesone_db.comment.find_one({
+                "_id": ObjectId(comment_uuid)
+            })
+
+            if comment:
+                current_spoiler = comment.get('spoiler', False)
+                new_spoiler = not current_spoiler
+
+                g_crackmesone_db.comment.update_one(
+                    {"_id": ObjectId(comment_uuid)},
+                    {"$set": {"spoiler": new_spoiler}}
+                )
+
+                log_reviewer_operation(
+                    "toggle_comment_spoiler", current_user['username'],
+                    {
+                        "comment_uuid": comment_uuid,
+                        "crackme_uuid": crackme_uuid,
+                        "new_spoiler_status": new_spoiler
+                    },
+                    True
+                )
+            else:
+                error = "Comment not found"
     else:
         crackme_uuid = request.args.get("crackme_uuid")
 
@@ -1876,7 +1902,8 @@ def delcomment(current_user):
                     {
                         'comment_uuid': str(c["_id"]),
                         'author': c["author"],
-                        'content': c["info"]
+                        'content': c["info"],
+                        'spoiler': c.get("spoiler", False)
                     }
                     for c in g_crackmesone_db.comment.find({
                         'crackmehexid': crackme_uuid

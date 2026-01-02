@@ -10,7 +10,42 @@
         document.getElementById(id1).style.display = 'none';
         document.getElementById(id2).style.display = 'block';
     }
+
+    function revealSpoiler(id) {
+        var hidden = document.getElementById('spoiler-hidden-' + id);
+        var content = document.getElementById('spoiler-content-' + id);
+        if (hidden && content) {
+            hidden.style.display = 'none';
+            content.style.display = 'inline';
+        }
+    }
 </script>
+<style>
+    .spoiler-hidden {
+        background-color: #333;
+        color: #333;
+        padding: 2px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .spoiler-hidden:hover {
+        background-color: #555;
+    }
+    .spoiler-tag {
+        background-color: #ff6b6b;
+        color: white;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        margin-left: 5px;
+    }
+    .spoiler-btn {
+        font-size: 0.8em;
+        padding: 1px 6px;
+        margin-left: 5px;
+    }
+</style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
     <div class="columns panel-background">
@@ -89,7 +124,24 @@
             <p>You must be logged in to post a comment</p>
             {% endif %}
             {% for comment in comments %}
-            <p><a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}: <span style="white-space: pre-line">{{ comment.info }}</span></p>
+            <p>
+                <a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}:
+                {% if comment.spoiler %}
+                <span class="spoiler-tag">SPOILER</span>
+                <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal spoiler]</span>
+                <span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info }}</span>
+                {% else %}
+                <span style="white-space: pre-line">{{ comment.info }}</span>
+                {% endif %}
+                {% if usersess == username %}
+                <form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-sm spoiler-btn" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}">
+                        {% if comment.spoiler %}Unspoiler{% else %}Spoiler{% endif %}
+                    </button>
+                </form>
+                {% endif %}
+            </p>
             {% endfor %}
         </div>
         <div class="column col-12" id="solutions" style="display:none">
