@@ -503,7 +503,7 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
         # Create password-protected zip
         ret = call([
             "zip", "-j", "--password", ARCHIVE_PASSWORD,
-            "--", dest_path_without_ext, temp_path
+            dest_path_without_ext, "--", temp_path
         ])
 
         if ret != 0:
