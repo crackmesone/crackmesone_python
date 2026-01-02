@@ -2505,3 +2505,311 @@ def _handle_change_password(current_user):
         return f"Success: Password changed for '{username}'."
     except Exception as e:
         return f"Error saving to file: {str(e)}"
+
+
+# =============================================================================
+# Site Archive
+# =============================================================================
+
+import threading
+from flask import jsonify
+
+ARCHIVE_DIR = os.path.join(CRACKMESONE_DIR, 'archive')
+ARCHIVE_STATUS_FILE = os.path.join(ARCHIVE_DIR, 'status.json')
+
+# Lock for thread-safe status file access
+_archive_lock = threading.Lock()
+
+
+def get_archive_status():
+    """Get current archive creation status."""
+    if not os.path.exists(ARCHIVE_STATUS_FILE):
+        return {'status': 'idle'}
+
+    try:
+        with open(ARCHIVE_STATUS_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {'status': 'idle'}
+
+
+def set_archive_status(status, **kwargs):
+    """Set archive creation status."""
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    data = {'status': status, 'updated_at': datetime.datetime.now().isoformat()}
+    data.update(kwargs)
+
+    with _archive_lock:
+        with open(ARCHIVE_STATUS_FILE, 'w') as f:
+            json.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
+
+
+def clear_archive_status():
+    """Clear archive status file."""
+    if os.path.exists(ARCHIVE_STATUS_FILE):
+        try:
+            os.remove(ARCHIVE_STATUS_FILE)
+        except Exception:
+            pass
+
+
+def get_archive_list():
+    """Get list of existing archives with metadata."""
+    archives = []
+    if not os.path.exists(ARCHIVE_DIR):
+        return archives
+
+    for filename in os.listdir(ARCHIVE_DIR):
+        if filename.startswith('crackmesone_') and filename.endswith('.zip'):
+            filepath = os.path.join(ARCHIVE_DIR, filename)
+            stat = os.stat(filepath)
+            archives.append({
+                'filename': filename,
+                'size': stat.st_size,
+                'size_mb': round(stat.st_size / (1024 * 1024), 2),
+                'created': datetime.datetime.fromtimestamp(stat.st_mtime)
+            })
+
+    # Sort by creation time, newest first
+    archives.sort(key=lambda x: x['created'], reverse=True)
+    return archives
+
+
+def create_site_archive_background(requesting_user):
+    """Create a full archive of the site in a background thread.
+
+    Updates status file as it progresses.
+    """
+    import zipfile
+    from app.services.database import get_db
+
+    # Create archive directory if it doesn't exist
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+
+    # Generate timestamp for folder name
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    archive_name = f'crackmesone_{timestamp}'
+    archive_folder = os.path.join(ARCHIVE_DIR, archive_name)
+
+    try:
+        set_archive_status('running', step='Initializing...')
+
+        # Create the archive folder structure
+        os.makedirs(archive_folder, exist_ok=True)
+        os.makedirs(os.path.join(archive_folder, 'database'), exist_ok=True)
+
+        # Get fresh database connection for this thread
+        db = get_db()
+        if db is None:
+            raise RuntimeError("Database connection not available")
+
+        # Dump database tables as JSON first (excluding user info)
+        set_archive_status('running', step='Exporting crackmes database...')
+        crackmes = list(db.crackme.find({}))
+        for c in crackmes:
+            c['_id'] = str(c['_id'])
+        with open(os.path.join(archive_folder, 'database', 'crackmes.json'), 'w') as f:
+            json.dump(crackmes, f, indent=2, default=str)
+
+        set_archive_status('running', step='Exporting solutions database...')
+        solutions = list(db.solution.find({}))
+        for s in solutions:
+            s['_id'] = str(s['_id'])
+            if 'crackmeid' in s:
+                s['crackmeid'] = str(s['crackmeid'])
+        with open(os.path.join(archive_folder, 'database', 'solutions.json'), 'w') as f:
+            json.dump(solutions, f, indent=2, default=str)
+
+        set_archive_status('running', step='Exporting comments database...')
+        comments = list(db.comment.find({}))
+        for c in comments:
+            c['_id'] = str(c['_id'])
+        with open(os.path.join(archive_folder, 'database', 'comments.json'), 'w') as f:
+            json.dump(comments, f, indent=2, default=str)
+
+        # Copy crackme files
+        set_archive_status('running', step='Copying crackme files...')
+        crackme_src = os.path.join(CRACKMESONE_DIR, 'static', 'crackme')
+        crackme_dst = os.path.join(archive_folder, 'crackme')
+        if os.path.exists(crackme_src):
+            shutil.copytree(crackme_src, crackme_dst)
+
+        # Copy solution files
+        set_archive_status('running', step='Copying solution files...')
+        solution_src = os.path.join(CRACKMESONE_DIR, 'static', 'solution')
+        solution_dst = os.path.join(archive_folder, 'solution')
+        if os.path.exists(solution_src):
+            shutil.copytree(solution_src, solution_dst)
+
+        # Create zip archive
+        set_archive_status('running', step='Creating zip archive...')
+        zip_filename = f'{archive_name}.zip'
+        zip_filepath = os.path.join(ARCHIVE_DIR, zip_filename)
+
+        with zipfile.ZipFile(zip_filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(archive_folder):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, archive_folder)
+                    zipf.write(file_path, os.path.join(archive_name, arcname))
+
+        # Clean up the temporary folder
+        shutil.rmtree(archive_folder)
+
+        # Get file size
+        size_mb = round(os.path.getsize(zip_filepath) / (1024 * 1024), 2)
+
+        # Mark as completed
+        set_archive_status(
+            'completed',
+            filename=zip_filename,
+            size_mb=size_mb,
+            message=f"Archive created successfully: {zip_filename} ({size_mb} MB)"
+        )
+
+        # Log the operation
+        log_reviewer_operation(
+            "create_site_archive", requesting_user,
+            {"filename": zip_filename, "size_mb": size_mb},
+            True
+        )
+
+    except Exception as e:
+        # Clean up on failure
+        if os.path.exists(archive_folder):
+            shutil.rmtree(archive_folder)
+
+        set_archive_status('error', error=str(e))
+
+        log_reviewer_operation(
+            "create_site_archive", requesting_user,
+            {"error": str(e)},
+            False
+        )
+
+
+def delete_archive(filename):
+    """Delete an archive file.
+
+    Returns:
+        Tuple of (success: bool, message: str)
+    """
+    # Validate filename to prevent path traversal
+    if not filename.startswith('crackmesone_') or not filename.endswith('.zip'):
+        return False, "Invalid archive filename"
+
+    if '/' in filename or '\\' in filename or '..' in filename:
+        return False, "Invalid archive filename"
+
+    filepath = os.path.join(ARCHIVE_DIR, filename)
+
+    if not os.path.exists(filepath):
+        return False, "Archive not found"
+
+    try:
+        os.remove(filepath)
+        return True, f"Archive '{filename}' deleted successfully"
+    except Exception as e:
+        return False, f"Error deleting archive: {str(e)}"
+
+
+@reviewer_bp.route('/sitearchive', methods=['GET', 'POST'])
+@admin_required
+def sitearchive(current_user):
+    """Manage site archives (admin only)."""
+    message = None
+    error = None
+
+    if request.method == 'POST':
+        validate_csrf_token()
+        action = request.form.get('action')
+
+        if action == 'create':
+            # Check if archive is already running
+            status = get_archive_status()
+            if status.get('status') == 'running':
+                error = "An archive is already being created. Please wait."
+            else:
+                # Clear any old status and start background thread
+                clear_archive_status()
+                set_archive_status('running', step='Starting...')
+
+                thread = threading.Thread(
+                    target=create_site_archive_background,
+                    args=(current_user['username'],)
+                )
+                thread.daemon = True
+                thread.start()
+
+                message = "Archive creation started. This page will update automatically."
+
+        elif action == 'delete':
+            filename = request.form.get('filename')
+            success, msg = delete_archive(filename)
+            if success:
+                message = msg
+                log_reviewer_operation(
+                    "delete_site_archive", current_user['username'],
+                    {"filename": filename},
+                    True
+                )
+            else:
+                error = msg
+                log_reviewer_operation(
+                    "delete_site_archive", current_user['username'],
+                    {"filename": filename, "error": msg},
+                    False
+                )
+
+        elif action == 'clear_status':
+            # Allow clearing stuck status
+            clear_archive_status()
+            message = "Status cleared."
+
+    archives = get_archive_list()
+    status = get_archive_status()
+
+    return render_template(
+        'reviewer/sitearchive.html',
+        user=current_user['username'],
+        is_admin=current_user['is_admin'],
+        archives=archives,
+        message=message,
+        error=error,
+        archive_status=status
+    )
+
+
+@reviewer_bp.route('/sitearchive/status')
+@admin_required
+def sitearchive_status(current_user):
+    """Get archive creation status (JSON endpoint for polling)."""
+    status = get_archive_status()
+    return jsonify(status)
+
+
+@reviewer_bp.route('/downloadarchive/<filename>')
+@admin_required
+def downloadarchive(current_user, filename):
+    """Download a site archive (admin only)."""
+    # Validate filename to prevent path traversal
+    if not filename.startswith('crackmesone_') or not filename.endswith('.zip'):
+        abort(400)
+
+    if '/' in filename or '\\' in filename or '..' in filename:
+        abort(400)
+
+    filepath = os.path.join(ARCHIVE_DIR, filename)
+
+    if not os.path.exists(filepath):
+        abort(404)
+
+    log_reviewer_operation(
+        "download_site_archive", current_user['username'],
+        {"filename": filename},
+        True
+    )
+
+    return send_file(filepath, as_attachment=True, download_name=filename)
