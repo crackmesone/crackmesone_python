@@ -500,9 +500,12 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
     shutil.move(source_path, temp_path)
 
     try:
+        # Find zip command (use full path to avoid PATH issues in web server)
+        zip_cmd = shutil.which("zip") or "/usr/bin/zip"
+
         # Create password-protected zip
         ret = call([
-            "zip", "-j", "--password", ARCHIVE_PASSWORD,
+            zip_cmd, "-j", "--password", ARCHIVE_PASSWORD,
             dest_path_without_ext, "--", temp_path
         ])
 
