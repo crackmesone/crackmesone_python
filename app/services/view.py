@@ -149,8 +149,8 @@ def register_filters(app):
         from markupsafe import escape
         escaped_text = str(escape(text))
 
-        # Replace @mentions with links (matches all valid username characters)
-        mention_pattern = re.compile(r'@([a-zA-Z0-9_\-@.+]+)')
+        # Replace @mentions with links (only after whitespace or at start of text)
+        mention_pattern = re.compile(r'(?:^|(?<=\s))@([a-zA-Z0-9_\-@.+]+)', re.MULTILINE)
 
         def replace_mention(match):
             username = match.group(1)

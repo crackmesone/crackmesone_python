@@ -17,8 +17,9 @@ from app.services.discord import notify_new_comment, notify_spoiler_toggle
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.controllers.decorators import login_required
 
-# Regex to match @mentions (matches all valid username characters: alphanumeric, _-@.+)
-MENTION_PATTERN = re.compile(r'@([a-zA-Z0-9_\-@.+]+)')
+# Regex to match @mentions (only after whitespace or at start of text)
+# Valid username characters: alphanumeric, _-@.+
+MENTION_PATTERN = re.compile(r'(?:^|(?<=\s))@([a-zA-Z0-9_\-@.+]+)', re.MULTILINE)
 
 
 def parse_mentions(text):
