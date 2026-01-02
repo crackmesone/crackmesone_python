@@ -119,11 +119,8 @@ background: #797979;
     -webkit-overflow-scrolling: touch;
 }
 .table-responsive .table {
+    width: 100%;
     min-width: 800px;
-}
-.table td, .table th {
-    word-break: break-word;
-    max-width: 200px;
 }
 .bar .bar-item {
         background: #9acc14;
