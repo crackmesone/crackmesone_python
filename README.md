@@ -228,6 +228,12 @@ Alternatively, an existing admin can add new reviewers through the web interface
 | Reset user passwords | No | Yes |
 | Manage reviewer accounts | No | Yes |
 
+## FAQ
+
+**How do I report a security vulnerability?**
+
+Please see [SECURITY.md](SECURITY.md) for instructions on reporting security issues.
+
 ## Previous Codebase
 
 The site was originally written in Go. The old codebase is archived at [crackmesone/crackmes.one](https://github.com/crackmesone/crackmes.one).
