@@ -49,6 +49,44 @@
             padding-top: 20px;
             border-top: 2px solid #ddd;
         }
+        .data-section {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .data-section-header {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #5755d9;
+        }
+        .data-table {
+            width: 100%;
+            font-size: 0.9em;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 8px;
+            background: #f0f0f0;
+        }
+        .data-table td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .status-visible {
+            color: green;
+        }
+        .status-hidden {
+            color: orange;
+        }
+        .status-seen {
+            color: #888;
+        }
+        .status-unseen {
+            color: #5755d9;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -72,15 +110,24 @@
         </div>
         {% endif %}
 
-        <form class="form-horizontal" method="post">
+        <form class="form-horizontal" method="post" id="lookup-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="show_all" id="show_all_input" value="0">
             <div class="form-group">
                 <div class="col-3">Email or Username</div>
                 <div class="col-9 col-sm-12">
-                    <input class="form-input" type="text" id="search_query" name="search_query" placeholder="Enter email or username" required>
+                    <input class="form-input" type="text" id="search_query" name="search_query"
+                           placeholder="Enter email or username"
+                           value="{{ user_info.username if user_info else '' }}" required>
                 </div>
             </div>
-            <input type="submit" class="btn btn-primary float-right" value="Lookup User">
+            <div class="form-group">
+                <div class="col-3"></div>
+                <div class="col-9 col-sm-12">
+                    <button type="submit" class="btn btn-primary" onclick="document.getElementById('show_all_input').value='0'">Lookup User</button>
+                    <button type="submit" class="btn btn-secondary" onclick="document.getElementById('show_all_input').value='1'">Show All Data</button>
+                </div>
+            </div>
         </form>
 
         <script>
@@ -88,7 +135,7 @@
                 this.value = this.value.trim();
             });
 
-            document.querySelector('form').addEventListener('submit', function(e) {
+            document.getElementById('lookup-form').addEventListener('submit', function(e) {
                 document.getElementById('search_query').value = document.getElementById('search_query').value.trim();
             });
         </script>
@@ -104,7 +151,9 @@
 
             <div class="info-row">
                 <div class="info-label">Username:</div>
-                <div class="info-value">{{ user_info.username }}</div>
+                <div class="info-value">
+                    <a href="https://crackmes.one/user/{{ user_info.username }}" target="_blank">{{ user_info.username }}</a>
+                </div>
             </div>
 
             <div class="info-row">
@@ -162,6 +211,197 @@
                 <a href="{{ url_for('reviewer.deleteuser') }}" class="btn btn-error float-right">Delete User Account</a>
             </div>
         </div>
+
+        {% if all_data %}
+        <!-- Crackmes Section -->
+        <div class="data-section">
+            <div class="data-section-header">Crackmes ({{ all_data.crackmes|length }})</div>
+            {% if all_data.crackmes %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for crackme in all_data.crackmes %}
+                    <tr>
+                        <td><a href="https://crackmes.one/crackme/{{ crackme.hexid }}" target="_blank">{{ crackme.name }}</a></td>
+                        <td>{{ crackme.date.strftime('%Y-%m-%d %H:%M') if crackme.date else 'N/A' }}</td>
+                        <td class="{{ 'status-visible' if crackme.visible else 'status-hidden' }}">
+                            {{ 'Visible' if crackme.visible else 'Hidden' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No crackmes found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Solutions Section -->
+        <div class="data-section">
+            <div class="data-section-header">Solutions ({{ all_data.solutions|length }})</div>
+            {% if all_data.solutions %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Crackme</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for solution in all_data.solutions %}
+                    <tr>
+                        <td>
+                            {% if solution.crackme_hexid %}
+                            <a href="https://crackmes.one/crackme/{{ solution.crackme_hexid }}" target="_blank">{{ solution.crackme_name }}</a>
+                            {% else %}
+                            {{ solution.crackme_name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ solution.date.strftime('%Y-%m-%d %H:%M') if solution.date else 'N/A' }}</td>
+                        <td class="{{ 'status-visible' if solution.visible else 'status-hidden' }}">
+                            {{ 'Visible' if solution.visible else 'Hidden' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No solutions found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Comments Section -->
+        <div class="data-section">
+            <div class="data-section-header">Comments ({{ all_data.comments|length }})</div>
+            {% if all_data.comments %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Crackme</th>
+                        <th>Comment</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comment in all_data.comments %}
+                    <tr>
+                        <td>
+                            {% if comment.crackme_hexid %}
+                            <a href="https://crackmes.one/crackme/{{ comment.crackme_hexid }}" target="_blank">{{ comment.crackme_name }}</a>
+                            {% else %}
+                            {{ comment.crackme_name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ comment.comment }}</td>
+                        <td>{{ comment.date.strftime('%Y-%m-%d %H:%M') if comment.date else 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No comments found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Difficulty Ratings Section -->
+        <div class="data-section">
+            <div class="data-section-header">Difficulty Ratings ({{ all_data.difficulty_ratings|length }})</div>
+            {% if all_data.difficulty_ratings %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Crackme</th>
+                        <th>Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rating in all_data.difficulty_ratings %}
+                    <tr>
+                        <td>
+                            {% if rating.crackme_hexid %}
+                            <a href="https://crackmes.one/crackme/{{ rating.crackme_hexid }}" target="_blank">{{ rating.crackme_name }}</a>
+                            {% else %}
+                            {{ rating.crackme_name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ rating.value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No difficulty ratings found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Quality Ratings Section -->
+        <div class="data-section">
+            <div class="data-section-header">Quality Ratings ({{ all_data.quality_ratings|length }})</div>
+            {% if all_data.quality_ratings %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Crackme</th>
+                        <th>Rating</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rating in all_data.quality_ratings %}
+                    <tr>
+                        <td>
+                            {% if rating.crackme_hexid %}
+                            <a href="https://crackmes.one/crackme/{{ rating.crackme_hexid }}" target="_blank">{{ rating.crackme_name }}</a>
+                            {% else %}
+                            {{ rating.crackme_name }}
+                            {% endif %}
+                        </td>
+                        <td>{{ rating.value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No quality ratings found.</p>
+            {% endif %}
+        </div>
+
+        <!-- Notifications Section -->
+        <div class="data-section">
+            <div class="data-section-header">Notifications (showing up to 50 most recent)</div>
+            {% if all_data.notifications %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Message</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notif in all_data.notifications %}
+                    <tr>
+                        <td>{{ notif.text }}</td>
+                        <td>{{ notif.time.strftime('%Y-%m-%d %H:%M') if notif.time else 'N/A' }}</td>
+                        <td class="{{ 'status-seen' if notif.seen else 'status-unseen' }}">
+                            {{ 'Seen' if notif.seen else 'Unseen' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No notifications found.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
         {% endif %}
 
     </div>
