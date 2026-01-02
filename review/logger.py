@@ -66,8 +66,8 @@ def send_discord_log(operation_type, user, details, success):
         color = 16711680  # Red for failures
     elif operation_type.startswith('delete'):
         color = 16753920  # Orange for deletions
-    elif operation_type.startswith('validate'):
-        color = 65280  # Green for validations
+    elif operation_type.startswith('validate') or operation_type.startswith('approve'):
+        color = 65280  # Green for validations/approvals
     else:
         color = 3447003  # Blue for other operations
 
