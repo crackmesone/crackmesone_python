@@ -114,6 +114,27 @@ def comment_by_id(comment_id):
     return comment
 
 
+def get_thread_participants(crackme_hexid):
+    """Get all unique usernames who have commented on a crackme.
+
+    Args:
+        crackme_hexid: Hex ID of the crackme
+
+    Returns:
+        Set of usernames who have commented on the crackme
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('comment')
+    comments = collection.find(
+        {'crackmehexid': crackme_hexid, 'visible': True},
+        {'author': 1}
+    )
+
+    return set(comment['author'] for comment in comments)
+
+
 def comment_set_spoiler(comment_id, is_spoiler):
     """Set the spoiler status of a comment.
 

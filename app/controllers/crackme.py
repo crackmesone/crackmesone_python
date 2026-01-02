@@ -52,6 +52,15 @@ def crackme_view(hexid):
     # Get current user for edit permission check
     usersess = session.get('name')
 
+    # Build mention targets for @mention autocomplete (author + commenters + solution authors)
+    mention_targets = {crackme.get('author', '')}
+    for comment in comments:
+        mention_targets.add(comment.get('author', ''))
+    for solution in solutions:
+        mention_targets.add(solution.get('author', ''))
+    mention_targets.discard('')  # Remove empty strings
+    mention_targets = sorted(mention_targets)  # Sort alphabetically
+
     return render_template('crackme/read.html',
                            info=crackme.get('info', ''),
                            name=crackme.get('name', ''),
@@ -63,6 +72,7 @@ def crackme_view(hexid):
                            platform=crackme.get('platform', ''),
                            solutions=solutions,
                            comments=comments,
+                           mention_targets=mention_targets,
                            nbsolutions=crackme.get('nbsolutions', 0),
                            nbcomments=crackme.get('nbcomments', 0),
                            nbdownloads=crackme.get('nbdownloads', 0),

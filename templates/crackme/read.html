@@ -32,6 +32,32 @@
     .spoiler-hidden:hover {
         background-color: #555;
     }
+    /* @mention autocomplete styles */
+    .mention-dropdown {
+        position: absolute;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        border-radius: 4px;
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        min-width: 120px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .mention-dropdown.active {
+        display: block;
+    }
+    .mention-item {
+        padding: 6px 10px;
+        cursor: pointer;
+        color: #ddd;
+    }
+    .mention-item:hover,
+    .mention-item.selected {
+        background: #3a3a3a;
+        color: #fff;
+    }
 </style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
@@ -115,7 +141,7 @@
             <div style="margin-bottom: 1em;">
                 <a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}:
                 {% if comment.spoiler %}
-                <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal]</span><span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info }}</span>{% else %}<span style="white-space: pre-line">{{ comment.info }}</span>{% endif %}{% if usersess == username or (usersess == comment.author and not comment.spoiler) %}<form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline; margin-left: 8px;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm active" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}">{% if comment.spoiler %}Unspoiler{% else %}Spoiler{% endif %}</button></form>{% endif %}
+                <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal]</span><span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info|render_mentions }}</span>{% else %}<span style="white-space: pre-line">{{ comment.info|render_mentions }}</span>{% endif %}{% if usersess == username or (usersess == comment.author and not comment.spoiler) %}<form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline; margin-left: 8px;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm active" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}">{% if comment.spoiler %}Unspoiler{% else %}Spoiler{% endif %}</button></form>{% endif %}
             </div>
             {% endfor %}
         </div>
@@ -150,7 +176,10 @@
                     <p>Share how awesome the crack me was or where you struggle to finish it! Stay polite and do not spoil the solution/flag!</p>
                     <form action="/comment/{{ hexid }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <textarea name="comment" id="comment" placeholder="An awesome comment" style="width: 100%;" rows="5"></textarea>
+                        <div style="position: relative;">
+                            <textarea name="comment" id="comment" placeholder="An awesome comment" style="width: 100%;" rows="5"></textarea>
+                            <div id="mention-dropdown" class="mention-dropdown"></div>
+                        </div>
                         <label class="form-checkbox" style="margin-top: 10px;">
                             <input type="checkbox" name="spoiler">
                             <i class="form-icon"></i> Mark as spoiler (hides content until clicked)
@@ -222,5 +251,154 @@
 </div>
 
 {% include 'partial/footer.html' %}
+
+<script>
+(function() {
+    var mentionTargets = {{ mention_targets|tojson }};
+    var currentUser = {{ usersess|tojson }};
+    // Filter out current user from mention targets (can't mention yourself)
+    if (currentUser) {
+        mentionTargets = mentionTargets.filter(function(name) {
+            return name !== currentUser;
+        });
+    }
+    var textarea = document.getElementById('comment');
+    var dropdown = document.getElementById('mention-dropdown');
+    if (!textarea || !dropdown || mentionTargets.length === 0) return;
+
+    var selectedIndex = -1;
+    var mentionStart = -1;
+
+    function getCaretCoordinates(element, position) {
+        var div = document.createElement('div');
+        var style = getComputedStyle(element);
+        for (var prop of ['fontFamily', 'fontSize', 'fontWeight', 'wordWrap', 'whiteSpace', 'borderLeftWidth', 'borderTopWidth', 'paddingLeft', 'paddingTop', 'lineHeight']) {
+            div.style[prop] = style[prop];
+        }
+        div.style.position = 'absolute';
+        div.style.visibility = 'hidden';
+        div.style.whiteSpace = 'pre-wrap';
+        div.style.width = element.offsetWidth + 'px';
+        var text = element.value.substring(0, position);
+        div.textContent = text;
+        var span = document.createElement('span');
+        span.textContent = '|';
+        div.appendChild(span);
+        document.body.appendChild(div);
+        var coords = { top: span.offsetTop, left: span.offsetLeft };
+        document.body.removeChild(div);
+        return coords;
+    }
+
+    function showDropdown(filtered, query) {
+        if (filtered.length === 0) {
+            dropdown.classList.remove('active');
+            return;
+        }
+        dropdown.innerHTML = '';
+        filtered.forEach(function(name, i) {
+            var item = document.createElement('div');
+            item.className = 'mention-item' + (i === selectedIndex ? ' selected' : '');
+            item.textContent = '@' + name;
+            item.addEventListener('mousedown', function(e) {
+                e.preventDefault();
+                selectMention(name);
+            });
+            dropdown.appendChild(item);
+        });
+        var coords = getCaretCoordinates(textarea, mentionStart);
+        dropdown.style.top = (coords.top + 20) + 'px';
+        dropdown.style.left = coords.left + 'px';
+        dropdown.classList.add('active');
+    }
+
+    function selectMention(name) {
+        var before = textarea.value.substring(0, mentionStart);
+        var after = textarea.value.substring(textarea.selectionStart);
+        textarea.value = before + '@' + name + ' ' + after;
+        var newPos = mentionStart + name.length + 2;
+        textarea.setSelectionRange(newPos, newPos);
+        dropdown.classList.remove('active');
+        mentionStart = -1;
+        selectedIndex = -1;
+        textarea.focus();
+    }
+
+    function getCurrentMention() {
+        var pos = textarea.selectionStart;
+        var text = textarea.value.substring(0, pos);
+
+        // Find the start of current word (after last whitespace or start)
+        var wordStart = 0;
+        for (var i = text.length - 1; i >= 0; i--) {
+            if (/\s/.test(text[i])) {
+                wordStart = i + 1;
+                break;
+            }
+        }
+
+        // Check if current word starts with @
+        if (text[wordStart] !== '@') return null;
+
+        // Everything after @ is the query
+        var query = text.substring(wordStart + 1);
+        return { start: wordStart, query: query };
+    }
+
+    textarea.addEventListener('input', function() {
+        var mention = getCurrentMention();
+        if (!mention) {
+            dropdown.classList.remove('active');
+            mentionStart = -1;
+            return;
+        }
+        mentionStart = mention.start;
+        var query = mention.query.toLowerCase();
+        var filtered = mentionTargets.filter(function(name) {
+            return name.toLowerCase().indexOf(query) === 0;
+        });
+        selectedIndex = filtered.length > 0 ? 0 : -1;
+        showDropdown(filtered, query);
+    });
+
+    textarea.addEventListener('keydown', function(e) {
+        if (!dropdown.classList.contains('active')) return;
+        var items = dropdown.querySelectorAll('.mention-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            items.forEach(function(it, i) { it.classList.toggle('selected', i === selectedIndex); });
+            if (items[selectedIndex]) items[selectedIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+            items.forEach(function(it, i) { it.classList.toggle('selected', i === selectedIndex); });
+            if (items[selectedIndex]) items[selectedIndex].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' || e.key === 'Tab') {
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                e.preventDefault();
+                var name = items[selectedIndex].textContent.substring(1);
+                selectMention(name);
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.classList.remove('active');
+            mentionStart = -1;
+        }
+    });
+
+    textarea.addEventListener('blur', function() {
+        setTimeout(function() { dropdown.classList.remove('active'); }, 150);
+    });
+
+    // Auto-focus textarea when comment modal opens
+    function checkModalFocus() {
+        if (window.location.hash === '#modal-comment') {
+            setTimeout(function() { textarea.focus(); }, 100);
+        }
+    }
+    window.addEventListener('hashchange', checkModalFocus);
+    checkModalFocus(); // Check on page load
+})();
+</script>
 {% endblock %}
 {% block foot %}{% endblock %}
