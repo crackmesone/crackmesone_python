@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Delete User Account</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        .preview-section {
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .preview-header {
+            color: #ff9800;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        .preview-item {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        .crackme-detail {
+            background-color: #3c3c3c;
+            border-left: 3px solid #ff9800;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .crackme-name {
+            font-weight: bold;
+            color: #fff;
+        }
+        .cascade-info {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-left: 15px;
+        }
+        .final-confirm-section {
+            border: 3px solid #e85600;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        {% if message %}
+        <div class="text-center notif-item s-rounded">
+            <span style="white-space: pre-line;">{{ message }}</span>
+        </div>
+        {% endif %}
+
+        {% if not preview %}
+        <!-- Step 1: Initial form to enter user email -->
+        <div class="panel panel-danger" style="border: 2px solid #e85600; margin-bottom: 20px;">
+            <div class="panel-header">
+                <h3 style="color: #e85600;">DANGER: IRREVERSIBLE OPERATION</h3>
+            </div>
+            <div class="panel-body">
+                <p><strong>WARNING:</strong> This action will permanently delete ALL data associated with the user account, including:</p>
+                <ul>
+                    <li>The user account itself</li>
+                    <li>All crackmes posted by this user</li>
+                    <li>All solutions posted by this user AND all solutions on their crackmes (CASCADE)</li>
+                    <li>All comments posted by this user AND all comments on their crackmes (CASCADE)</li>
+                    <li>All difficulty and quality ratings posted by this user AND on their crackmes (CASCADE)</li>
+                    <li>All notifications for this user</li>
+                </ul>
+                <p><strong>This action cannot be undone!</strong> You will see a detailed preview of what will be deleted before final confirmation.</p>
+            </div>
+        </div>
+
+        <form class="form-horizontal" method="post" id="deleteUserForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="preview">
+            <div class="form-group">
+                <div class="col-3">User Email</div>
+                <div class="col-9 col-sm-12">
+                    <input class="form-input" type="email" id="user_email" name="user_email" placeholder="Enter email of user to delete" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-3">Confirm Email</div>
+                <div class="col-9 col-sm-12">
+                    <input class="form-input" type="email" id="confirm_email" name="confirm_email" placeholder="Type the email again to confirm" required>
+                </div>
+            </div>
+            <input type="submit" class="btn btn-primary float-right" value="PREVIEW DELETION">
+        </form>
+
+        <script>
+            document.getElementById('user_email').addEventListener('blur', function() {
+                this.value = this.value.trim();
+            });
+            document.getElementById('confirm_email').addEventListener('blur', function() {
+                this.value = this.value.trim();
+            });
+
+            document.getElementById('deleteUserForm').addEventListener('submit', function(e) {
+                document.getElementById('user_email').value = document.getElementById('user_email').value.trim();
+                document.getElementById('confirm_email').value = document.getElementById('confirm_email').value.trim();
+            });
+        </script>
+        {% else %}
+        <!-- Step 2: Show preview and final confirmation -->
+        <div class="preview-section">
+            <div class="preview-header">DELETION PREVIEW for {{ preview.username }} ({{ preview.email }})</div>
+
+            <p><strong>The following items will be permanently deleted:</strong></p>
+
+            <div class="preview-item">
+                <strong>1 User Account:</strong> {{ preview.username }} ({{ preview.email }})
+            </div>
+
+            <div class="preview-item">
+                <strong>{{ preview.notifications }} Notifications</strong>
+            </div>
+
+            <div class="preview-item">
+                <strong>{{ preview.solutions }} Solutions</strong> posted by user
+            </div>
+
+            <div class="preview-item">
+                <strong>{{ preview.user_comments }} Comments</strong> by user on other crackmes
+            </div>
+
+            <div class="preview-item">
+                <strong>{{ preview.difficulty_ratings }} Difficulty Ratings</strong> by user
+            </div>
+
+            <div class="preview-item">
+                <strong>{{ preview.quality_ratings }} Quality Ratings</strong> by user
+            </div>
+
+            <div class="preview-item">
+                <strong>{{ preview.crackmes }} Crackmes</strong> by user (with CASCADE deletion):
+            </div>
+
+            {% if preview.crackme_details %}
+            {% for crackme in preview.crackme_details %}
+            <div class="crackme-detail">
+                <div class="crackme-name">{{ crackme.name }} ({{ crackme.hexid }})</div>
+                <div class="cascade-info">
+                    -> {{ crackme.solutions }} solutions will be cascade deleted<br>
+                    -> {{ crackme.comments }} comments will be cascade deleted<br>
+                    -> {{ crackme.difficulty_ratings }} difficulty ratings will be cascade deleted<br>
+                    -> {{ crackme.quality_ratings }} quality ratings will be cascade deleted
+                </div>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <hr>
+
+            <div style="margin-top: 20px; font-size: 1.1em;">
+                <strong>TOTAL ITEMS TO BE DELETED:</strong>
+                <ul>
+                    <li>1 user account</li>
+                    <li>{{ preview.notifications }} notifications</li>
+                    <li>{{ preview.solutions + preview.total_solutions_on_user_crackmes }} solutions ({{ preview.solutions }} by user + {{ preview.total_solutions_on_user_crackmes }} on user's crackmes)</li>
+                    <li>{{ preview.total_comments }} comments ({{ preview.user_comments }} by user + {{ preview.total_comments - preview.user_comments }} on user's crackmes)</li>
+                    <li>{{ preview.crackmes }} crackmes</li>
+                    <li>Difficulty/quality ratings will be recalculated for affected crackmes</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="final-confirm-section">
+            <h3 style="color: #e85600;">FINAL CONFIRMATION REQUIRED</h3>
+            <p><strong>This action is IRREVERSIBLE!</strong> Once you click the button below, all the data listed above will be permanently deleted.</p>
+
+            <form method="post" id="confirmDeleteForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="confirm_delete">
+                <input type="hidden" name="confirmed_email" value="{{ preview.email }}">
+
+                <div style="margin-top: 20px;">
+                    <a href="{{ url_for('reviewer.deleteuser') }}" class="btn btn-secondary">Cancel</a>
+                    <input type="submit" class="btn btn-error float-right" value="CONFIRM & DELETE USER ACCOUNT" id="confirmDeleteButton">
+                </div>
+            </form>
+        </div>
+
+        <script>
+            document.getElementById('confirmDeleteForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const finalConfirm = confirm("Are you ABSOLUTELY SURE you want to DELETE ALL DATA for user: {{ preview.email }}?\n\nThis is your LAST CHANCE to cancel!\n\nClick OK to proceed with deletion, or Cancel to abort.");
+
+                if (finalConfirm) {
+                    const deleteConfirmation = prompt('Type "DELETE" (without quotes, all capitals) to confirm:');
+                    if (deleteConfirmation === "DELETE") {
+                        this.submit();
+                    } else {
+                        alert('Deletion cancelled. You must type "DELETE" exactly to confirm.');
+                    }
+                } else {
+                    alert('Deletion cancelled.');
+                }
+            });
+        </script>
+        {% endif %}
+
+    </div>
+</body>
+
+</html>

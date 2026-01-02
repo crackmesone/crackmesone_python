@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Reviewer Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <div class="container grid-lg wrapper">
+        <div class="columns" style=" justify-content: center;">
+            <div class="column col-6 col-xs-12 panel-input">
+                <div class="toast toast-warning" style="margin-bottom: 1rem;">
+                    This login is for administrators and reviewers only. Regular users should use the main site login.
+                </div>
+                <form class="form-horizontal" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <div class="col-4 col-sm-12">
+                            <label class="form-label" for="name">Username</label>
+                        </div>
+                        <div class="col-8 col-sm-12">
+                            <input class="form-input" type="text" id="name" name="username" placeholder="Name">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-4 col-sm-12">
+                            <label class="form-label" for="input-example-5">Password</label>
+                        </div>
+                        <div class="col-8 col-sm-12">
+                            <input class="form-input" type="password" id="password" name="password"
+                                placeholder="password">
+                        </div>
+                    </div>
+                    <input type="submit" value="Login" class="btn active float-right">
+                </form>
+            </div>
+        </div>
+
+        {% if error %}
+        <h3 class="text-center"> {{ error }}</h3><br>
+        {% endif %}
+
+    </div>
+</body>
+
+</html>

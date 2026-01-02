@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>View crackme</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        <h3>
+            <p><strong>"{{ crackme.name }}"</strong> by <a href="https://crackmes.one/user/{{crackme.author}}">{{ crackme.author }}</a></p>
+        </h3>
+        <div class="columns panel-background">
+            <div class="column col-12">
+                <h3>
+                    <p>Crackme info</p>
+                </h3>
+                <p><span style="white-space: pre-line"> Language: {{ crackme.lang }}</span></p>
+                <p><span style="white-space: pre-line"> Arch: {{ crackme.arch }}</span></p>
+                <p><span style="white-space: pre-line"> Platform: {{ crackme.platform }}</span></p>
+                <div class="divider"></div>
+                <h3>
+                    <p>Description</p>
+                </h3>
+                <p><span style="white-space: pre-line">{{ crackme.info }}</span></p>
+                <div class="divider"></div>
+                <h3>
+                    <p>Download</p>
+                </h3>
+
+                <a href="{{ url_for('reviewer.downloadreview', uuid=crackme.crackme_uuid, type='crackme') }}">Download</a>
+                <div class="divider"></div>
+
+                <h3>
+                    <p>Review</p>
+                </h3>
+
+                <div class="form-group">
+                    <div class="col-3">Reject reason (optional)</div>
+                </div>
+
+                <form action="{{ url_for('reviewer.rejectcrackme') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="uuid" value="{{crackme.crackme_uuid}}">
+                    <input class="form-input" type="text" id="name" name="reject_reason" placeholder="Reason">
+                    <h3>
+                        <p></p>
+                    </h3>
+                    <button type="submit" class="btn active float-right">Reject</button>
+                </form>
+
+                <form action="{{ url_for('reviewer.approvecrackme') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="uuid" value="{{crackme.crackme_uuid}}">
+                    <button type="submit" class="btn active float-left">Accept</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>

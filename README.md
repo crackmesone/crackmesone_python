@@ -6,6 +6,7 @@ The source code for [crackmes.one](https://crackmes.one), a platform for sharing
 
 - Python 3.8+
 - MongoDB 4.0+
+- `zip` command (for creating password-protected archives when approving submissions)
 
 ## Installation
 
@@ -124,6 +125,12 @@ crackmesone_python/
 │   ├── crackmesone.service  # Systemd service file
 │   ├── setup.sh             # First-time setup script
 │   └── deploy.sh            # Deployment script
+├── review/                  # Reviewer tool (moderation interface)
+│   ├── routes.py            # Reviewer Flask blueprint
+│   ├── users.json           # Reviewer credentials
+│   └── templates/           # Reviewer templates
+├── script/                  # Utility scripts
+│   └── generate_reviewer_password_hash.py  # Password hash generator
 ├── templates/               # Jinja2 templates
 ├── static/                  # Static files (CSS, JS, images)
 ├── tmp/                     # Upload staging area
@@ -142,6 +149,7 @@ crackmesone_python/
 - Search functionality
 - RSS feed
 - Notifications
+- Content moderation (reviewer tool for approving/rejecting submissions)
 
 ## Configuration
 
@@ -158,6 +166,67 @@ Edit `config/config.json`:
 - **Recaptcha.Secret**: Your reCAPTCHA secret key
 - **Discord.Enabled**: Enable/disable Discord notifications for new submissions
 - **Discord.WebhookURL**: Your Discord webhook URL (get from Discord channel settings → Integrations → Webhooks)
+- **Reviewer.Enabled**: Enable/disable the reviewer tool (for moderating submissions)
+- **Reviewer.PasswordSalt**: Salt used for hashing reviewer passwords (change in production!)
+
+### Reviewer Tool
+
+The reviewer tool is a separate authentication system for site moderators to approve/reject crackme and solution submissions. It is accessed at `/review`.
+
+#### Enabling the Reviewer Tool
+
+1. Set `Reviewer.Enabled` to `true` in `config/config.json`
+2. Set a secure random string for `Reviewer.PasswordSalt`
+
+#### Reviewer Credentials (`review/users.json`)
+
+Reviewer accounts are stored in `review/users.json` with the following format:
+
+```json
+{
+  "username": {
+    "password_hash": "sha256-hash-of-password-plus-salt",
+    "is_admin": false
+  }
+}
+```
+
+- **password_hash**: SHA256 hash of the password concatenated with the `PasswordSalt` from config
+- **is_admin**: If `true`, the user has admin privileges (can delete approved content, manage reviewers, delete users)
+
+#### Creating Reviewer Accounts
+
+Use the password hash generator script to create password hashes:
+
+```bash
+python script/generate_reviewer_password_hash.py <password>
+```
+
+Then add the username and hash to `review/users.json`:
+
+```json
+{
+  "newreviewer": {
+    "password_hash": "<output-from-script>",
+    "is_admin": false
+  }
+}
+```
+
+Alternatively, an existing admin can add new reviewers through the web interface at `/review/managereviewers`.
+
+#### Reviewer vs Admin Permissions
+
+| Action | Reviewer | Admin |
+|--------|----------|-------|
+| Approve/reject pending crackmes | Yes | Yes |
+| Approve/reject pending solutions | Yes | Yes |
+| Delete approved crackmes | No | Yes |
+| Delete approved solutions | No | Yes |
+| Delete comments | No | Yes |
+| Delete user accounts | No | Yes |
+| Reset user passwords | No | Yes |
+| Manage reviewer accounts | No | Yes |
 
 ## Previous Codebase
 

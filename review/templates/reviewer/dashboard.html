@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        <div class="columns" style=" justify-content: center;">
+            <div class="column col-10 col-xs-12 panel-input">
+                <a href="{{ url_for('reviewer.reviewsolution') }}" class="btn btn-link">Review solutions</a>
+                <a href="{{ url_for('reviewer.reviewcrackme') }}" class="btn btn-link">Review crackmes</a>
+                {% if is_admin %}
+                <a href="{{ url_for('reviewer.deletesolution') }}" class="btn btn-link">Delete solution</a>
+                <a href="{{ url_for('reviewer.deletecrackme') }}" class="btn btn-link">Delete crackme</a>
+                <a href="{{ url_for('reviewer.delcomment') }}" class="btn btn-link">Delete comment</a>
+                <a href="{{ url_for('reviewer.lookupuser') }}" class="btn btn-link">User Lookup</a>
+                <a href="{{ url_for('reviewer.resetuserpassword') }}" class="btn btn-link">Reset User Password</a>
+                <a href="{{ url_for('reviewer.deleteuser') }}" class="btn btn-link btn-error">Delete User Account</a>
+                <hr>
+                <a href="{{ url_for('reviewer.managereviewers') }}" class="btn btn-link">Manage Reviewers</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column col-6">
+                <div class="column col-12 panel-background">
+                    <p>The number of solutions needs to be reviewed:</p>
+                    <h2 class="text-center"> {{ solution_cnt }} </h2><br>
+                </div>
+            </div>
+            <div class="column col-6">
+                <div class="column col-12 panel-background">
+                    <p>The number of crackmes needs to be reviewed:</p>
+                    <h2 class="text-center"> {{ crackme_cnt }} </h2><br>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

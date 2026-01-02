@@ -52,6 +52,21 @@ def create_app(config_path=None):
     from app.controllers import register_blueprints
     register_blueprints(app)
 
+    # Register reviewer blueprint (separate authentication system)
+    reviewer_config = config.get('Reviewer', {})
+    if reviewer_config.get('Enabled', False):
+        from review.routes import reviewer_bp, init_reviewer
+        from review.logger import init_logger as init_reviewer_logger
+        app.config['REVIEWER_PASSWORD_SALT'] = reviewer_config.get('PasswordSalt', 'default_salt')
+        init_reviewer(app)
+        # Use private webhook for reviewer operation logs
+        discord_config = config.get('Discord', {})
+        private_webhook = discord_config.get('WebhookPrivate', '') if discord_config.get('Enabled', False) else None
+        init_reviewer_logger(discord_webhook=private_webhook)
+        app.register_blueprint(reviewer_bp)
+        # Exempt reviewer routes from main CSRF (reviewer has its own CSRF)
+        csrf.exempt(reviewer_bp)
+
     # Register template context processors
     @app.context_processor
     def inject_globals():

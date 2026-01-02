@@ -18,6 +18,11 @@
     },
     "Discord": {
         "Enabled": false,
-        "WebhookURL": "your-discord-webhook-url"
+        "WebhookPublic": "your-public-discord-webhook-url",
+        "WebhookPrivate": "your-private-discord-webhook-url"
+    },
+    "Reviewer": {
+        "Enabled": false,
+        "PasswordSalt": "change-this-to-a-secure-random-salt"
     }
 }

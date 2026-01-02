@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>User Lookup</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <style>
+        .user-info-section {
+            border: 2px solid #5755d9;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-header {
+            color: #5755d9;
+            font-weight: bold;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #5755d9;
+            padding-bottom: 10px;
+        }
+        .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: bold;
+            width: 200px;
+        }
+        .info-value {
+            flex: 1;
+        }
+        .admin-badge {
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .action-buttons {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        {% if message %}
+        <div class="text-center notif-item s-rounded">
+            <span>{{ message }}</span>
+        </div>
+        {% endif %}
+
+        <form class="form-horizontal" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <div class="col-3">Email or Username</div>
+                <div class="col-9 col-sm-12">
+                    <input class="form-input" type="text" id="search_query" name="search_query" placeholder="Enter email or username" required>
+                </div>
+            </div>
+            <input type="submit" class="btn btn-primary float-right" value="Lookup User">
+        </form>
+
+        <script>
+            document.getElementById('search_query').addEventListener('blur', function() {
+                this.value = this.value.trim();
+            });
+
+            document.querySelector('form').addEventListener('submit', function(e) {
+                document.getElementById('search_query').value = document.getElementById('search_query').value.trim();
+            });
+        </script>
+
+        {% if user_info %}
+        <div class="user-info-section">
+            <div class="info-header">
+                User Information
+                {% if user_info.is_admin %}
+                <span class="admin-badge">ADMIN</span>
+                {% endif %}
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Username:</div>
+                <div class="info-value">{{ user_info.username }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Email:</div>
+                <div class="info-value">{{ user_info.email }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Account Created:</div>
+                <div class="info-value">{{ user_info.created_at }}</div>
+            </div>
+
+            <hr style="margin: 20px 0;">
+
+            <div class="info-header" style="font-size: 1.1em; margin-bottom: 10px;">Activity Statistics</div>
+
+            <div class="info-row">
+                <div class="info-label">Crackmes Posted:</div>
+                <div class="info-value">{{ user_info.crackmes_count }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Solutions Posted:</div>
+                <div class="info-value">{{ user_info.solutions_count }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Comments Posted:</div>
+                <div class="info-value">{{ user_info.comments_count }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Difficulty Ratings:</div>
+                <div class="info-value">{{ user_info.difficulty_ratings_count }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Quality Ratings:</div>
+                <div class="info-value">{{ user_info.quality_ratings_count }}</div>
+            </div>
+
+            <div class="info-row">
+                <div class="info-label">Notifications:</div>
+                <div class="info-value">{{ user_info.notifications_count }}</div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{ url_for('reviewer.resetuserpassword') }}" class="btn btn-primary">Reset Password</a>
+                <a href="{{ url_for('reviewer.deleteuser') }}" class="btn btn-error float-right">Delete User Account</a>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</body>
+
+</html>
