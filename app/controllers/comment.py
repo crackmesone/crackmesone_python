@@ -9,6 +9,7 @@ from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
+from app.services.discord import notify_new_comment
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.controllers.decorators import login_required
 
@@ -48,7 +49,7 @@ def leave_comment(hexid):
     except Exception as e:
         print(f"Failed to increment comment count: {e}")
 
-    # Send notification to crackme author
+    # Send notification to crackme author and Discord
     try:
         crackme = crackme_by_hexid(hexid)
         if crackme.get('author') != username:
@@ -56,6 +57,8 @@ def leave_comment(hexid):
                 crackme['author'],
                 f"New comment on your crackme '{crackme['name']}' by: {username}"
             )
+        # Send Discord moderation notification
+        notify_new_comment(username, crackme['name'], hexid, comment_text)
     except Exception as e:
         print(f"Notification error: {e}")
 

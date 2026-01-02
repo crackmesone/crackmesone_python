@@ -1,9 +1,10 @@
 """
 Discord webhook notification service.
 
-Two webhooks are supported:
+Three webhooks are supported:
 - WebhookPublic: Public channel for approved crackmes/solutions notifications
 - WebhookPrivate: Private/admin channel for pending submissions and reviewer logs
+- WebhookModeration: Moderation channel for user activity (comments, etc.)
 """
 
 import datetime
@@ -34,6 +35,11 @@ def get_public_webhook():
 def get_private_webhook():
     """Get the private Discord webhook URL (for pending items and logs)."""
     return discord_config.get('WebhookPrivate', '')
+
+
+def get_moderation_webhook():
+    """Get the moderation Discord webhook URL (for user activity like comments)."""
+    return discord_config.get('WebhookModeration', '')
 
 
 def send_to_webhook(webhook_url: str, message: str = None, embed: dict = None) -> bool:
@@ -176,3 +182,74 @@ def notify_new_solution(username: str, crackme_name: str) -> bool:
         }
     )
     return send_private_notification(embed=embed)
+
+
+def send_moderation_notification(embed: dict) -> bool:
+    """Send a notification to the moderation Discord channel.
+
+    Args:
+        embed: The embed object to send
+
+    Returns:
+        True if the notification was sent successfully, False otherwise
+    """
+    if not is_enabled():
+        return True
+    return send_to_webhook(get_moderation_webhook(), embed=embed)
+
+
+def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
+                       comment_text: str) -> bool:
+    """Send notification for a new comment posted.
+
+    Sent to MODERATION channel for monitoring user activity.
+
+    Args:
+        username: The user who posted the comment
+        crackme_name: The name of the crackme
+        crackme_hexid: The hexid of the crackme (for link)
+        comment_text: The comment content
+
+    Returns:
+        True if notification was sent successfully
+    """
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+
+    # Cyan/teal color for comments
+    color = 65535
+
+    # Truncate comment if too long
+    truncated_comment = comment_text[:500] + "..." if len(comment_text) > 500 else comment_text
+
+    embed = {
+        "title": "New Comment Posted",
+        "description": f"A new comment has been posted on crackmes.one",
+        "color": color,
+        "fields": [
+            {
+                "name": "Challenge",
+                "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_hexid})",
+                "inline": True
+            },
+            {
+                "name": "Author",
+                "value": f"[{username}](https://crackmes.one/user/{username})",
+                "inline": True
+            },
+            {
+                "name": "Comment",
+                "value": truncated_comment,
+                "inline": False
+            }
+        ],
+        "footer": {
+            "text": "CrackMes.One",
+        },
+        "timestamp": timestamp,
+    }
+    return send_moderation_notification(embed)

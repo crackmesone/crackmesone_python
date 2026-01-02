@@ -19,7 +19,8 @@
     "Discord": {
         "Enabled": false,
         "WebhookPublic": "your-public-discord-webhook-url",
-        "WebhookPrivate": "your-private-discord-webhook-url"
+        "WebhookPrivate": "your-private-discord-webhook-url",
+        "WebhookModeration": "your-moderation-discord-webhook-url"
     },
     "Reviewer": {
         "Enabled": false,
