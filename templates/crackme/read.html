@@ -45,9 +45,10 @@
         <div class="column col-3">
             <p>Upload:<br> {{ createdat|PRETTYTIME }}</p>
         </div>
-        <div class="column col-1">
-        </div>
-        <div class="column col-2" style="padding-right: 0rem">
+        <div class="column col-3" style="padding-right: 0rem; text-align: right;">
+            {% if usersess == username %}
+            <a href="/crackme/{{ hexid }}/edit" class="btn active btn-lg" style="margin-right: 10px;">Edit</a>
+            {% endif %}
             <a href="/download/crackme/{{ hexid }}" class="btn active btn-lg btn-download">Download</a>
         </div>
 
