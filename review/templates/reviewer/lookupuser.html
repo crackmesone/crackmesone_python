@@ -68,7 +68,7 @@
         .data-table th {
             text-align: left;
             padding: 8px;
-            background: #f0f0f0;
+            font-weight: bold;
         }
         .data-table td {
             padding: 8px;
@@ -125,7 +125,7 @@
                 <div class="col-3"></div>
                 <div class="col-9 col-sm-12">
                     <button type="submit" class="btn btn-primary" onclick="document.getElementById('show_all_input').value='0'">Lookup User</button>
-                    <button type="submit" class="btn btn-secondary" onclick="document.getElementById('show_all_input').value='1'">Show All Data</button>
+                    <button type="submit" class="btn btn-primary" onclick="document.getElementById('show_all_input').value='1'">Show All Data</button>
                 </div>
             </div>
         </form>
@@ -319,6 +319,7 @@
                     <tr>
                         <th>Crackme</th>
                         <th>Rating</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -332,6 +333,7 @@
                             {% endif %}
                         </td>
                         <td>{{ rating.value }}</td>
+                        <td>{{ rating.date.strftime('%Y-%m-%d %H:%M') if rating.date else 'N/A' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -350,6 +352,7 @@
                     <tr>
                         <th>Crackme</th>
                         <th>Rating</th>
+                        <th>Date</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -363,6 +366,7 @@
                             {% endif %}
                         </td>
                         <td>{{ rating.value }}</td>
+                        <td>{{ rating.date.strftime('%Y-%m-%d %H:%M') if rating.date else 'N/A' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -374,7 +378,7 @@
 
         <!-- Notifications Section -->
         <div class="data-section">
-            <div class="data-section-header">Notifications (showing up to 50 most recent)</div>
+            <div class="data-section-header">Notifications ({{ all_data.notifications|length }})</div>
             {% if all_data.notifications %}
             <table class="data-table">
                 <thead>
