@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Site Archive</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        <h3>Site Archive Management</h3>
+
+        {% if message %}
+        <div class="toast toast-success" style="margin-bottom: 15px;">{{ message }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="toast toast-error" style="margin-bottom: 15px;">{{ error }}</div>
+        {% endif %}
+
+        {% if download_file %}
+        <div class="toast toast-primary" style="margin-bottom: 15px;">
+            <a href="{{ url_for('reviewer.downloadarchive', filename=download_file) }}" class="btn btn-primary">Download {{ download_file }}</a>
+        </div>
+        {% endif %}
+
+        <div class="columns panel-background" style="margin-bottom: 20px;">
+            <div class="column col-12">
+                <h4>Create New Archive</h4>
+                <p>This will create a backup of all crackmes, solutions, and database entries (excluding user information).</p>
+                <p><strong>Contents:</strong></p>
+                <ul>
+                    <li><code>crackme/</code> - All crackme zip files</li>
+                    <li><code>solution/</code> - All solution zip files</li>
+                    <li><code>database/crackmes.json</code> - Crackme database entries</li>
+                    <li><code>database/solutions.json</code> - Solution database entries</li>
+                    <li><code>database/comments.json</code> - Comment database entries</li>
+                </ul>
+                <form action="{{ url_for('reviewer.sitearchive') }}" method="POST" style="margin-top: 15px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="create">
+                    <button type="submit" class="btn active" onclick="this.disabled=true; this.innerText='Creating archive...'; this.form.submit();">Create New Archive</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="columns panel-background">
+            <div class="column col-12">
+                <h4>Existing Archives</h4>
+                {% if archives %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Filename</th>
+                            <th>Size</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for archive in archives %}
+                        <tr>
+                            <td>{{ archive.filename }}</td>
+                            <td>{{ archive.size_mb }} MB</td>
+                            <td>{{ archive.created.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>
+                                <a href="{{ url_for('reviewer.downloadarchive', filename=archive.filename) }}" class="btn btn-sm active">Download</a>
+                                <form action="{{ url_for('reviewer.sitearchive') }}" method="POST" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="filename" value="{{ archive.filename }}">
+                                    <button type="submit" class="btn btn-sm btn-error" onclick="return confirm('Are you sure you want to delete this archive?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No archives found. Create one using the button above.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

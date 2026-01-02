@@ -2505,3 +2505,228 @@ def _handle_change_password(current_user):
         return f"Success: Password changed for '{username}'."
     except Exception as e:
         return f"Error saving to file: {str(e)}"
+
+
+# =============================================================================
+# Site Archive
+# =============================================================================
+
+ARCHIVE_DIR = os.path.join(CRACKMESONE_DIR, 'archive')
+
+
+def get_archive_list():
+    """Get list of existing archives with metadata."""
+    archives = []
+    if not os.path.exists(ARCHIVE_DIR):
+        return archives
+
+    for filename in os.listdir(ARCHIVE_DIR):
+        if filename.startswith('crackmesone_') and filename.endswith('.zip'):
+            filepath = os.path.join(ARCHIVE_DIR, filename)
+            stat = os.stat(filepath)
+            archives.append({
+                'filename': filename,
+                'size': stat.st_size,
+                'size_mb': round(stat.st_size / (1024 * 1024), 2),
+                'created': datetime.datetime.fromtimestamp(stat.st_mtime)
+            })
+
+    # Sort by creation time, newest first
+    archives.sort(key=lambda x: x['created'], reverse=True)
+    return archives
+
+
+def create_site_archive():
+    """Create a full archive of the site (crackmes, solutions, database).
+
+    Returns:
+        Tuple of (success: bool, message: str, filename: str or None)
+    """
+    import zipfile
+
+    # Create archive directory if it doesn't exist
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+
+    # Generate timestamp for folder name
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    archive_name = f'crackmesone_{timestamp}'
+    archive_folder = os.path.join(ARCHIVE_DIR, archive_name)
+
+    try:
+        # Create the archive folder structure
+        os.makedirs(archive_folder, exist_ok=True)
+        os.makedirs(os.path.join(archive_folder, 'database'), exist_ok=True)
+
+        # Copy crackme files
+        crackme_src = os.path.join(CRACKMESONE_DIR, 'static', 'crackme')
+        crackme_dst = os.path.join(archive_folder, 'crackme')
+        if os.path.exists(crackme_src):
+            shutil.copytree(crackme_src, crackme_dst)
+
+        # Copy solution files
+        solution_src = os.path.join(CRACKMESONE_DIR, 'static', 'solution')
+        solution_dst = os.path.join(archive_folder, 'solution')
+        if os.path.exists(solution_src):
+            shutil.copytree(solution_src, solution_dst)
+
+        # Dump database tables as JSON (excluding user info)
+        db = g_crackmesone_db
+
+        # Dump crackmes
+        crackmes = list(db.crackme.find({}))
+        for c in crackmes:
+            c['_id'] = str(c['_id'])  # Convert ObjectId to string
+        with open(os.path.join(archive_folder, 'database', 'crackmes.json'), 'w') as f:
+            json.dump(crackmes, f, indent=2, default=str)
+
+        # Dump solutions
+        solutions = list(db.solution.find({}))
+        for s in solutions:
+            s['_id'] = str(s['_id'])
+            if 'crackmeid' in s:
+                s['crackmeid'] = str(s['crackmeid'])
+        with open(os.path.join(archive_folder, 'database', 'solutions.json'), 'w') as f:
+            json.dump(solutions, f, indent=2, default=str)
+
+        # Dump comments
+        comments = list(db.comment.find({}))
+        for c in comments:
+            c['_id'] = str(c['_id'])
+        with open(os.path.join(archive_folder, 'database', 'comments.json'), 'w') as f:
+            json.dump(comments, f, indent=2, default=str)
+
+        # Create zip archive
+        zip_filename = f'{archive_name}.zip'
+        zip_filepath = os.path.join(ARCHIVE_DIR, zip_filename)
+
+        with zipfile.ZipFile(zip_filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for root, dirs, files in os.walk(archive_folder):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, archive_folder)
+                    zipf.write(file_path, os.path.join(archive_name, arcname))
+
+        # Clean up the temporary folder
+        shutil.rmtree(archive_folder)
+
+        # Get file size
+        size_mb = round(os.path.getsize(zip_filepath) / (1024 * 1024), 2)
+
+        return True, f"Archive created successfully: {zip_filename} ({size_mb} MB)", zip_filename
+
+    except Exception as e:
+        # Clean up on failure
+        if os.path.exists(archive_folder):
+            shutil.rmtree(archive_folder)
+        return False, f"Error creating archive: {str(e)}", None
+
+
+def delete_archive(filename):
+    """Delete an archive file.
+
+    Returns:
+        Tuple of (success: bool, message: str)
+    """
+    # Validate filename to prevent path traversal
+    if not filename.startswith('crackmesone_') or not filename.endswith('.zip'):
+        return False, "Invalid archive filename"
+
+    if '/' in filename or '\\' in filename or '..' in filename:
+        return False, "Invalid archive filename"
+
+    filepath = os.path.join(ARCHIVE_DIR, filename)
+
+    if not os.path.exists(filepath):
+        return False, "Archive not found"
+
+    try:
+        os.remove(filepath)
+        return True, f"Archive '{filename}' deleted successfully"
+    except Exception as e:
+        return False, f"Error deleting archive: {str(e)}"
+
+
+@reviewer_bp.route('/sitearchive', methods=['GET', 'POST'])
+@admin_required
+def sitearchive(current_user):
+    """Manage site archives (admin only)."""
+    message = None
+    error = None
+    download_file = None
+
+    if request.method == 'POST':
+        validate_csrf_token()
+        action = request.form.get('action')
+
+        if action == 'create':
+            success, msg, filename = create_site_archive()
+            if success:
+                message = msg
+                download_file = filename
+                log_reviewer_operation(
+                    "create_site_archive", current_user['username'],
+                    {"filename": filename},
+                    True
+                )
+            else:
+                error = msg
+                log_reviewer_operation(
+                    "create_site_archive", current_user['username'],
+                    {"error": msg},
+                    False
+                )
+
+        elif action == 'delete':
+            filename = request.form.get('filename')
+            success, msg = delete_archive(filename)
+            if success:
+                message = msg
+                log_reviewer_operation(
+                    "delete_site_archive", current_user['username'],
+                    {"filename": filename},
+                    True
+                )
+            else:
+                error = msg
+                log_reviewer_operation(
+                    "delete_site_archive", current_user['username'],
+                    {"filename": filename, "error": msg},
+                    False
+                )
+
+    archives = get_archive_list()
+
+    return render_template(
+        'reviewer/sitearchive.html',
+        user=current_user['username'],
+        is_admin=current_user['is_admin'],
+        archives=archives,
+        message=message,
+        error=error,
+        download_file=download_file
+    )
+
+
+@reviewer_bp.route('/downloadarchive/<filename>')
+@admin_required
+def downloadarchive(current_user, filename):
+    """Download a site archive (admin only)."""
+    # Validate filename to prevent path traversal
+    if not filename.startswith('crackmesone_') or not filename.endswith('.zip'):
+        abort(400)
+
+    if '/' in filename or '\\' in filename or '..' in filename:
+        abort(400)
+
+    filepath = os.path.join(ARCHIVE_DIR, filename)
+
+    if not os.path.exists(filepath):
+        abort(404)
+
+    log_reviewer_operation(
+        "download_site_archive", current_user['username'],
+        {"filename": filename},
+        True
+    )
+
+    return send_file(filepath, as_attachment=True, download_name=filename)

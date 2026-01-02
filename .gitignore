@@ -50,6 +50,7 @@ users.json
 .env
 review/review_operations.log
 review/users.json
+archive/
 
 # Testing
 .pytest_cache/
