@@ -29,5 +29,13 @@
     "Reviewer": {
         "Enabled": false,
         "PasswordSalt": "change-this-to-a-secure-random-salt"
+    },
+    "Email": {
+        "Enabled": false,
+        "ApiKey": "re_your_resend_api_key",
+        "From": "crackmes.one <admin@mail.crackmes.one>"
+    },
+    "Site": {
+        "BaseURL": "https://crackmes.one"
     }
 }

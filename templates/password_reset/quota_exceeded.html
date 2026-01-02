@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Password Reset Unavailable{% endblock %}
+{% block page_title %}Password Reset Unavailable{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="columns" style="justify-content: center;">
+        <div class="column col-6 col-xs-12 panel-input">
+            <p>The automated password reset feature is temporarily unavailable due to high demand.</p>
+            <p>Please email <a href="mailto:crackmesone@gmail.com">crackmesone@gmail.com</a> from the email address you used when you registered your account for assistance.</p>
+            <p>See <a href="/faq#reset-password">FAQ</a> for more information.</p>
+            <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                <a href="/login" class="btn active">Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}{% endblock %}

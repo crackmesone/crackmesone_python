@@ -1,20 +1,21 @@
 """
-Email service for sending SMTP emails.
+Email service using Resend API.
 """
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import base64
+import resend
 
 # Global email configuration
 email_config = {}
 
 
 def configure(config):
-    """Configure email settings."""
+    """Configure email settings with Resend API key."""
     global email_config
     email_config = config
+
+    api_key = config.get('ApiKey', '')
+    if api_key:
+        resend.api_key = api_key
 
 
 def read_config():
@@ -22,8 +23,13 @@ def read_config():
     return email_config
 
 
+def is_configured():
+    """Check if email service is properly configured."""
+    return bool(email_config.get('ApiKey'))
+
+
 def send_email(to: str, subject: str, body: str) -> bool:
-    """Send an email.
+    """Send an email using Resend.
 
     Args:
         to: Recipient email address
@@ -35,32 +41,60 @@ def send_email(to: str, subject: str, body: str) -> bool:
     """
     global email_config
 
-    if not email_config:
-        print("Email not configured")
+    if not is_configured():
+        print("Email not configured: missing Resend API key")
         return False
 
     try:
-        msg = MIMEMultipart()
-        msg['From'] = email_config.get('From', '')
-        msg['To'] = to
-        msg['Subject'] = subject
-        msg['MIME-Version'] = '1.0'
+        from_address = email_config.get('From', 'admin@mail.crackmes.one')
 
-        # Attach the body as plain text
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        params = {
+            "from": from_address,
+            "to": [to],
+            "subject": subject,
+            "text": body,
+            "reply_to": "crackmesone@gmail.com",
+        }
 
-        # Connect to SMTP server
-        hostname = email_config.get('Hostname', '')
-        port = email_config.get('Port', 587)
-        username = email_config.get('Username', '')
-        password = email_config.get('Password', '')
+        resend.Emails.send(params)
+        return True
+    except Exception as e:
+        print(f"Email error: {e}")
+        return False
 
-        with smtplib.SMTP(hostname, port) as server:
-            server.starttls()
-            if username and password:
-                server.login(username, password)
-            server.send_message(msg)
 
+def send_html_email(to: str, subject: str, html_body: str, text_body: str = None) -> bool:
+    """Send an HTML email using Resend.
+
+    Args:
+        to: Recipient email address
+        subject: Email subject
+        html_body: Email body (HTML)
+        text_body: Optional plain text fallback
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    global email_config
+
+    if not is_configured():
+        print("Email not configured: missing Resend API key")
+        return False
+
+    try:
+        from_address = email_config.get('From', 'admin@mail.crackmes.one')
+
+        params = {
+            "from": from_address,
+            "to": [to],
+            "subject": subject,
+            "html": html_body,
+        }
+
+        if text_body:
+            params["text"] = text_body
+
+        resend.Emails.send(params)
         return True
     except Exception as e:
         print(f"Email error: {e}")
