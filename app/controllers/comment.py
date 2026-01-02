@@ -19,7 +19,7 @@ comment_bp = Blueprint('comment', __name__)
 
 @comment_bp.route('/comment/<hexid>', methods=['POST'])
 @login_required
-@limit("30 per hour")
+@limit("30 per hour", key_func=lambda: session.get('name'))
 def leave_comment(hexid):
     """Post a comment on a crackme."""
     username = session.get('name')

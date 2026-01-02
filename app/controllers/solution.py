@@ -44,7 +44,7 @@ def upload_solution_get(hexidcrackme):
 
 @solution_bp.route('/upload/solution/<hexidcrackme>', methods=['POST'])
 @login_required
-@limit("20 per day")
+@limit("20 per day", key_func=lambda: session.get('name'))
 def upload_solution_post(hexidcrackme):
     """Handle solution upload."""
     username = session.get('name')

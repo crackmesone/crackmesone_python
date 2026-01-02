@@ -18,8 +18,7 @@
     },
     "RateLimiter": {
         "Enabled": true,
-        "StorageUri": "memory://",
-        "DefaultLimits": ["200 per day", "50 per hour"]
+        "StorageUri": "memory://"
     },
     "Discord": {
         "Enabled": false,

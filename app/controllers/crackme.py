@@ -127,7 +127,7 @@ def upload_crackme_get():
 
 @crackme_bp.route('/upload/crackme', methods=['POST'])
 @login_required
-@limit("10 per day")
+@limit("10 per day", key_func=lambda: session.get('name'))
 def upload_crackme_post():
     """Handle crackme upload."""
     username = session.get('name')

@@ -20,7 +20,7 @@ def change_password_get():
 
 @password_bp.route('/change-password', methods=['POST'])
 @login_required
-@limit("5 per hour")
+@limit("5 per hour", key_func=lambda: session.get('name'))
 def change_password_post():
     """Handle password change."""
     username = session.get('name')

@@ -1,5 +1,36 @@
 """
 Rate limiting service using Flask-Limiter.
+
+Rate Limits Documentation
+=========================
+
+The following rate limits are applied to protect against spam and abuse:
+
++-------------------------+----------------+-------------+----------------------------------+
+| Route                   | Limit          | Limited By  | Purpose                          |
++-------------------------+----------------+-------------+----------------------------------+
+| POST /register          | 10 per hour    | IP address  | Prevent mass account creation    |
+| POST /login             | 20 per hour    | IP address  | Prevent brute-force attacks      |
+| POST /change-password   | 5 per hour     | Username    | Prevent password guess attempts  |
+| POST /upload/crackme    | 10 per day     | Username    | Prevent submission spam          |
+| POST /upload/solution   | 20 per day     | Username    | Prevent submission spam          |
+| POST /comment           | 30 per hour    | Username    | Prevent comment spam             |
++-------------------------+----------------+-------------+----------------------------------+
+
+Configuration
+=============
+
+Rate limiting can be enabled/disabled via config.json:
+
+    "RateLimiter": {
+        "Enabled": true,
+        "StorageUri": "memory://"
+    }
+
+Storage options:
+- "memory://" - In-memory storage (default, suitable for single instance)
+- "redis://localhost:6379" - Redis storage (recommended for production)
+- "mongodb://localhost:27017" - MongoDB storage
 """
 
 from flask_limiter import Limiter
@@ -18,7 +49,6 @@ def init_limiter(app, config):
         config: Rate limiter configuration dict with keys:
             - Enabled: bool - Whether rate limiting is enabled
             - StorageUri: str - Storage backend URI (default: memory://)
-            - DefaultLimits: list - Default rate limits (e.g., ["200 per day", "50 per hour"])
     """
     global limiter, limiter_config
     limiter_config = config
@@ -34,12 +64,10 @@ def init_limiter(app, config):
         return
 
     storage_uri = config.get('StorageUri', 'memory://')
-    default_limits = config.get('DefaultLimits', [])
 
     limiter = Limiter(
         key_func=get_remote_address,
         app=app,
-        default_limits=default_limits,
         storage_uri=storage_uri,
         strategy="fixed-window",
     )
@@ -61,9 +89,16 @@ def limit(*args, **kwargs):
     Usage:
         from app.services.limiter import limit
 
+        # Limit by IP address (default)
         @app.route('/api/resource')
         @limit("5 per minute")
         def resource():
+            ...
+
+        # Limit by username (for logged-in routes)
+        @app.route('/upload')
+        @limit("10 per day", key_func=lambda: session.get('name'))
+        def upload():
             ...
 
     When rate limiting is disabled, this decorator does nothing.
