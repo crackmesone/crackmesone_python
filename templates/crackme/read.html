@@ -10,7 +10,29 @@
         document.getElementById(id1).style.display = 'none';
         document.getElementById(id2).style.display = 'block';
     }
+
+    function revealSpoiler(id) {
+        var hidden = document.getElementById('spoiler-hidden-' + id);
+        var content = document.getElementById('spoiler-content-' + id);
+        if (hidden && content) {
+            hidden.style.display = 'none';
+            content.style.display = 'inline';
+        }
+    }
 </script>
+<style>
+    .spoiler-hidden {
+        background-color: #333;
+        color: #333;
+        padding: 2px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .spoiler-hidden:hover {
+        background-color: #555;
+    }
+</style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
     <div class="columns panel-background">
@@ -89,7 +111,11 @@
             <p>You must be logged in to post a comment</p>
             {% endif %}
             {% for comment in comments %}
-            <p><a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}: <span style="white-space: pre-line">{{ comment.info }}</span></p>
+            <div style="margin-bottom: 1em;">
+                <a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}:
+                {% if comment.spoiler %}
+                <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal]</span><span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info }}</span>{% else %}<span style="white-space: pre-line">{{ comment.info }}</span>{% endif %}{% if usersess == username or (usersess == comment.author and not comment.spoiler) %}<form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline; margin-left: 8px;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-sm active" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}">{% if comment.spoiler %}Unspoiler{% else %}Spoiler{% endif %}</button></form>{% endif %}
+            </div>
             {% endfor %}
         </div>
         <div class="column col-12" id="solutions" style="display:none">
@@ -124,6 +150,10 @@
                     <form action="/comment/{{ hexid }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <textarea name="comment" id="comment" placeholder="An awesome comment" style="width: 100%;" rows="5"></textarea>
+                        <label class="form-checkbox" style="margin-top: 10px;">
+                            <input type="checkbox" name="spoiler">
+                            <i class="form-icon"></i> Mark as spoiler (hides content until clicked)
+                        </label>
                         <input type="submit" class="btn active float-right" value="Post a comment">
                         {% if RECAPTCHA_SITEKEY %}
                         <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>

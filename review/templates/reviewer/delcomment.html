@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Delete comments</title>
+    <title>Manage Comments</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
@@ -45,9 +45,10 @@
         <table class="table table-striped table-scroll">
             <thead>
                 <tr style="text-align: center;">
-                    <th style="width: 20%;">Author</th>
-                    <th style="width: 60%;">Comment</th>
-                    <th style="width: 20%;">Delete</th>
+                    <th style="width: 15%;">Author</th>
+                    <th style="width: 50%;">Comment</th>
+                    <th style="width: 15%;">Spoiler</th>
+                    <th style="width: 20%;">Actions</th>
                 </tr>
             </thead>
             <tbody id="content-list">
@@ -56,12 +57,23 @@
                     <td> <span style="white-space: pre-line">{{comment.author}}</span></td>
                     <td> <span style="white-space: pre-line">{{comment.content}}</span></td>
                     <td>
+                        <form method="post" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="action" value="toggle_spoiler">
+                            <input type="hidden" name="comment_uuid" value="{{comment.comment_uuid}}">
+                            <input type="hidden" name="crackme_uuid" value="{{crackme_uuid}}">
+                            <button type="submit" class="btn btn-sm {{ 'btn-warning' if comment.spoiler else 'btn-primary' }}">
+                                {{ 'Yes' if comment.spoiler else 'No' }}
+                            </button>
+                        </form>
+                    </td>
+                    <td>
                         <form method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this comment?');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="action" value="delete">
                             <input type="hidden" name="comment_uuid" value="{{comment.comment_uuid}}">
                             <input type="hidden" name="crackme_uuid" value="{{crackme_uuid}}">
-                            <button type="submit" class="btn btn-sm btn-error">X</button>
+                            <button type="submit" class="btn btn-sm btn-error">Delete</button>
                         </form>
                     </td>
                 </tr>

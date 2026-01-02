@@ -4,12 +4,12 @@ Comment controller - Posting comments.
 
 from flask import Blueprint, request, redirect, flash, session
 import bleach
-from app.models.comment import comment_create
+from app.models.comment import comment_create, comment_by_id, comment_set_spoiler
 from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
-from app.services.discord import notify_new_comment
+from app.services.discord import notify_new_comment, notify_spoiler_toggle
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.controllers.decorators import login_required
 
@@ -34,10 +34,11 @@ def leave_comment(hexid):
         return redirect(f'/crackme/{hexid}')
 
     comment_text = bleach.clean(request.form.get('comment', ''))
+    is_spoiler = request.form.get('spoiler') == 'on'
 
     # Create comment
     try:
-        comment_create(comment_text, username, hexid)
+        comment_create(comment_text, username, hexid, spoiler=is_spoiler)
     except Exception as e:
         print(f"Error creating comment: {e}")
         flash('Comment creation failed. Please try again later.', FLASH_ERROR)
@@ -64,3 +65,75 @@ def leave_comment(hexid):
 
     flash('Comment uploaded!', FLASH_SUCCESS)
     return redirect(f'/crackme/{hexid}')
+
+
+@comment_bp.route('/comment/<comment_id>/spoiler', methods=['POST'])
+@login_required
+def toggle_spoiler(comment_id):
+    """Toggle spoiler status on a comment.
+
+    Permissions:
+    - Crackme author: can mark and unmark any comment on their crackme
+    - Comment author: can only mark their own comment (cannot unmark)
+    """
+    username = session.get('name')
+
+    # Get the comment
+    try:
+        comment = comment_by_id(comment_id)
+    except ErrNoResult:
+        flash('Comment not found.', FLASH_ERROR)
+        return redirect('/')
+
+    crackme_hexid = comment.get('crackmehexid')
+    comment_author = comment.get('author')
+    current_spoiler = comment.get('spoiler', False)
+
+    # Get the crackme
+    try:
+        crackme = crackme_by_hexid(crackme_hexid)
+    except ErrNoResult:
+        flash('Crackme not found.', FLASH_ERROR)
+        return redirect('/')
+
+    is_crackme_author = crackme.get('author') == username
+    is_comment_author = comment_author == username
+
+    # Check permissions
+    if not is_crackme_author and not is_comment_author:
+        flash('You can only mark comments as spoilers on your own crackmes or your own comments.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}')
+
+    # Comment author can only mark, not unmark (unless they're also crackme author)
+    if is_comment_author and not is_crackme_author and current_spoiler:
+        flash('You cannot remove the spoiler mark from your own comment. Contact the crackme author.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}')
+
+    # Toggle spoiler status
+    new_spoiler = not current_spoiler
+
+    try:
+        comment_set_spoiler(comment_id, new_spoiler)
+    except Exception as e:
+        print(f"Error toggling spoiler: {e}")
+        flash('Failed to update spoiler status.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}')
+
+    # Send Discord moderation notification
+    try:
+        notify_spoiler_toggle(
+            username,
+            crackme['name'],
+            crackme_hexid,
+            comment.get('author', 'Unknown'),
+            new_spoiler
+        )
+    except Exception as e:
+        print(f"Discord notification error: {e}")
+
+    if new_spoiler:
+        flash('Comment marked as spoiler.', FLASH_SUCCESS)
+    else:
+        flash('Spoiler marking removed.', FLASH_SUCCESS)
+
+    return redirect(f'/crackme/{crackme_hexid}')

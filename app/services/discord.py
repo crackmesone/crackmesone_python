@@ -253,3 +253,60 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
         "timestamp": timestamp,
     }
     return send_moderation_notification(embed)
+
+
+def notify_spoiler_toggle(username: str, crackme_name: str, crackme_hexid: str,
+                          comment_author: str, is_spoiler: bool) -> bool:
+    """Send notification when a user marks/unmarks a comment as spoiler.
+
+    Sent to MODERATION channel for monitoring user activity.
+
+    Args:
+        username: The crackme owner who toggled the spoiler
+        crackme_name: The name of the crackme
+        crackme_hexid: The hexid of the crackme (for link)
+        comment_author: The author of the comment
+        is_spoiler: True if marked as spoiler, False if unmarked
+
+    Returns:
+        True if notification was sent successfully
+    """
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+
+    # Orange color for spoiler actions
+    color = 16753920
+
+    action = "marked as spoiler" if is_spoiler else "unmarked as spoiler"
+
+    embed = {
+        "title": f"Comment {action.title()}",
+        "description": f"A comment has been {action}",
+        "color": color,
+        "fields": [
+            {
+                "name": "Challenge",
+                "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_hexid})",
+                "inline": True
+            },
+            {
+                "name": "Marked by",
+                "value": f"[{username}](https://crackmes.one/user/{username})",
+                "inline": True
+            },
+            {
+                "name": "Comment Author",
+                "value": f"[{comment_author}](https://crackmes.one/user/{comment_author})",
+                "inline": True
+            }
+        ],
+        "footer": {
+            "text": "CrackMes.One",
+        },
+        "timestamp": timestamp,
+    }
+    return send_moderation_notification(embed)
