@@ -19,6 +19,28 @@
         {% block head %}{% endblock %}
     </head>
     <body>
+        <style>
+            .off-canvas-sidebar.active {
+                transform: translateX(0);
+            }
+            .off-canvas-sidebar.active ~ .off-canvas-overlay {
+                display: block;
+            }
+        </style>
+        <script>
+            function toggleSidebar(id) {
+                var sidebar = document.getElementById(id);
+                if (sidebar) sidebar.classList.add('active');
+            }
+            function closeSidebar() {
+                document.querySelectorAll('.off-canvas-sidebar.active').forEach(function(s) {
+                    s.classList.remove('active');
+                });
+                if (window.location.hash) {
+                    history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+            }
+        </script>
         {% include 'partial/menu.html' %}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}

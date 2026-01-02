@@ -19,6 +19,37 @@
             content.style.display = 'inline';
         }
     }
+
+    function openModal(id) {
+        var modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.add('active');
+            var input = modal.querySelector('textarea, input:not([type="hidden"])');
+            if (input) setTimeout(function() { input.focus(); }, 100);
+        }
+    }
+
+    function closeModal() {
+        document.querySelectorAll('.modal.active').forEach(function(m) {
+            m.classList.remove('active');
+        });
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+    }
+
+    // Support direct links with hash (e.g., #modal-comment)
+    document.addEventListener('DOMContentLoaded', function() {
+        var hash = window.location.hash;
+        if (hash && hash.length > 1) {
+            var modalId = hash.substring(1);
+            var modal = document.getElementById(modalId);
+            if (modal && modal.classList.contains('modal')) {
+                openModal(modalId);
+                history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
+        }
+    });
 </script>
 <style>
     .spoiler-hidden {
@@ -58,6 +89,9 @@
         background: #3a3a3a;
         color: #fff;
     }
+    .modal.active {
+        display: flex;
+    }
 </style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
@@ -85,13 +119,13 @@
         <div class="column col-3">
             <p>Difficulty:<br> {{ difficulty }}
             {% if AuthLevel == "auth" %}
-            <a href="#rate-diff">Rate!</a></p>
+            <a href="#" onclick="openModal('rate-diff'); return false;">Rate!</a></p>
             {% endif %}
         </div>
         <div class="column col-3">
             <p>Quality:<br> {{ quality }}
             {% if AuthLevel == "auth" %}
-            <a href="#rate-qual">Rate!</a></p>
+            <a href="#" onclick="openModal('rate-qual'); return false;">Rate!</a></p>
             {% endif %}
         </div>
         <div class="column col-3">
@@ -133,7 +167,7 @@
 
         <div class="column col-12" id="comments" style="display:none">
             {% if AuthLevel == "auth" %}
-            <a href="#modal-comment" class="btn active float-right" style="margin-top:-65px;">Post a comment</a>
+            <a href="#" onclick="openModal('modal-comment'); return false;" class="btn active float-right" style="margin-top:-65px;">Post a comment</a>
             {% else %}
             <p>You must be logged in to post a comment</p>
             {% endif %}
@@ -165,10 +199,10 @@
     </div>
 
     <div class="modal" id="modal-comment">
-        <a href="#close" class="modal-overlay" aria-label="Close"></a>
+        <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
         <div class="modal-container">
             <div class="modal-header">
-                <a href="#close" class="btn btn-clear float-right" aria-label="Close"></a>
+                <a href="#" onclick="closeModal(); return false;" class="btn btn-clear float-right" aria-label="Close"></a>
                 <div class="modal-title h5">Write a comment</div>
             </div>
             <div class="modal-body">
@@ -195,10 +229,10 @@
     </div>
 
     <div class="modal" id="rate-diff">
-        <a href="#close" class="modal-overlay" aria-label="Close"></a>
+        <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
         <div class="modal-container">
             <div class="modal-header">
-                <a href="#close" class="btn btn-clear float-right" aria-label="Close"></a>
+                <a href="#" onclick="closeModal(); return false;" class="btn btn-clear float-right" aria-label="Close"></a>
                 <div class="modal-title h5">Rate the difficulty</div>
             </div>
             <div class="modal-body">
@@ -223,10 +257,10 @@
 </div>
 
 <div class="modal" id="rate-qual">
-    <a href="#close" class="modal-overlay" aria-label="Close"></a>
+    <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
     <div class="modal-container">
         <div class="modal-header">
-            <a href="#close" class="btn btn-clear float-right" aria-label="Close"></a>
+            <a href="#" onclick="closeModal(); return false;" class="btn btn-clear float-right" aria-label="Close"></a>
             <div class="modal-title h5">Rate the quality</div>
         </div>
         <div class="modal-body">
@@ -389,15 +423,6 @@
     textarea.addEventListener('blur', function() {
         setTimeout(function() { dropdown.classList.remove('active'); }, 150);
     });
-
-    // Auto-focus textarea when comment modal opens
-    function checkModalFocus() {
-        if (window.location.hash === '#modal-comment') {
-            setTimeout(function() { textarea.focus(); }, 100);
-        }
-    }
-    window.addEventListener('hashchange', checkModalFocus);
-    checkModalFocus(); // Check on page load
 })();
 </script>
 {% endblock %}

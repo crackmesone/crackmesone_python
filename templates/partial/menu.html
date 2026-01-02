@@ -21,7 +21,7 @@
 </header>
 <div class="off-canvas show-xs">
     <h2 class="text-center"><a href="/" class="title-navbar">crackmes.one</a></h2>
-    <a class="off-canvas-toggle btn btn-primary btn-action" href="#sidebar-id">
+    <a class="off-canvas-toggle btn btn-primary btn-action" href="#" onclick="toggleSidebar('sidebar-id'); return false;">
         <i class="icon icon-menu"></i>
     </a>
 
@@ -38,7 +38,7 @@
             <li class="nav"><a href="{{ BaseURI }}logout" class="btn btn-link">Logout</a></li>
         </ul>
     </div>
-    <a class="off-canvas-overlay" href="#close"></a>
+    <a class="off-canvas-overlay" href="#" onclick="closeSidebar(); return false;"></a>
 </div>
 
 {% else %}
@@ -55,11 +55,11 @@
 </header>
 <div class="off-canvas show-xs">
     <h2 class="text-center"><a href="/" class="title-navbar">crackmes.one</a></h2>
-    <a class="off-canvas-toggle btn btn-primary btn-action" href="#sidebar-id">
+    <a class="off-canvas-toggle btn btn-primary btn-action" href="#" onclick="toggleSidebar('sidebar-id-guest'); return false;">
         <i class="icon icon-menu"></i>
     </a>
 
-    <div id="sidebar-id" class="off-canvas-sidebar">
+    <div id="sidebar-id-guest" class="off-canvas-sidebar">
         <ul class="nav">
             <li class="nav"><a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
             <li class="nav"><a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a></li>
@@ -70,6 +70,6 @@
             <li class="nav"><a href="{{ BaseURI }}register" class="btn btn-link">Register</a></li>
         </ul>
     </div>
-    <a class="off-canvas-overlay" href="#close"></a>
+    <a class="off-canvas-overlay" href="#" onclick="closeSidebar(); return false;"></a>
 </div>
 {% endif %}
