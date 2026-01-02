@@ -52,7 +52,6 @@
             <div class="toast toast-success">
                 <span id="completed-message">Archive created successfully!</span>
                 <a id="download-link" href="#" class="btn btn-primary btn-sm" style="margin-left: 10px;">Download</a>
-                <button class="btn btn-sm" onclick="location.reload();">Refresh Page</button>
             </div>
         </div>
 
@@ -60,7 +59,6 @@
         <div id="archive-error" style="display: none; margin-bottom: 15px;">
             <div class="toast toast-error">
                 <span id="error-message">An error occurred</span>
-                <button class="btn btn-sm" onclick="location.reload();">Refresh Page</button>
             </div>
         </div>
 
@@ -128,13 +126,14 @@
         var statusUrl = "{{ url_for('reviewer.sitearchive_status') }}";
         var downloadUrlBase = "{{ url_for('reviewer.downloadarchive', filename='PLACEHOLDER') }}".replace('PLACEHOLDER', '');
 
+        // Map step messages to progress percentages
         var progressSteps = {
-            'initializing': 10,
-            'copying_crackmes': 30,
-            'copying_solutions': 50,
-            'exporting_database': 70,
-            'creating_zip': 90,
-            'completed': 100
+            'Starting...': 5,
+            'Initializing...': 10,
+            'Copying crackme files...': 30,
+            'Copying solution files...': 50,
+            'Exporting database...': 70,
+            'Creating zip archive...': 90
         };
 
         function updateStatusDisplay(data) {
@@ -183,7 +182,7 @@
                     clearInterval(pollingInterval);
                     pollingInterval = null;
                 }
-            } else {
+            } else if (data.status === 'running') {
                 // In progress
                 statusDiv.style.display = 'block';
                 completedDiv.style.display = 'none';
@@ -191,16 +190,9 @@
                 createBtn.disabled = true;
                 createBtn.innerText = 'Archive in progress...';
 
-                var stepMessages = {
-                    'initializing': 'Initializing archive...',
-                    'copying_crackmes': 'Copying crackme files...',
-                    'copying_solutions': 'Copying solution files...',
-                    'exporting_database': 'Exporting database...',
-                    'creating_zip': 'Creating zip archive...'
-                };
-
-                statusMessage.innerText = stepMessages[data.status] || data.status;
-                var progress = progressSteps[data.status] || 0;
+                var step = data.step || 'Processing...';
+                statusMessage.innerText = step;
+                var progress = progressSteps[step] || 50;
                 progressBar.style.width = progress + '%';
             }
         }
@@ -219,7 +211,7 @@
         function startPolling() {
             if (!pollingInterval) {
                 pollStatus(); // Immediate first poll
-                pollingInterval = setInterval(pollStatus, 2000); // Poll every 2 seconds
+                pollingInterval = setInterval(pollStatus, 1000); // Poll every second
             }
         }
 
