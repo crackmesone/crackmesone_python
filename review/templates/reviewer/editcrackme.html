@@ -41,8 +41,8 @@
                     <input type="hidden" name="crackme_uuid" value="{{ crackme.hexid }}">
 
                     <div class="form-group">
-                        <label class="form-label" for="name">Crackme name</label>
-                        <input class="form-input" type="text" id="name" name="name" value="{{ crackme.name }}">
+                        <label class="form-label">Crackme name (not editable)</label>
+                        <input class="form-input" type="text" value="{{ crackme.name }}" disabled>
                     </div>
 
                     <div class="form-group">

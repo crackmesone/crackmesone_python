@@ -1832,17 +1832,14 @@ def editcrackme(current_user):
     if request.method == 'POST' and crackme_uuid:
         validate_csrf_token()
 
-        # Get form data
-        name = request.form.get('name', '').strip()
+        # Get form data (name is not editable)
         info = request.form.get('info', '').strip()
         lang = request.form.get('lang', '')
         arch = request.form.get('arch', '')
         platform = request.form.get('platform', '')
         notify_author = request.form.get('notify_author') == 'on'
 
-        if not name:
-            error = "Name is required"
-        else:
+        if True:
             # Get current crackme
             crackme_obj = g_crackmesone_db.crackme.find_one({
                 "_id": ObjectId(crackme_uuid)
@@ -1851,10 +1848,8 @@ def editcrackme(current_user):
             if not crackme_obj:
                 error = "Crackme not found"
             else:
-                # Track changes
+                # Track changes (name is not editable)
                 changes = []
-                if crackme_obj.get('name') != name:
-                    changes.append(f"name: '{crackme_obj.get('name')}' -> '{name}'")
                 if crackme_obj.get('info') != info:
                     changes.append("description updated")
                 if crackme_obj.get('lang') != lang:
@@ -1864,11 +1859,10 @@ def editcrackme(current_user):
                 if crackme_obj.get('platform') != platform:
                     changes.append(f"platform: '{crackme_obj.get('platform')}' -> '{platform}'")
 
-                # Update the crackme
+                # Update the crackme (name excluded)
                 g_crackmesone_db.crackme.update_one(
                     {"_id": ObjectId(crackme_uuid)},
                     {"$set": {
-                        "name": name,
                         "info": info,
                         "lang": lang,
                         "arch": arch,
@@ -1920,7 +1914,7 @@ def editcrackme(current_user):
                         "edit_crackme_admin", current_user['username'],
                         {
                             "crackme_uuid": crackme_uuid,
-                            "crackme_name": name,
+                            "crackme_name": crackme_obj.get('name'),
                             "changes": changes
                         },
                         True
@@ -1934,13 +1928,13 @@ def editcrackme(current_user):
                                 change_summary += f" and {len(changes) - 3} more"
                             send_user_notification(
                                 crackme_obj['author'],
-                                f"Your crackme '{name}' has been updated by an admin: {change_summary}"
+                                f"Your crackme '{crackme_obj.get('name')}' has been updated by an admin: {change_summary}"
                             )
                         except Exception as e:
                             print(f"Notification error: {e}")
 
                     if not error:
-                        message = f"Crackme '{name}' updated successfully"
+                        message = f"Crackme '{crackme_obj.get('name')}' updated successfully"
                 else:
                     message = "No changes were made"
 

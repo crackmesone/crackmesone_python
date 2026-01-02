@@ -350,8 +350,8 @@ def crackme_update(hexid, updates):
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
-    # Only allow updating these fields
-    allowed_fields = {'name', 'info', 'lang', 'arch', 'platform'}
+    # Only allow updating these fields (name is excluded to avoid database issues)
+    allowed_fields = {'info', 'lang', 'arch', 'platform'}
     filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
 
     if not filtered_updates:

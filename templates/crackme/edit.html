@@ -6,19 +6,11 @@
 
 <div class="container grid-lg wrapper">
     <h2>Edit crackme: {{ crackme.name }}</h2>
-    <p>Update the details of your crackme. Note: You cannot change the uploaded file.</p>
+    <p>Update the details of your crackme. Note: You cannot change the name or uploaded file.</p>
 
     <div class="divider"></div>
     <form class="form-horizontal" action="/crackme/{{ crackme.hexid }}/edit" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="form-group">
-            <div class="col-3 col-sm-12">
-                <label class="form-label" for="name">Crackme name</label>
-            </div>
-            <div class="col-9 col-sm-12">
-                <input class="form-input" type="text" id="name" name="name" placeholder="Name" value="{{ crackme.name }}">
-            </div>
-        </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
                 <label class="form-label" for="lang">Language</label>

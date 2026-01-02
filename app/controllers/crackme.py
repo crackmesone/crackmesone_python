@@ -297,21 +297,14 @@ def edit_crackme_post(hexid):
         flash('You can only edit your own crackmes.', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
-    # Get form data
-    name = bleach.clean(request.form.get('name', ''))
+    # Get form data (name is not editable)
     info = bleach.clean(request.form.get('info', ''))
     lang = bleach.clean(request.form.get('lang', ''))
     arch = bleach.clean(request.form.get('arch', ''))
     platform = request.form.get('platform', '')
 
-    # Validate required fields
-    if not name:
-        flash('Name is required.', FLASH_ERROR)
-        return render_template('crackme/edit.html', crackme=crackme)
-
     # Update the crackme
     updates = {
-        'name': name,
         'info': info,
         'lang': lang,
         'arch': arch,
@@ -330,7 +323,7 @@ def edit_crackme_post(hexid):
     if changes:
         # Send notification to the author about the edit
         try:
-            notification_add(username, f"Your crackme '{name}' has been updated.")
+            notification_add(username, f"Your crackme '{crackme.get('name')}' has been updated.")
         except Exception as e:
             print(f"Notification error: {e}")
 
