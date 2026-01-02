@@ -520,8 +520,26 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
 
         return True, None
 
+    except FileNotFoundError:
+        # zip command not found - move file back
+        if os.path.exists(temp_path):
+            try:
+                shutil.move(temp_path, source_path)
+            except Exception:
+                pass
+        return False, "zip command not found"
+
+    except Exception as e:
+        # Other errors - move file back
+        if os.path.exists(temp_path):
+            try:
+                shutil.move(temp_path, source_path)
+            except Exception:
+                pass
+        return False, f"Error creating zip: {str(e)}"
+
     finally:
-        # Clean up temp file
+        # Clean up temp file (only if zip succeeded, file was moved to archive)
         if os.path.exists(temp_path):
             try:
                 os.remove(temp_path)
