@@ -335,3 +335,63 @@ def random_crackme():
     if not results:
         raise ErrNoResult("No crackmes found")
     return results[0]
+
+
+def crackme_update(hexid, updates):
+    """Update a crackme's fields.
+
+    Args:
+        hexid: The hex ID of the crackme
+        updates: Dictionary of fields to update (name, info, lang, arch, platform)
+
+    Returns:
+        Dictionary with old values of changed fields, or None if crackme not found
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    # Only allow updating these fields (name is excluded to avoid database issues)
+    allowed_fields = {'info', 'lang', 'arch', 'platform'}
+    filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
+
+    if not filtered_updates:
+        return {}
+
+    collection = get_collection('crackme')
+
+    # Get current values first
+    crackme = collection.find_one({'hexid': hexid})
+    if not crackme:
+        return None
+
+    # Track what changed
+    changes = {}
+    for field, new_value in filtered_updates.items():
+        old_value = crackme.get(field)
+        if old_value != new_value:
+            changes[field] = {'old': old_value, 'new': new_value}
+
+    if changes:
+        collection.update_one(
+            {'hexid': hexid},
+            {'$set': filtered_updates}
+        )
+
+    return changes
+
+
+def crackme_by_hexid_any(hexid):
+    """Get crackme by hex ID regardless of visibility status.
+
+    Used for admin/editing purposes.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('crackme')
+    result = collection.find_one({'hexid': hexid})
+
+    if result is None:
+        raise ErrNoResult("Crackme not found")
+
+    return result

@@ -1816,6 +1816,156 @@ def deletecrackme(current_user):
     )
 
 
+@reviewer_bp.route('/editcrackme', methods=['GET', 'POST'])
+@admin_required
+def editcrackme(current_user):
+    """Edit an approved crackme (admin only).
+
+    Allows editing crackme metadata and optionally replacing the file.
+    """
+    message = None
+    error = None
+    crackme = None
+
+    crackme_uuid = request.args.get('crackme_uuid') or request.form.get('crackme_uuid')
+
+    if request.method == 'POST' and crackme_uuid:
+        validate_csrf_token()
+
+        # Get form data (name is not editable)
+        info = request.form.get('info', '').strip()
+        lang = request.form.get('lang', '')
+        arch = request.form.get('arch', '')
+        platform = request.form.get('platform', '')
+        notify_author = request.form.get('notify_author') == 'on'
+
+        if True:
+            # Get current crackme
+            crackme_obj = g_crackmesone_db.crackme.find_one({
+                "_id": ObjectId(crackme_uuid)
+            })
+
+            if not crackme_obj:
+                error = "Crackme not found"
+            else:
+                # Track changes (name is not editable)
+                changes = []
+                if crackme_obj.get('info') != info:
+                    changes.append("description updated")
+                if crackme_obj.get('lang') != lang:
+                    changes.append(f"language: '{crackme_obj.get('lang')}' -> '{lang}'")
+                if crackme_obj.get('arch') != arch:
+                    changes.append(f"arch: '{crackme_obj.get('arch')}' -> '{arch}'")
+                if crackme_obj.get('platform') != platform:
+                    changes.append(f"platform: '{crackme_obj.get('platform')}' -> '{platform}'")
+
+                # Update the crackme (name excluded)
+                g_crackmesone_db.crackme.update_one(
+                    {"_id": ObjectId(crackme_uuid)},
+                    {"$set": {
+                        "info": info,
+                        "lang": lang,
+                        "arch": arch,
+                        "platform": platform
+                    }}
+                )
+
+                # Handle file replacement
+                file_replaced = False
+                if 'file' in request.files:
+                    file = request.files['file']
+                    if file.filename:
+                        file_data = file.read()
+                        if len(file_data) > 0:
+                            # Save to temp location
+                            temp_path = os.path.join(
+                                CRACKMESONE_DIR, 'tmp',
+                                f"replace_{crackme_uuid}_{file.filename}"
+                            )
+                            os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+
+                            with open(temp_path, 'wb') as f:
+                                f.write(file_data)
+
+                            # Create password-protected zip
+                            dest_path = os.path.join(
+                                get_static_dir('crackme'),
+                                crackme_obj['hexid']
+                            )
+
+                            # Remove old zip first
+                            old_zip = dest_path + ".zip"
+                            if os.path.exists(old_zip):
+                                os.remove(old_zip)
+
+                            success, zip_error = create_password_protected_zip(
+                                temp_path, dest_path, file.filename
+                            )
+
+                            if success:
+                                file_replaced = True
+                                changes.append("file replaced")
+                            else:
+                                error = f"Failed to replace file: {zip_error}"
+
+                if changes:
+                    # Log the operation
+                    log_reviewer_operation(
+                        "edit_crackme_admin", current_user['username'],
+                        {
+                            "crackme_uuid": crackme_uuid,
+                            "crackme_name": crackme_obj.get('name'),
+                            "changes": changes
+                        },
+                        True
+                    )
+
+                    # Notify author if requested
+                    if notify_author and not error:
+                        try:
+                            change_summary = ", ".join(changes[:3])
+                            if len(changes) > 3:
+                                change_summary += f" and {len(changes) - 3} more"
+                            send_user_notification(
+                                crackme_obj['author'],
+                                f"Your crackme '{crackme_obj.get('name')}' has been updated by an admin: {change_summary}"
+                            )
+                        except Exception as e:
+                            print(f"Notification error: {e}")
+
+                    if not error:
+                        message = f"Crackme '{crackme_obj.get('name')}' updated successfully"
+                else:
+                    message = "No changes were made"
+
+    # Load crackme for display
+    if crackme_uuid and ObjectId.is_valid(crackme_uuid):
+        crackme_obj = g_crackmesone_db.crackme.find_one({
+            "_id": ObjectId(crackme_uuid)
+        })
+        if crackme_obj:
+            crackme = {
+                "hexid": crackme_obj['hexid'],
+                "name": crackme_obj.get('name', ''),
+                "info": crackme_obj.get('info', ''),
+                "lang": crackme_obj.get('lang', ''),
+                "arch": crackme_obj.get('arch', ''),
+                "platform": crackme_obj.get('platform', ''),
+                "author": crackme_obj.get('author', '')
+            }
+        else:
+            error = "Crackme not found"
+
+    return render_template(
+        'reviewer/editcrackme.html',
+        user=current_user['username'],
+        is_admin=current_user['is_admin'],
+        crackme=crackme,
+        message=message,
+        error=error
+    )
+
+
 @reviewer_bp.route('/delcomment', methods=['GET', 'POST'])
 @admin_required
 def delcomment(current_user):

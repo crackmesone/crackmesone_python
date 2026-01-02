@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Edit crackme (Admin)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        {% if message %}
+        <div class="toast toast-primary">{{ message }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="toast toast-error">{{ error }}</div>
+        {% endif %}
+
+        {% if crackme %}
+        <h3>Edit crackme: "{{ crackme.name }}" by {{ crackme.author }}</h3>
+        <p>View on site: <a href="https://crackmes.one/crackme/{{ crackme.hexid }}" target="_blank">{{ crackme.name }}</a></p>
+
+        <div class="columns panel-background">
+            <div class="column col-12">
+                <form action="{{ url_for('reviewer.editcrackme') }}" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="crackme_uuid" value="{{ crackme.hexid }}">
+
+                    <div class="form-group">
+                        <label class="form-label">Crackme name (not editable)</label>
+                        <input class="form-input" type="text" value="{{ crackme.name }}" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="lang">Language</label>
+                        <select class="form-select" id="lang" name="lang">
+                            <option value="C/C++" {{ 'selected' if crackme.lang == 'C/C++' else '' }}>C/C++</option>
+                            <option value="Assembler" {{ 'selected' if crackme.lang == 'Assembler' else '' }}>Assembler</option>
+                            <option value="Java" {{ 'selected' if crackme.lang == 'Java' else '' }}>Java</option>
+                            <option value="Go" {{ 'selected' if crackme.lang == 'Go' else '' }}>Go</option>
+                            <option value="Rust" {{ 'selected' if crackme.lang == 'Rust' else '' }}>Rust</option>
+                            <option value="WebAssembly" {{ 'selected' if crackme.lang == 'WebAssembly' else '' }}>WebAssembly</option>
+                            <option value="(Visual) Basic" {{ 'selected' if crackme.lang == '(Visual) Basic' else '' }}>(Visual) Basic</option>
+                            <option value="Borland Delphi" {{ 'selected' if crackme.lang == 'Borland Delphi' else '' }}>Borland Delphi</option>
+                            <option value="Turbo Pascal" {{ 'selected' if crackme.lang == 'Turbo Pascal' else '' }}>Turbo Pascal</option>
+                            <option value=".NET" {{ 'selected' if crackme.lang == '.NET' else '' }}>.NET</option>
+                            <option value="Unspecified/other" {{ 'selected' if crackme.lang == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="arch">Arch</label>
+                        <select class="form-select" id="arch" name="arch">
+                            <option value="x86" {{ 'selected' if crackme.arch == 'x86' else '' }}>x86</option>
+                            <option value="x86-64" {{ 'selected' if crackme.arch == 'x86-64' else '' }}>x86-64</option>
+                            <option value="java" {{ 'selected' if crackme.arch == 'java' else '' }}>java</option>
+                            <option value="ARM" {{ 'selected' if crackme.arch == 'ARM' else '' }}>ARM</option>
+                            <option value="MIPS" {{ 'selected' if crackme.arch == 'MIPS' else '' }}>MIPS</option>
+                            <option value="RISC-V" {{ 'selected' if crackme.arch == 'RISC-V' else '' }}>RISC-V</option>
+                            <option value="other" {{ 'selected' if crackme.arch == 'other' else '' }}>other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="platform">Platform</label>
+                        <select class="form-select" id="platform" name="platform">
+                            <option value="Mac OS X" {{ 'selected' if crackme.platform == 'Mac OS X' else '' }}>Mac OS X</option>
+                            <option value="Multiplatform" {{ 'selected' if crackme.platform == 'Multiplatform' else '' }}>Multiplatform</option>
+                            <option value="Unix/linux etc." {{ 'selected' if crackme.platform == 'Unix/linux etc.' else '' }}>Unix/linux etc.</option>
+                            <option value="Windows" {{ 'selected' if crackme.platform == 'Windows' else '' }}>Windows</option>
+                            <option value="Android" {{ 'selected' if crackme.platform == 'Android' else '' }}>Android</option>
+                            <option value="iOS" {{ 'selected' if crackme.platform == 'iOS' else '' }}>iOS</option>
+                            <option value="Unspecified/other" {{ 'selected' if crackme.platform == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="info">Description</label>
+                        <textarea class="form-input" id="info" name="info" rows="5">{{ crackme.info }}</textarea>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="file">Replace file (optional)</label>
+                        <input class="form-input" type="file" id="file" name="file">
+                        <p class="form-input-hint">Upload a new file to replace the existing crackme. Leave empty to keep current file. The new file will be automatically password-protected.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-checkbox">
+                            <input type="checkbox" name="notify_author" checked>
+                            <i class="form-icon"></i> Notify author about changes
+                        </label>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 20px;">
+                        <button type="submit" class="btn active">Save changes</button>
+                        <a href="{{ url_for('reviewer.dashboard') }}" class="btn" style="margin-left: 10px;">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <h3>Edit crackme (Admin)</h3>
+        <div class="columns panel-background">
+            <div class="column col-12">
+                <form action="{{ url_for('reviewer.editcrackme') }}" method="GET">
+                    <div class="form-group">
+                        <label class="form-label" for="crackme_uuid">Crackme UUID</label>
+                        <input class="form-input" type="text" id="crackme_uuid" name="crackme_uuid" placeholder="Enter crackme hex ID">
+                    </div>
+                    <button type="submit" class="btn active">Load crackme</button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</body>

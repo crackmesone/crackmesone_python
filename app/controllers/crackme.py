@@ -9,7 +9,8 @@ import bleach
 from app.models.crackme import (
     crackme_by_hexid, last_crackmes, crackme_create_prepare,
     crackme_insert, crackme_delete_by_hexid, crackme_by_user_and_name,
-    crackme_update_difficulty, crackme_update_quality, crackme_increment_downloads
+    crackme_update_difficulty, crackme_update_quality, crackme_increment_downloads,
+    crackme_update
 )
 from app.models.solution import solutions_by_crackme
 from app.models.comment import comments_by_crackme
@@ -47,6 +48,9 @@ def crackme_view(hexid):
         print(f"Error getting crackme data: {e}")
         abort(500)
 
+    # Get current user for edit permission check
+    usersess = session.get('name')
+
     return render_template('crackme/read.html',
                            info=crackme.get('info', ''),
                            name=crackme.get('name', ''),
@@ -62,7 +66,8 @@ def crackme_view(hexid):
                            nbcomments=crackme.get('nbcomments', 0),
                            nbdownloads=crackme.get('nbdownloads', 0),
                            difficulty=f"{crackme.get('difficulty', 0):.1f}",
-                           quality=f"{crackme.get('quality', 0):.1f}")
+                           quality=f"{crackme.get('quality', 0):.1f}",
+                           usersess=usersess)
 
 
 @crackme_bp.route('/lasts')
@@ -249,3 +254,81 @@ def upload_crackme_post():
                            submission_type='Crackme',
                            name=crackme['name'],
                            username=username)
+
+
+@crackme_bp.route('/crackme/<hexid>/edit', methods=['GET'])
+@login_required
+def edit_crackme_get(hexid):
+    """Display the crackme edit form."""
+    username = session.get('name')
+
+    try:
+        crackme = crackme_by_hexid(hexid)
+    except ErrNoResult:
+        abort(404)
+    except Exception as e:
+        print(f"Error getting crackme: {e}")
+        abort(500)
+
+    # Only author can edit their own crackme
+    if crackme.get('author') != username:
+        flash('You can only edit your own crackmes.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}')
+
+    return render_template('crackme/edit.html', crackme=crackme)
+
+
+@crackme_bp.route('/crackme/<hexid>/edit', methods=['POST'])
+@login_required
+def edit_crackme_post(hexid):
+    """Handle crackme edit submission."""
+    username = session.get('name')
+
+    try:
+        crackme = crackme_by_hexid(hexid)
+    except ErrNoResult:
+        abort(404)
+    except Exception as e:
+        print(f"Error getting crackme: {e}")
+        abort(500)
+
+    # Only author can edit their own crackme
+    if crackme.get('author') != username:
+        flash('You can only edit your own crackmes.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}')
+
+    # Get form data (name is not editable)
+    info = bleach.clean(request.form.get('info', ''))
+    lang = bleach.clean(request.form.get('lang', ''))
+    arch = bleach.clean(request.form.get('arch', ''))
+    platform = request.form.get('platform', '')
+
+    # Update the crackme
+    updates = {
+        'info': info,
+        'lang': lang,
+        'arch': arch,
+        'platform': platform
+    }
+
+    try:
+        changes = crackme_update(hexid, updates)
+    except Exception as e:
+        print(f"Error updating crackme: {e}")
+        abort(500)
+
+    if changes is None:
+        abort(404)
+
+    if changes:
+        # Send notification to the author about the edit
+        try:
+            notification_add(username, f"Your crackme '{crackme.get('name')}' has been updated.")
+        except Exception as e:
+            print(f"Notification error: {e}")
+
+        flash('Crackme updated successfully!', FLASH_SUCCESS)
+    else:
+        flash('No changes were made.', FLASH_SUCCESS)
+
+    return redirect(f'/crackme/{hexid}')

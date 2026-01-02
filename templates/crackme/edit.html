@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Edit crackme{% endblock %}
+{% block page_title %}Edit crackme{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <h2>Edit crackme: {{ crackme.name }}</h2>
+    <p>Update the details of your crackme. Note: You cannot change the name or uploaded file.</p>
+
+    <div class="divider"></div>
+    <form class="form-horizontal" action="/crackme/{{ crackme.hexid }}/edit" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="lang">Language</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="lang" name="lang" multiple="">
+                    <option value="C/C++" {{ 'selected' if crackme.lang == 'C/C++' else '' }}>C/C++</option>
+                    <option value="Assembler" {{ 'selected' if crackme.lang == 'Assembler' else '' }}>Assembler</option>
+                    <option value="Java" {{ 'selected' if crackme.lang == 'Java' else '' }}>Java</option>
+                    <option value="Go" {{ 'selected' if crackme.lang == 'Go' else '' }}>Go</option>
+                    <option value="Rust" {{ 'selected' if crackme.lang == 'Rust' else '' }}>Rust</option>
+                    <option value="WebAssembly" {{ 'selected' if crackme.lang == 'WebAssembly' else '' }}>WebAssembly</option>
+                    <option value="(Visual) Basic" {{ 'selected' if crackme.lang == '(Visual) Basic' else '' }}>(Visual) Basic</option>
+                    <option value="Borland Delphi" {{ 'selected' if crackme.lang == 'Borland Delphi' else '' }}>Borland Delphi</option>
+                    <option value="Turbo Pascal" {{ 'selected' if crackme.lang == 'Turbo Pascal' else '' }}>Turbo Pascal</option>
+                    <option value=".NET" {{ 'selected' if crackme.lang == '.NET' else '' }}>.NET</option>
+                    <option value="Unspecified/other" {{ 'selected' if crackme.lang == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="arch">Arch</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="arch" name="arch" multiple="">
+                    <option value="x86" {{ 'selected' if crackme.arch == 'x86' else '' }}>x86</option>
+                    <option value="x86-64" {{ 'selected' if crackme.arch == 'x86-64' else '' }}>x86-64</option>
+                    <option value="java" {{ 'selected' if crackme.arch == 'java' else '' }}>java</option>
+                    <option value="ARM" {{ 'selected' if crackme.arch == 'ARM' else '' }}>ARM</option>
+                    <option value="MIPS" {{ 'selected' if crackme.arch == 'MIPS' else '' }}>MIPS</option>
+                    <option value="RISC-V" {{ 'selected' if crackme.arch == 'RISC-V' else '' }}>RISC-V</option>
+                    <option value="other" {{ 'selected' if crackme.arch == 'other' else '' }}>other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="platform">Platform</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="platform" name="platform" multiple="">
+                    <option value="Mac OS X" {{ 'selected' if crackme.platform == 'Mac OS X' else '' }}>Mac OS X</option>
+                    <option value="Multiplatform" {{ 'selected' if crackme.platform == 'Multiplatform' else '' }}>Multiplatform</option>
+                    <option value="Unix/linux etc." {{ 'selected' if crackme.platform == 'Unix/linux etc.' else '' }}>Unix/linux etc.</option>
+                    <option value="Windows" {{ 'selected' if crackme.platform == 'Windows' else '' }}>Windows</option>
+                    <option value="Android" {{ 'selected' if crackme.platform == 'Android' else '' }}>Android</option>
+                    <option value="iOS" {{ 'selected' if crackme.platform == 'iOS' else '' }}>iOS</option>
+                    <option value="Unspecified/other" {{ 'selected' if crackme.platform == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="info">Description</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <textarea class="form-input" id="info" name="info" placeholder="Description" rows="5">{{ crackme.info }}</textarea>
+            </div>
+        </div>
+        <div class="form-group" style="margin-top: 20px;">
+            <div class="col-3 col-sm-12"></div>
+            <div class="col-9 col-sm-12">
+                <input type="submit" class="btn active" value="Save changes">
+                <a href="/crackme/{{ crackme.hexid }}" class="btn" style="margin-left: 10px;">Cancel</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}
