@@ -2,9 +2,10 @@
 Comment controller - Posting comments.
 """
 
+import re
 from flask import Blueprint, request, redirect, flash, session
 import bleach
-from app.models.comment import comment_create, comment_by_id, comment_set_spoiler
+from app.models.comment import comment_create, comment_by_id, comment_set_spoiler, get_thread_participants
 from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
@@ -13,6 +14,22 @@ from app.services.limiter import limit
 from app.services.discord import notify_new_comment, notify_spoiler_toggle
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.controllers.decorators import login_required
+
+# Regex to match @mentions (alphanumeric usernames, underscores, hyphens)
+MENTION_PATTERN = re.compile(r'@([a-zA-Z0-9_-]+)')
+
+
+def parse_mentions(text):
+    """Extract @mentioned usernames from text.
+
+    Args:
+        text: Comment text to parse
+
+    Returns:
+        Set of mentioned usernames (without @ symbol)
+    """
+    matches = MENTION_PATTERN.findall(text)
+    return set(matches)
 
 comment_bp = Blueprint('comment', __name__)
 
@@ -52,16 +69,43 @@ def leave_comment(hexid):
     except Exception as e:
         print(f"Failed to increment comment count: {e}")
 
-    # Send notification to crackme author and Discord
+    # Send notification to crackme author and handle @mentions
     try:
         crackme = crackme_by_hexid(hexid)
-        if crackme.get('author') != username:
+        crackme_author = crackme.get('author')
+        crackme_name = crackme['name']
+
+        # Notify crackme author (if not the commenter)
+        if crackme_author != username:
             notification_add(
-                crackme['author'],
-                f"New comment on your crackme '{crackme['name']}' by: {username}"
+                crackme_author,
+                f"New comment on your crackme '{crackme_name}' by: {username}"
             )
+
+        # Handle @mentions
+        mentioned_users = parse_mentions(comment_text)
+        if mentioned_users:
+            # Get valid mention targets: crackme author + thread participants
+            thread_participants = get_thread_participants(hexid)
+            valid_targets = thread_participants | {crackme_author}
+
+            # Send notifications to valid mentioned users
+            for mentioned_user in mentioned_users:
+                # Skip if user mentioned themselves
+                if mentioned_user == username:
+                    continue
+                # Skip if already notified as crackme author
+                if mentioned_user == crackme_author:
+                    continue
+                # Only notify if user is a valid target
+                if mentioned_user in valid_targets:
+                    notification_add(
+                        mentioned_user,
+                        f"You were mentioned by {username} in a comment on '{crackme_name}'"
+                    )
+
         # Send Discord moderation notification
-        notify_new_comment(username, crackme['name'], hexid, comment_text)
+        notify_new_comment(username, crackme_name, hexid, comment_text)
     except Exception as e:
         print(f"Notification error: {e}")
 

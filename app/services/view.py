@@ -132,6 +132,33 @@ def register_filters(app):
         """Mark a value as safe (no HTML escaping)."""
         return Markup(value)
 
+    @app.template_filter('render_mentions')
+    def render_mentions(text):
+        """Convert @mentions to user profile links.
+
+        Args:
+            text: Comment text that may contain @mentions
+
+        Returns:
+            Markup with @mentions converted to links
+        """
+        if not text:
+            return text
+
+        # Escape HTML first to prevent XSS
+        from markupsafe import escape
+        escaped_text = str(escape(text))
+
+        # Replace @mentions with links
+        mention_pattern = re.compile(r'@([a-zA-Z0-9_-]+)')
+
+        def replace_mention(match):
+            username = match.group(1)
+            return f'<a href="/user/{username}">@{username}</a>'
+
+        result = mention_pattern.sub(replace_mention, escaped_text)
+        return Markup(result)
+
 
 def repopulate(fields, form_data, context):
     """Repopulate form fields in template context.
