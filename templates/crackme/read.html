@@ -327,18 +327,22 @@
     function getCurrentMention() {
         var pos = textarea.selectionStart;
         var text = textarea.value.substring(0, pos);
-        // Find @ that starts a mention (at start or after whitespace)
-        var atIndex = -1;
+
+        // Find the start of current word (after last whitespace or start)
+        var wordStart = 0;
         for (var i = text.length - 1; i >= 0; i--) {
-            if (text[i] === '@' && (i === 0 || /\s/.test(text[i - 1]))) {
-                atIndex = i;
+            if (/\s/.test(text[i])) {
+                wordStart = i + 1;
                 break;
             }
-            if (/\s/.test(text[i])) break; // Stop at whitespace
         }
-        if (atIndex === -1) return null;
-        var afterAt = text.substring(atIndex + 1);
-        return { start: atIndex, query: afterAt };
+
+        // Check if current word starts with @
+        if (text[wordStart] !== '@') return null;
+
+        // Everything after @ is the query
+        var query = text.substring(wordStart + 1);
+        return { start: wordStart, query: query };
     }
 
     textarea.addEventListener('input', function() {
