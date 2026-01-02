@@ -7,6 +7,7 @@ from app.models.user import user_by_name, user_by_mail, user_create
 from app.models.errors import ErrNoResult
 from app.services.passhash import hash_string
 from app.services.recaptcha import verify as verify_recaptcha
+from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, authorized_chars_only
 from app.controllers.decorators import anonymous_required
 
@@ -22,6 +23,7 @@ def register_get():
 
 @register_bp.route('/register', methods=['POST'])
 @anonymous_required
+@limit("10 per hour")
 def register_post():
     """Handle registration form submission."""
     # Check for brute force

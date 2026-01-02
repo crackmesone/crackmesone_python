@@ -11,6 +11,7 @@ from app.models.solution import solution_create, solutions_by_user_and_crackme
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
+from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS
 from app.services.archive import is_archive_password_protected, is_pe_file
 from app.services.discord import notify_new_solution
@@ -43,6 +44,7 @@ def upload_solution_get(hexidcrackme):
 
 @solution_bp.route('/upload/solution/<hexidcrackme>', methods=['POST'])
 @login_required
+@limit("20 per day", key_func=lambda: session.get('name'))
 def upload_solution_post(hexidcrackme):
     """Handle solution upload."""
     username = session.get('name')

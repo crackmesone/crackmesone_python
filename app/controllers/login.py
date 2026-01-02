@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, request, redirect, flash, session
 from app.models.user import user_by_name
 from app.models.errors import ErrNoResult
 from app.services.passhash import match_string
+from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, FLASH_WARNING, authorized_chars_only
 from app.controllers.decorators import anonymous_required
 
@@ -28,6 +29,7 @@ def login_get():
 
 @login_bp.route('/login', methods=['POST'])
 @anonymous_required
+@limit("20 per hour")
 def login_post():
     """Handle login form submission."""
     name = request.form.get('name', '')

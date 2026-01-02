@@ -16,6 +16,10 @@
         "SiteKey": "your-recaptcha-site-key",
         "Secret": "your-recaptcha-secret"
     },
+    "RateLimiter": {
+        "Enabled": true,
+        "StorageUri": "memory://"
+    },
     "Discord": {
         "Enabled": false,
         "WebhookPublic": "your-public-discord-webhook-url",
