@@ -1819,7 +1819,7 @@ def deletecrackme(current_user):
 @reviewer_bp.route('/delcomment', methods=['GET', 'POST'])
 @admin_required
 def delcomment(current_user):
-    """Delete comments on a crackme (admin only)."""
+    """Manage comments on a crackme - delete or toggle spoiler (admin only)."""
     crackme_uuid = None
     error = None
 
