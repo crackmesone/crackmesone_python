@@ -52,10 +52,12 @@ def crackme_view(hexid):
     # Get current user for edit permission check
     usersess = session.get('name')
 
-    # Build mention targets for @mention autocomplete (author + commenters)
+    # Build mention targets for @mention autocomplete (author + commenters + solution authors)
     mention_targets = {crackme.get('author', '')}
     for comment in comments:
         mention_targets.add(comment.get('author', ''))
+    for solution in solutions:
+        mention_targets.add(solution.get('author', ''))
     mention_targets.discard('')  # Remove empty strings
     mention_targets = sorted(mention_targets)  # Sort alphabetically
 

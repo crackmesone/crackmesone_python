@@ -111,6 +111,27 @@ def solutions_by_crackme(crackme_object_id):
     }))
 
 
+def get_solution_authors(crackme_hexid):
+    """Get all unique usernames who have submitted solutions for a crackme.
+
+    Args:
+        crackme_hexid: Hex ID of the crackme
+
+    Returns:
+        Set of usernames who have submitted solutions
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('solution')
+    solutions = collection.find(
+        {'crackmehexid': crackme_hexid, 'visible': True},
+        {'author': 1}
+    )
+
+    return set(solution['author'] for solution in solutions)
+
+
 def solution_create(info, username, crackme_hexid):
     """Create a new solution."""
     if not check_connection():

@@ -6,6 +6,7 @@ import re
 from flask import Blueprint, request, redirect, flash, session
 import bleach
 from app.models.comment import comment_create, comment_by_id, comment_set_spoiler, get_thread_participants
+from app.models.solution import get_solution_authors
 from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
@@ -85,9 +86,10 @@ def leave_comment(hexid):
         # Handle @mentions
         mentioned_users = parse_mentions(comment_text)
         if mentioned_users:
-            # Get valid mention targets: crackme author + thread participants
+            # Get valid mention targets: crackme author + thread participants + solution authors
             thread_participants = get_thread_participants(hexid)
-            valid_targets = thread_participants | {crackme_author}
+            solution_authors = get_solution_authors(hexid)
+            valid_targets = thread_participants | solution_authors | {crackme_author}
 
             # Send notifications to valid mentioned users
             for mentioned_user in mentioned_users:
