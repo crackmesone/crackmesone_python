@@ -4,6 +4,57 @@ Archive service for validating uploaded archive files.
 
 import zipfile
 import io
+import struct
+
+# PE file extensions (case-insensitive)
+PE_EXTENSIONS = {'.exe', '.dll', '.sys', '.scr', '.ocx', '.com', '.drv', '.cpl', '.efi'}
+
+
+def is_pe_file(filename: str, file_data: bytes) -> bool:
+    """Check if a file is a Windows PE (Portable Executable) file.
+
+    Checks both the file extension and the PE header magic bytes.
+
+    Args:
+        filename: The name of the file (used for extension check)
+        file_data: The binary content of the file
+
+    Returns:
+        True if the file appears to be a PE file, False otherwise
+    """
+    # Check file extension
+    if filename:
+        ext = filename.lower()
+        # Get extension (handle files like "file.exe" or just check suffix)
+        dot_idx = ext.rfind('.')
+        if dot_idx != -1:
+            ext = ext[dot_idx:]
+            if ext in PE_EXTENSIONS:
+                return True
+
+    # Check PE header magic bytes
+    if len(file_data) < 64:
+        return False
+
+    # Check for DOS MZ header
+    if file_data[0:2] != b'MZ':
+        return False
+
+    # Get PE header offset from DOS header (at offset 0x3C)
+    try:
+        pe_offset = struct.unpack('<I', file_data[0x3C:0x40])[0]
+
+        # Check if PE offset is reasonable
+        if pe_offset < 64 or pe_offset > len(file_data) - 4:
+            return False
+
+        # Check for PE signature
+        if file_data[pe_offset:pe_offset + 4] == b'PE\x00\x00':
+            return True
+    except (struct.error, IndexError):
+        pass
+
+    return False
 
 
 def is_archive_password_protected(file_data: bytes) -> bool:
