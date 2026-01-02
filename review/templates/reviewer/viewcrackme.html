@@ -51,19 +51,46 @@
                     <p>Review</p>
                 </h3>
 
-                <div class="form-group">
-                    <div class="col-3">Reject reason (optional)</div>
-                </div>
-
                 <form action="{{ url_for('reviewer.rejectcrackme') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{crackme.crackme_uuid}}">
-                    <input class="form-input" type="text" id="name" name="reject_reason" placeholder="Reason">
-                    <h3>
-                        <p></p>
-                    </h3>
-                    <button type="submit" class="btn active float-right">Reject</button>
+
+                    <div class="form-group">
+                        <label class="form-label">Reject reason</label>
+                        <select class="form-select" id="preset_reason_crackme" onchange="updateRejectReason('crackme')">
+                            <option value="">-- Select a reason or type custom --</option>
+                            <option value="This is commercial software or a game cheat, not an educational crackme">Commercial software / game cheat</option>
+                            <option value="File is corrupted or doesn't execute properly">File corrupted / doesn't run</option>
+                            <option value="File contains malware or suspicious code">Contains malware</option>
+                            <option value="Uses commercial packer/protector (Themida, VMProtect, etc.) which is not allowed">Commercial packer/protector</option>
+                            <option value="Password-protected archive - do NOT add a password, the server handles this automatically">Password-protected archive</option>
+                            <option value="Duplicate submission - you already have a crackme with this name pending or approved">Duplicate submission</option>
+                            <option value="File too large or archive contains unnecessary files">File size / unnecessary files</option>
+                            <option value="custom">Other (type custom reason below)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input class="form-input" type="text" id="reject_reason_crackme" name="reject_reason" placeholder="Custom reason (or selected reason appears here)">
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <button type="submit" class="btn active float-right">Reject</button>
+                    </div>
                 </form>
+
+                <script>
+                function updateRejectReason(type) {
+                    var select = document.getElementById('preset_reason_' + type);
+                    var input = document.getElementById('reject_reason_' + type);
+                    if (select.value && select.value !== 'custom') {
+                        input.value = select.value;
+                    } else if (select.value === 'custom') {
+                        input.value = '';
+                        input.focus();
+                    }
+                }
+                </script>
 
                 <form action="{{ url_for('reviewer.approvecrackme') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -47,19 +47,47 @@
                     <p>Review</p>
                 </h3>
 
-                <div class="form-group">
-                    <div class="col-3">Reject reason (optional)</div>
-                </div>
-
                 <form action="{{ url_for('reviewer.rejectsolution') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{solution.solution_uuid}}">
-                    <input class="form-input" type="text" id="name" name="reject_reason" placeholder="Reason">
-                    <h3>
-                        <p></p>
-                    </h3>
-                    <button type="submit" class="btn active float-right">Reject</button>
+
+                    <div class="form-group">
+                        <label class="form-label">Reject reason</label>
+                        <select class="form-select" id="preset_reason_solution" onchange="updateRejectReason('solution')">
+                            <option value="">-- Select a reason or type custom --</option>
+                            <option value="Not a valid solution or writeup - does not explain how to solve the crackme">Not a valid solution</option>
+                            <option value="Missing or insufficient explanation - please describe your approach and methodology">Missing explanation</option>
+                            <option value="Solution file is corrupted or cannot be opened">File corrupted</option>
+                            <option value="Patched binary is not allowed - please provide a writeup explaining the solution">Patched binary</option>
+                            <option value="Duplicate submission - you already submitted a solution for this crackme">Duplicate submission</option>
+                            <option value="Solution contains only the flag/password without explanation">No writeup, only flag</option>
+                            <option value="Writeup is for a different crackme">Wrong crackme</option>
+                            <option value="Password-protected archive - do NOT add a password, the server handles this automatically">Password-protected archive</option>
+                            <option value="custom">Other (type custom reason below)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <input class="form-input" type="text" id="reject_reason_solution" name="reject_reason" placeholder="Custom reason (or selected reason appears here)">
+                    </div>
+
+                    <div style="margin-top: 15px;">
+                        <button type="submit" class="btn active float-right">Reject</button>
+                    </div>
                 </form>
+
+                <script>
+                function updateRejectReason(type) {
+                    var select = document.getElementById('preset_reason_' + type);
+                    var input = document.getElementById('reject_reason_' + type);
+                    if (select.value && select.value !== 'custom') {
+                        input.value = select.value;
+                    } else if (select.value === 'custom') {
+                        input.value = '';
+                        input.focus();
+                    }
+                }
+                </script>
 
                 <form action="{{ url_for('reviewer.approvesolution') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
