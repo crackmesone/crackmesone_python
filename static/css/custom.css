@@ -107,10 +107,20 @@ background: #797979;
     background: rgb(49, 49, 49);
 }
 .table td {
-        border-bottom: 0rem solid #f0f1f4;
+    border-bottom: 0rem solid #f0f1f4;
 }
 .table th {
-        border-bottom: 0rem solid #727e96;
+    border-bottom: 0rem solid #727e96;
+}
+
+/* RESPONSIVE TABLE - horizontal scroll on overflow */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.table-responsive .table {
+    width: 100%;
+    min-width: 800px;
 }
 .bar .bar-item {
         background: #9acc14;
