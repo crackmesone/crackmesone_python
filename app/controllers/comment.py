@@ -9,6 +9,7 @@ from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
+from app.services.limiter import limit
 from app.services.discord import notify_new_comment, notify_spoiler_toggle
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.controllers.decorators import login_required
@@ -18,6 +19,7 @@ comment_bp = Blueprint('comment', __name__)
 
 @comment_bp.route('/comment/<hexid>', methods=['POST'])
 @login_required
+@limit("30 per hour")
 def leave_comment(hexid):
     """Post a comment on a crackme."""
     username = session.get('name')

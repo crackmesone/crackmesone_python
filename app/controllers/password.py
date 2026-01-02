@@ -5,6 +5,7 @@ Password controller - Change password.
 from flask import Blueprint, render_template, request, session
 from app.models.user import user_by_name, update_user_password
 from app.services.passhash import hash_string, match_string
+from app.services.limiter import limit
 from app.controllers.decorators import login_required
 
 password_bp = Blueprint('password', __name__)
@@ -19,6 +20,7 @@ def change_password_get():
 
 @password_bp.route('/change-password', methods=['POST'])
 @login_required
+@limit("5 per hour")
 def change_password_post():
     """Handle password change."""
     username = session.get('name')

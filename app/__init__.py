@@ -11,6 +11,7 @@ from flask_wtf.csrf import CSRFProtect
 from app.services.database import init_db
 from app.services.session import init_session
 from app.services.recaptcha import init_recaptcha
+from app.services.limiter import init_limiter
 from app.services.discord import init_discord
 from app.services.view import register_filters
 
@@ -46,6 +47,7 @@ def create_app(config_path=None):
     init_db(app, config['Database'])
     init_session(app, config['Session'])
     init_recaptcha(app, config['Recaptcha'])
+    init_limiter(app, config.get('RateLimiter', {}))
     init_discord(app, config.get('Discord'))
 
     # Register blueprints

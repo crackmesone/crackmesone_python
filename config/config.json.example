@@ -16,6 +16,11 @@
         "SiteKey": "your-recaptcha-site-key",
         "Secret": "your-recaptcha-secret"
     },
+    "RateLimiter": {
+        "Enabled": true,
+        "StorageUri": "memory://",
+        "DefaultLimits": ["200 per day", "50 per hour"]
+    },
     "Discord": {
         "Enabled": false,
         "WebhookPublic": "your-public-discord-webhook-url",

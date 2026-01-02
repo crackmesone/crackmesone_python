@@ -18,6 +18,7 @@ from app.models.rating import rating_difficulty_create, rating_quality_create, r
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
+from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.services.archive import is_archive_password_protected
 from app.services.discord import notify_new_crackme
@@ -126,6 +127,7 @@ def upload_crackme_get():
 
 @crackme_bp.route('/upload/crackme', methods=['POST'])
 @login_required
+@limit("10 per day")
 def upload_crackme_post():
     """Handle crackme upload."""
     username = session.get('name')
