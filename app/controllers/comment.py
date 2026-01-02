@@ -9,7 +9,7 @@ from app.models.crackme import crackme_by_hexid, crackme_increment_comments
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
-from app.services.discord import notify_new_comment
+from app.services.discord import notify_new_comment, notify_spoiler_toggle
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
 from app.controllers.decorators import login_required
 
@@ -102,6 +102,18 @@ def toggle_spoiler(comment_id):
         print(f"Error toggling spoiler: {e}")
         flash('Failed to update spoiler status.', FLASH_ERROR)
         return redirect(f'/crackme/{crackme_hexid}')
+
+    # Send Discord moderation notification
+    try:
+        notify_spoiler_toggle(
+            username,
+            crackme['name'],
+            crackme_hexid,
+            comment.get('author', 'Unknown'),
+            new_spoiler
+        )
+    except Exception as e:
+        print(f"Discord notification error: {e}")
 
     if new_spoiler:
         flash('Comment marked as spoiler.', FLASH_SUCCESS)
