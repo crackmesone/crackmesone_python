@@ -329,3 +329,89 @@ def notify_spoiler_toggle(username: str, crackme_name: str, crackme_hexid: str,
         "timestamp": timestamp,
     }
     return send_moderation_notification(embed)
+
+
+def notify_password_reset_request(email: str) -> bool:
+    """Send notification when someone requests a password reset.
+
+    Sent to MODERATION channel for monitoring.
+
+    Args:
+        email: The email address that requested reset
+
+    Returns:
+        True if notification was sent successfully
+    """
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+
+    # Orange color for password reset requests
+    color = 16744448
+
+    embed = {
+        "title": "Password Reset Requested",
+        "description": "A user has requested a password reset link",
+        "color": color,
+        "fields": [
+            {
+                "name": "Email",
+                "value": email,
+                "inline": True
+            }
+        ],
+        "footer": {
+            "text": "CrackMes.One",
+        },
+        "timestamp": timestamp,
+    }
+    return send_moderation_notification(embed)
+
+
+def notify_password_reset_complete(username: str, email: str) -> bool:
+    """Send notification when someone completes a password reset.
+
+    Sent to MODERATION channel for monitoring.
+
+    Args:
+        username: The username whose password was reset
+        email: The email address associated with the account
+
+    Returns:
+        True if notification was sent successfully
+    """
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+
+    # Green color for successful reset
+    color = 65280
+
+    embed = {
+        "title": "Password Reset Completed",
+        "description": "A user has successfully reset their password",
+        "color": color,
+        "fields": [
+            {
+                "name": "User",
+                "value": f"[{username}]({get_base_url()}/user/{username})",
+                "inline": True
+            },
+            {
+                "name": "Email",
+                "value": email,
+                "inline": True
+            }
+        ],
+        "footer": {
+            "text": "CrackMes.One",
+        },
+        "timestamp": timestamp,
+    }
+    return send_moderation_notification(embed)

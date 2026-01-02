@@ -13,6 +13,7 @@ from app.services.session import init_session
 from app.services.recaptcha import init_recaptcha
 from app.services.limiter import init_limiter
 from app.services.discord import init_discord
+from app.services.email import configure as configure_email
 from app.services.view import register_filters
 
 
@@ -49,6 +50,11 @@ def create_app(config_path=None):
     init_recaptcha(app, config['Recaptcha'])
     init_limiter(app, config.get('RateLimiter', {}))
     init_discord(app, config.get('Discord'))
+
+    # Initialize email service if configured
+    email_config = config.get('Email', {})
+    if email_config.get('Enabled', False):
+        configure_email(email_config)
 
     # Register blueprints
     from app.controllers import register_blueprints

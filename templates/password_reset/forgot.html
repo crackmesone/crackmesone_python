@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Forgot Password{% endblock %}
+{% block page_title %}Forgot Password{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="columns" style="justify-content: center;">
+        <div class="column col-6 col-xs-12 panel-input">
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
+            <form class="form-horizontal" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="email">Email</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="email" id="email" name="email" placeholder="your@email.com" required>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                    <a href="/login" class="btn active">Back to Login</a>
+                    <input type="submit" value="Send Reset Link" class="btn active">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}{% endblock %}
