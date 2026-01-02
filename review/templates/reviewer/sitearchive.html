@@ -130,9 +130,11 @@
         var progressSteps = {
             'Starting...': 5,
             'Initializing...': 10,
-            'Copying crackme files...': 30,
-            'Copying solution files...': 50,
-            'Exporting database...': 70,
+            'Exporting crackmes database...': 20,
+            'Exporting solutions database...': 30,
+            'Exporting comments database...': 40,
+            'Copying crackme files...': 55,
+            'Copying solution files...': 70,
             'Creating zip archive...': 90
         };
 
@@ -194,6 +196,11 @@
                 statusMessage.innerText = step;
                 var progress = progressSteps[step] || 50;
                 progressBar.style.width = progress + '%';
+
+                // Ensure polling continues
+                if (!pollingInterval) {
+                    pollingInterval = setInterval(pollStatus, 1000);
+                }
             }
         }
 

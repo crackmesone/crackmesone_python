@@ -2542,6 +2542,8 @@ def set_archive_status(status, **kwargs):
     with _archive_lock:
         with open(ARCHIVE_STATUS_FILE, 'w') as f:
             json.dump(data, f)
+            f.flush()
+            os.fsync(f.fileno())
 
 
 def clear_archive_status():
@@ -2581,6 +2583,7 @@ def create_site_archive_background(requesting_user):
     Updates status file as it progresses.
     """
     import zipfile
+    from app.services.database import get_db
 
     # Create archive directory if it doesn't exist
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
@@ -2591,11 +2594,40 @@ def create_site_archive_background(requesting_user):
     archive_folder = os.path.join(ARCHIVE_DIR, archive_name)
 
     try:
-        set_archive_status('running', step='Initializing...', filename=None)
+        set_archive_status('running', step='Initializing...')
 
         # Create the archive folder structure
         os.makedirs(archive_folder, exist_ok=True)
         os.makedirs(os.path.join(archive_folder, 'database'), exist_ok=True)
+
+        # Get fresh database connection for this thread
+        db = get_db()
+        if db is None:
+            raise RuntimeError("Database connection not available")
+
+        # Dump database tables as JSON first (excluding user info)
+        set_archive_status('running', step='Exporting crackmes database...')
+        crackmes = list(db.crackme.find({}))
+        for c in crackmes:
+            c['_id'] = str(c['_id'])
+        with open(os.path.join(archive_folder, 'database', 'crackmes.json'), 'w') as f:
+            json.dump(crackmes, f, indent=2, default=str)
+
+        set_archive_status('running', step='Exporting solutions database...')
+        solutions = list(db.solution.find({}))
+        for s in solutions:
+            s['_id'] = str(s['_id'])
+            if 'crackmeid' in s:
+                s['crackmeid'] = str(s['crackmeid'])
+        with open(os.path.join(archive_folder, 'database', 'solutions.json'), 'w') as f:
+            json.dump(solutions, f, indent=2, default=str)
+
+        set_archive_status('running', step='Exporting comments database...')
+        comments = list(db.comment.find({}))
+        for c in comments:
+            c['_id'] = str(c['_id'])
+        with open(os.path.join(archive_folder, 'database', 'comments.json'), 'w') as f:
+            json.dump(comments, f, indent=2, default=str)
 
         # Copy crackme files
         set_archive_status('running', step='Copying crackme files...')
@@ -2610,33 +2642,6 @@ def create_site_archive_background(requesting_user):
         solution_dst = os.path.join(archive_folder, 'solution')
         if os.path.exists(solution_src):
             shutil.copytree(solution_src, solution_dst)
-
-        # Dump database tables as JSON (excluding user info)
-        set_archive_status('running', step='Exporting database...')
-        db = g_crackmesone_db
-
-        # Dump crackmes
-        crackmes = list(db.crackme.find({}))
-        for c in crackmes:
-            c['_id'] = str(c['_id'])
-        with open(os.path.join(archive_folder, 'database', 'crackmes.json'), 'w') as f:
-            json.dump(crackmes, f, indent=2, default=str)
-
-        # Dump solutions
-        solutions = list(db.solution.find({}))
-        for s in solutions:
-            s['_id'] = str(s['_id'])
-            if 'crackmeid' in s:
-                s['crackmeid'] = str(s['crackmeid'])
-        with open(os.path.join(archive_folder, 'database', 'solutions.json'), 'w') as f:
-            json.dump(solutions, f, indent=2, default=str)
-
-        # Dump comments
-        comments = list(db.comment.find({}))
-        for c in comments:
-            c['_id'] = str(c['_id'])
-        with open(os.path.join(archive_folder, 'database', 'comments.json'), 'w') as f:
-            json.dump(comments, f, indent=2, default=str)
 
         # Create zip archive
         set_archive_status('running', step='Creating zip archive...')
