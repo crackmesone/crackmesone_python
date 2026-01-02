@@ -3,6 +3,7 @@ Comment controller - Posting comments.
 """
 
 import re
+from html import escape as html_escape
 from flask import Blueprint, request, redirect, flash, session
 import bleach
 from app.models.comment import comment_create, comment_by_id, comment_set_spoiler, get_thread_participants
@@ -80,7 +81,7 @@ def leave_comment(hexid):
         if crackme_author != username:
             notification_add(
                 crackme_author,
-                f"New comment on your crackme '{crackme_name}' by: {username}"
+                f"New comment on your crackme '<a href=\"/crackme/{hexid}\">{html_escape(crackme_name)}</a>' by: <a href=\"/user/{html_escape(username)}\">{html_escape(username)}</a>"
             )
 
         # Handle @mentions
@@ -103,7 +104,7 @@ def leave_comment(hexid):
                 if mentioned_user in valid_targets:
                     notification_add(
                         mentioned_user,
-                        f"You were mentioned by {username} in a comment on '{crackme_name}'"
+                        f"You were mentioned by <a href=\"/user/{html_escape(username)}\">{html_escape(username)}</a> in a comment on '<a href=\"/crackme/{hexid}\">{html_escape(crackme_name)}</a>'"
                     )
 
         # Send Discord moderation notification

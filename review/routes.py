@@ -13,6 +13,7 @@ from flask import (
     url_for, abort, send_file, session
 )
 from functools import wraps
+from html import escape as html_escape
 import datetime
 from datetime import timezone
 import hashlib
@@ -759,9 +760,9 @@ def reject_pending_crackme(file_loc, reject_reason=None):
             os.remove(file_path)
 
         # Notify author
-        notif_text = f"Your crackme '{crackme['name']}' has been rejected!"
+        notif_text = f"Your crackme '{html_escape(crackme['name'])}' has been rejected!"
         if reject_reason:
-            notif_text += f" Reason: {reject_reason}"
+            notif_text += f" Reason: {html_escape(reject_reason)}"
         send_user_notification(crackme["author"], notif_text)
 
         return True, f"Crackme '{crackme['name']}' rejected successfully"
@@ -810,9 +811,9 @@ def reject_pending_solution(file_loc, reject_reason=None):
             os.remove(file_path)
 
         # Notify author
-        notif_text = f"Your solution for '{crackme_name}' has been rejected!"
+        notif_text = f"Your solution for '{html_escape(crackme_name)}' has been rejected!"
         if reject_reason:
-            notif_text += f" Reason: {reject_reason}"
+            notif_text += f" Reason: {html_escape(reject_reason)}"
         send_user_notification(solution["author"], notif_text)
 
         return True, f"Solution for '{crackme_name}' rejected successfully"
@@ -872,7 +873,7 @@ def approve_pending_crackme(file_loc):
         # Notify author
         send_user_notification(
             crackme["author"],
-            f"Your crackme '{crackme['name']}' has been accepted!"
+            f"Your crackme '<a href=\"/crackme/{crackme['hexid']}\">{html_escape(crackme['name'])}</a>' has been accepted!"
         )
 
         return True, f"Crackme '{crackme['name']}' approved successfully"
@@ -940,14 +941,14 @@ def approve_pending_solution(file_loc):
         # Notify solution author
         send_user_notification(
             solution["author"],
-            f"Your solution for '{crackme_name}' has been accepted!"
+            f"Your solution for '<a href=\"/crackme/{crackme['hexid']}\">{html_escape(crackme_name)}</a>' has been accepted!"
         )
 
         # Notify crackme author
         send_user_notification(
             crackme["author"],
-            f"A new solution for your crackme '{crackme_name}' "
-            f"has been submitted by: {solution['author']}"
+            f"A new solution for your crackme '<a href=\"/crackme/{crackme['hexid']}\">{html_escape(crackme_name)}</a>' "
+            f"has been submitted by: <a href=\"/user/{html_escape(solution['author'])}\">{html_escape(solution['author'])}</a>"
         )
 
         return True, f"Solution for '{crackme_name}' approved successfully"
@@ -1928,7 +1929,7 @@ def editcrackme(current_user):
                                 change_summary += f" and {len(changes) - 3} more"
                             send_user_notification(
                                 crackme_obj['author'],
-                                f"Your crackme '{crackme_obj.get('name')}' has been updated by an admin: {change_summary}"
+                                f"Your crackme '<a href=\"/crackme/{crackme_obj.get('hexid')}\">{html_escape(crackme_obj.get('name'))}</a>' has been updated by an admin: {html_escape(change_summary)}"
                             )
                         except Exception as e:
                             print(f"Notification error: {e}")

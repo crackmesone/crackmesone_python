@@ -3,6 +3,7 @@ Crackme controller - Crackme viewing and uploading.
 """
 
 import os
+from html import escape as html_escape
 from flask import Blueprint, render_template, request, redirect, flash, session, abort
 from werkzeug.utils import secure_filename
 import bleach
@@ -252,7 +253,7 @@ def upload_crackme_post():
 
     # Send notification
     try:
-        notification_add(username, f"Crackme '{crackme['name']}' added, waiting for approval!")
+        notification_add(username, f"Crackme '{html_escape(crackme['name'])}' added, waiting for approval!")
     except Exception as e:
         print(f"Notification error: {e}")
 
@@ -335,7 +336,7 @@ def edit_crackme_post(hexid):
     if changes:
         # Send notification to the author about the edit
         try:
-            notification_add(username, f"Your crackme '{crackme.get('name')}' has been updated.")
+            notification_add(username, f"Your crackme '<a href=\"/crackme/{hexid}\">{html_escape(crackme.get('name'))}</a>' has been updated.")
         except Exception as e:
             print(f"Notification error: {e}")
 
