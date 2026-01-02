@@ -32,11 +32,37 @@
         <div class="toast toast-error" style="margin-bottom: 15px;">{{ error }}</div>
         {% endif %}
 
-        {% if download_file %}
-        <div class="toast toast-primary" style="margin-bottom: 15px;">
-            <a href="{{ url_for('reviewer.downloadarchive', filename=download_file) }}" class="btn btn-primary">Download {{ download_file }}</a>
+        <!-- Status display for archive creation -->
+        <div id="archive-status" style="display: none; margin-bottom: 15px;">
+            <div class="toast toast-primary">
+                <div style="display: flex; align-items: center;">
+                    <div class="loading loading-sm" style="margin-right: 10px;"></div>
+                    <span id="status-message">Creating archive...</span>
+                </div>
+                <div style="margin-top: 10px;">
+                    <div class="bar">
+                        <div id="progress-bar" class="bar-item" role="progressbar" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
+
+        <!-- Completed status display -->
+        <div id="archive-completed" style="display: none; margin-bottom: 15px;">
+            <div class="toast toast-success">
+                <span id="completed-message">Archive created successfully!</span>
+                <a id="download-link" href="#" class="btn btn-primary btn-sm" style="margin-left: 10px;">Download</a>
+                <button class="btn btn-sm" onclick="location.reload();">Refresh Page</button>
+            </div>
+        </div>
+
+        <!-- Error status display -->
+        <div id="archive-error" style="display: none; margin-bottom: 15px;">
+            <div class="toast toast-error">
+                <span id="error-message">An error occurred</span>
+                <button class="btn btn-sm" onclick="location.reload();">Refresh Page</button>
+            </div>
+        </div>
 
         <div class="columns panel-background" style="margin-bottom: 20px;">
             <div class="column col-12">
@@ -50,10 +76,10 @@
                     <li><code>database/solutions.json</code> - Solution database entries</li>
                     <li><code>database/comments.json</code> - Comment database entries</li>
                 </ul>
-                <form action="{{ url_for('reviewer.sitearchive') }}" method="POST" style="margin-top: 15px;">
+                <form id="create-archive-form" action="{{ url_for('reviewer.sitearchive') }}" method="POST" style="margin-top: 15px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="create">
-                    <button type="submit" class="btn active" onclick="this.disabled=true; this.innerText='Creating archive...'; this.form.submit();">Create New Archive</button>
+                    <button type="submit" id="create-btn" class="btn active">Create New Archive</button>
                 </form>
             </div>
         </div>
@@ -96,6 +122,126 @@
             </div>
         </div>
     </div>
+
+    <script>
+        var pollingInterval = null;
+        var statusUrl = "{{ url_for('reviewer.sitearchive_status') }}";
+        var downloadUrlBase = "{{ url_for('reviewer.downloadarchive', filename='PLACEHOLDER') }}".replace('PLACEHOLDER', '');
+
+        var progressSteps = {
+            'initializing': 10,
+            'copying_crackmes': 30,
+            'copying_solutions': 50,
+            'exporting_database': 70,
+            'creating_zip': 90,
+            'completed': 100
+        };
+
+        function updateStatusDisplay(data) {
+            var statusDiv = document.getElementById('archive-status');
+            var completedDiv = document.getElementById('archive-completed');
+            var errorDiv = document.getElementById('archive-error');
+            var createBtn = document.getElementById('create-btn');
+            var statusMessage = document.getElementById('status-message');
+            var progressBar = document.getElementById('progress-bar');
+
+            if (data.status === 'idle') {
+                statusDiv.style.display = 'none';
+                completedDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                createBtn.disabled = false;
+                createBtn.innerText = 'Create New Archive';
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            } else if (data.status === 'completed') {
+                statusDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                completedDiv.style.display = 'block';
+                createBtn.disabled = false;
+                createBtn.innerText = 'Create New Archive';
+
+                if (data.filename) {
+                    document.getElementById('download-link').href = downloadUrlBase + data.filename;
+                    document.getElementById('completed-message').innerText = 'Archive "' + data.filename + '" created successfully!';
+                }
+
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            } else if (data.status === 'error') {
+                statusDiv.style.display = 'none';
+                completedDiv.style.display = 'none';
+                errorDiv.style.display = 'block';
+                document.getElementById('error-message').innerText = data.error || 'An error occurred during archive creation';
+                createBtn.disabled = false;
+                createBtn.innerText = 'Create New Archive';
+
+                if (pollingInterval) {
+                    clearInterval(pollingInterval);
+                    pollingInterval = null;
+                }
+            } else {
+                // In progress
+                statusDiv.style.display = 'block';
+                completedDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                createBtn.disabled = true;
+                createBtn.innerText = 'Archive in progress...';
+
+                var stepMessages = {
+                    'initializing': 'Initializing archive...',
+                    'copying_crackmes': 'Copying crackme files...',
+                    'copying_solutions': 'Copying solution files...',
+                    'exporting_database': 'Exporting database...',
+                    'creating_zip': 'Creating zip archive...'
+                };
+
+                statusMessage.innerText = stepMessages[data.status] || data.status;
+                var progress = progressSteps[data.status] || 0;
+                progressBar.style.width = progress + '%';
+            }
+        }
+
+        function pollStatus() {
+            fetch(statusUrl)
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    updateStatusDisplay(data);
+                })
+                .catch(function(err) {
+                    console.error('Error polling status:', err);
+                });
+        }
+
+        function startPolling() {
+            if (!pollingInterval) {
+                pollStatus(); // Immediate first poll
+                pollingInterval = setInterval(pollStatus, 2000); // Poll every 2 seconds
+            }
+        }
+
+        // Handle form submission
+        document.getElementById('create-archive-form').addEventListener('submit', function(e) {
+            var createBtn = document.getElementById('create-btn');
+            createBtn.disabled = true;
+            createBtn.innerText = 'Starting...';
+
+            // Hide any previous status
+            document.getElementById('archive-completed').style.display = 'none';
+            document.getElementById('archive-error').style.display = 'none';
+
+            // Start polling after a short delay to allow the request to initiate
+            setTimeout(startPolling, 500);
+        });
+
+        // Check initial status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            pollStatus();
+        });
+    </script>
 </body>
 
 </html>

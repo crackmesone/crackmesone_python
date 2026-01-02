@@ -2511,7 +2511,46 @@ def _handle_change_password(current_user):
 # Site Archive
 # =============================================================================
 
+import threading
+from flask import jsonify
+
 ARCHIVE_DIR = os.path.join(CRACKMESONE_DIR, 'archive')
+ARCHIVE_STATUS_FILE = os.path.join(ARCHIVE_DIR, 'status.json')
+
+# Lock for thread-safe status file access
+_archive_lock = threading.Lock()
+
+
+def get_archive_status():
+    """Get current archive creation status."""
+    if not os.path.exists(ARCHIVE_STATUS_FILE):
+        return {'status': 'idle'}
+
+    try:
+        with open(ARCHIVE_STATUS_FILE, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {'status': 'idle'}
+
+
+def set_archive_status(status, **kwargs):
+    """Set archive creation status."""
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    data = {'status': status, 'updated_at': datetime.datetime.now().isoformat()}
+    data.update(kwargs)
+
+    with _archive_lock:
+        with open(ARCHIVE_STATUS_FILE, 'w') as f:
+            json.dump(data, f)
+
+
+def clear_archive_status():
+    """Clear archive status file."""
+    if os.path.exists(ARCHIVE_STATUS_FILE):
+        try:
+            os.remove(ARCHIVE_STATUS_FILE)
+        except Exception:
+            pass
 
 
 def get_archive_list():
@@ -2536,11 +2575,10 @@ def get_archive_list():
     return archives
 
 
-def create_site_archive():
-    """Create a full archive of the site (crackmes, solutions, database).
+def create_site_archive_background(requesting_user):
+    """Create a full archive of the site in a background thread.
 
-    Returns:
-        Tuple of (success: bool, message: str, filename: str or None)
+    Updates status file as it progresses.
     """
     import zipfile
 
@@ -2553,29 +2591,34 @@ def create_site_archive():
     archive_folder = os.path.join(ARCHIVE_DIR, archive_name)
 
     try:
+        set_archive_status('running', step='Initializing...', filename=None)
+
         # Create the archive folder structure
         os.makedirs(archive_folder, exist_ok=True)
         os.makedirs(os.path.join(archive_folder, 'database'), exist_ok=True)
 
         # Copy crackme files
+        set_archive_status('running', step='Copying crackme files...')
         crackme_src = os.path.join(CRACKMESONE_DIR, 'static', 'crackme')
         crackme_dst = os.path.join(archive_folder, 'crackme')
         if os.path.exists(crackme_src):
             shutil.copytree(crackme_src, crackme_dst)
 
         # Copy solution files
+        set_archive_status('running', step='Copying solution files...')
         solution_src = os.path.join(CRACKMESONE_DIR, 'static', 'solution')
         solution_dst = os.path.join(archive_folder, 'solution')
         if os.path.exists(solution_src):
             shutil.copytree(solution_src, solution_dst)
 
         # Dump database tables as JSON (excluding user info)
+        set_archive_status('running', step='Exporting database...')
         db = g_crackmesone_db
 
         # Dump crackmes
         crackmes = list(db.crackme.find({}))
         for c in crackmes:
-            c['_id'] = str(c['_id'])  # Convert ObjectId to string
+            c['_id'] = str(c['_id'])
         with open(os.path.join(archive_folder, 'database', 'crackmes.json'), 'w') as f:
             json.dump(crackmes, f, indent=2, default=str)
 
@@ -2596,6 +2639,7 @@ def create_site_archive():
             json.dump(comments, f, indent=2, default=str)
 
         # Create zip archive
+        set_archive_status('running', step='Creating zip archive...')
         zip_filename = f'{archive_name}.zip'
         zip_filepath = os.path.join(ARCHIVE_DIR, zip_filename)
 
@@ -2612,13 +2656,33 @@ def create_site_archive():
         # Get file size
         size_mb = round(os.path.getsize(zip_filepath) / (1024 * 1024), 2)
 
-        return True, f"Archive created successfully: {zip_filename} ({size_mb} MB)", zip_filename
+        # Mark as completed
+        set_archive_status(
+            'completed',
+            filename=zip_filename,
+            size_mb=size_mb,
+            message=f"Archive created successfully: {zip_filename} ({size_mb} MB)"
+        )
+
+        # Log the operation
+        log_reviewer_operation(
+            "create_site_archive", requesting_user,
+            {"filename": zip_filename, "size_mb": size_mb},
+            True
+        )
 
     except Exception as e:
         # Clean up on failure
         if os.path.exists(archive_folder):
             shutil.rmtree(archive_folder)
-        return False, f"Error creating archive: {str(e)}", None
+
+        set_archive_status('error', error=str(e))
+
+        log_reviewer_operation(
+            "create_site_archive", requesting_user,
+            {"error": str(e)},
+            False
+        )
 
 
 def delete_archive(filename):
@@ -2652,29 +2716,29 @@ def sitearchive(current_user):
     """Manage site archives (admin only)."""
     message = None
     error = None
-    download_file = None
 
     if request.method == 'POST':
         validate_csrf_token()
         action = request.form.get('action')
 
         if action == 'create':
-            success, msg, filename = create_site_archive()
-            if success:
-                message = msg
-                download_file = filename
-                log_reviewer_operation(
-                    "create_site_archive", current_user['username'],
-                    {"filename": filename},
-                    True
-                )
+            # Check if archive is already running
+            status = get_archive_status()
+            if status.get('status') == 'running':
+                error = "An archive is already being created. Please wait."
             else:
-                error = msg
-                log_reviewer_operation(
-                    "create_site_archive", current_user['username'],
-                    {"error": msg},
-                    False
+                # Clear any old status and start background thread
+                clear_archive_status()
+                set_archive_status('running', step='Starting...')
+
+                thread = threading.Thread(
+                    target=create_site_archive_background,
+                    args=(current_user['username'],)
                 )
+                thread.daemon = True
+                thread.start()
+
+                message = "Archive creation started. This page will update automatically."
 
         elif action == 'delete':
             filename = request.form.get('filename')
@@ -2694,7 +2758,13 @@ def sitearchive(current_user):
                     False
                 )
 
+        elif action == 'clear_status':
+            # Allow clearing stuck status
+            clear_archive_status()
+            message = "Status cleared."
+
     archives = get_archive_list()
+    status = get_archive_status()
 
     return render_template(
         'reviewer/sitearchive.html',
@@ -2703,8 +2773,16 @@ def sitearchive(current_user):
         archives=archives,
         message=message,
         error=error,
-        download_file=download_file
+        archive_status=status
     )
+
+
+@reviewer_bp.route('/sitearchive/status')
+@admin_required
+def sitearchive_status(current_user):
+    """Get archive creation status (JSON endpoint for polling)."""
+    status = get_archive_status()
+    return jsonify(status)
 
 
 @reviewer_bp.route('/downloadarchive/<filename>')

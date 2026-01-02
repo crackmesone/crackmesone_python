@@ -50,7 +50,8 @@ users.json
 .env
 review/review_operations.log
 review/users.json
-archive/
+archive/*
+!archive/.gitkeep
 
 # Testing
 .pytest_cache/
