@@ -83,7 +83,7 @@ def send_discord_log(operation_type, user, details, success):
                 "fields": [
                     {
                         "name": "Status",
-                        "value": "Success" if success else "Failed",
+                        "value": "✅ Success" if success else "❌ Failed",
                         "inline": True
                     },
                     {
