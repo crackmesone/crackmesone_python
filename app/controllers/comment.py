@@ -3,8 +3,9 @@ Comment controller - Posting comments.
 """
 
 import re
+import secrets
 from html import escape as html_escape
-from flask import Blueprint, request, redirect, flash, session
+from flask import Blueprint, request, redirect, flash, session, render_template
 import bleach
 from app.models.comment import comment_create, comment_by_id, comment_set_spoiler, get_thread_participants
 from app.models.solution import get_solution_authors
@@ -20,6 +21,12 @@ from app.controllers.decorators import login_required
 # Regex to match @mentions (only after whitespace or at start of text)
 # Valid username characters: alphanumeric, _-@.+
 MENTION_PATTERN = re.compile(r'(?:^|(?<=\s))@([a-zA-Z0-9_\-@.+]+)', re.MULTILINE)
+
+# In-memory store for spoiler tokens (comment_id -> token)
+# Tokens are lost on app restart, which is acceptable for this use case
+# Limited to MAX_SPOILER_TOKENS to prevent unbounded memory growth
+MAX_SPOILER_TOKENS = 100
+_spoiler_tokens = {}
 
 
 def parse_mentions(text):
@@ -60,11 +67,22 @@ def leave_comment(hexid):
 
     # Create comment
     try:
-        comment_create(comment_text, username, hexid, spoiler=is_spoiler)
+        comment = comment_create(comment_text, username, hexid, spoiler=is_spoiler)
+        comment_id = str(comment['_id'])
     except Exception as e:
         print(f"Error creating comment: {e}")
         flash('Comment creation failed. Please try again later.', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
+
+    # Generate in-memory spoiler token (only if not already marked as spoiler)
+    spoiler_token = None
+    if not is_spoiler:
+        # Evict oldest token if at capacity
+        if len(_spoiler_tokens) >= MAX_SPOILER_TOKENS:
+            oldest_key = next(iter(_spoiler_tokens))
+            del _spoiler_tokens[oldest_key]
+        spoiler_token = secrets.token_urlsafe(32)
+        _spoiler_tokens[comment_id] = spoiler_token
 
     # Increment comment count
     try:
@@ -110,7 +128,8 @@ def leave_comment(hexid):
 
         # Send Discord moderation notification
         notify_new_comment(username, crackme_name, hexid, comment_text,
-                          is_spoiler=is_spoiler)
+                          is_spoiler=is_spoiler, comment_id=comment_id,
+                          spoiler_token=spoiler_token)
     except Exception as e:
         print(f"Notification error: {e}")
 
@@ -188,3 +207,54 @@ def toggle_spoiler(comment_id):
         flash('Spoiler marking removed.', FLASH_SUCCESS)
 
     return redirect(f'/crackme/{crackme_hexid}')
+
+
+@comment_bp.route('/comment/<comment_id>/spoiler-token/<token>', methods=['GET'])
+def mark_spoiler_by_token(comment_id, token):
+    """Mark a comment as spoiler using a secret token.
+
+    This endpoint allows marking a comment as spoiler without authentication,
+    using a secure token stored in memory. Used for Discord "Mark as Spoiler" action.
+    Tokens are lost on app restart, which is acceptable for this use case.
+    """
+    # Check if token exists and matches
+    stored_token = _spoiler_tokens.get(comment_id)
+    if not stored_token or stored_token != token:
+        return render_template('comment/spoiler_marked.html',
+                             success=False,
+                             error="Invalid token, comment not found, or already marked as spoiler.")
+
+    # Remove token (single use)
+    del _spoiler_tokens[comment_id]
+
+    # Mark comment as spoiler
+    try:
+        comment = comment_by_id(comment_id)
+        if comment.get('spoiler'):
+            return render_template('comment/spoiler_marked.html',
+                                 success=False,
+                                 error="Comment is already marked as spoiler.")
+
+        comment_set_spoiler(comment_id, True)
+        crackme_hexid = comment.get('crackmehexid')
+
+        # Send Discord notification about the spoiler toggle
+        try:
+            crackme = crackme_by_hexid(crackme_hexid)
+            notify_spoiler_toggle(
+                'Discord Action',
+                crackme['name'],
+                crackme_hexid,
+                comment.get('author', 'Unknown'),
+                True
+            )
+        except Exception as e:
+            print(f"Discord notification error: {e}")
+
+        return render_template('comment/spoiler_marked.html',
+                             crackme_hexid=crackme_hexid,
+                             success=True)
+    except ErrNoResult:
+        return render_template('comment/spoiler_marked.html',
+                             success=False,
+                             error="Comment not found.")
