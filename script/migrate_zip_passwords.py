@@ -26,6 +26,10 @@ from pathlib import Path
 OLD_PASSWORD = "crackmes.de"
 NEW_PASSWORD = "crackmes.one"
 
+# Find zip/unzip commands
+UNZIP_CMD = shutil.which("unzip") or "/usr/bin/unzip"
+ZIP_CMD = shutil.which("zip") or "/usr/bin/zip"
+
 # Paths relative to project root
 STATIC_DIR = Path("static")
 CRACKME_DIR = STATIC_DIR / "crackme"
@@ -37,7 +41,7 @@ def is_valid_zip(zip_path: Path) -> bool:
     """Check if a file is a valid zip archive."""
     try:
         result = subprocess.run(
-            ["unzip", "-t", str(zip_path)],
+            [UNZIP_CMD, "-t", str(zip_path)],
             capture_output=True,
             timeout=30
         )
@@ -52,7 +56,7 @@ def test_zip_password(zip_path: Path, password: str) -> bool:
     """Test if a zip file can be opened with the given password."""
     try:
         result = subprocess.run(
-            ["unzip", "-t", "-P", password, str(zip_path)],
+            [UNZIP_CMD, "-t", "-P", password, str(zip_path)],
             capture_output=True,
             timeout=30
         )
@@ -86,7 +90,7 @@ def convert_zip(zip_path: Path, output_path: Path, dry_run: bool = False) -> boo
 
         # Extract with old password
         extract_result = subprocess.run(
-            ["unzip", "-P", OLD_PASSWORD, "-d", str(temp_path), str(zip_path)],
+            [UNZIP_CMD, "-P", OLD_PASSWORD, "-d", str(temp_path), str(zip_path)],
             capture_output=True
         )
 
@@ -110,7 +114,7 @@ def convert_zip(zip_path: Path, output_path: Path, dry_run: bool = False) -> boo
         # Create new zip with new password
         # We need to zip from within the temp directory to preserve relative paths
         zip_result = subprocess.run(
-            ["zip", "-r", "-P", NEW_PASSWORD, str(output_path.absolute())] +
+            [ZIP_CMD, "-r", "-P", NEW_PASSWORD, str(output_path.absolute())] +
             [item.name for item in extracted_items],
             cwd=str(temp_path),
             capture_output=True
@@ -211,6 +215,8 @@ def main():
     print(f"Old password: {OLD_PASSWORD}")
     print(f"New password: {NEW_PASSWORD}")
     print(f"Output directory: {OUTPUT_DIR.absolute()}")
+    print(f"Using unzip: {UNZIP_CMD}")
+    print(f"Using zip: {ZIP_CMD}")
     if args.dry_run:
         print("\n*** DRY RUN MODE - No files will be modified ***")
 
