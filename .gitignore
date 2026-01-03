@@ -53,6 +53,7 @@ review/users.json
 archive/*
 !archive/.gitkeep
 converted/
+backup/
 logs/
 
 # Testing

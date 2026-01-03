@@ -9,7 +9,9 @@ This script:
 4. Outputs converted files to converted/crackme or converted/solution folders
 
 Usage:
-    python script/migrate_zip_passwords.py [--dry-run]
+    python script/migrate_zip_passwords.py              # Dry run (default)
+    python script/migrate_zip_passwords.py --convert    # Actually convert files
+    python script/migrate_zip_passwords.py --migrate    # Move converted files to static/
 """
 
 import os
@@ -36,6 +38,7 @@ STATIC_DIR = Path("static")
 CRACKME_DIR = STATIC_DIR / "crackme"
 SOLUTION_DIR = STATIC_DIR / "solution"
 OUTPUT_DIR = Path("converted")
+BACKUP_DIR = Path("backup")
 
 
 def is_valid_zip(zip_path: Path) -> bool:
@@ -192,22 +195,77 @@ def process_directory(source_dir: Path, output_subdir: str, dry_run: bool = Fals
     return stats, file_results
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Convert zip passwords from crackmes.de to crackmes.one"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would be done without actually converting"
-    )
-    args = parser.parse_args()
+def migrate_files() -> int:
+    """Move converted files to static/, backing up originals first."""
+    print("=" * 60)
+    print("Migrate Converted Files")
+    print("=" * 60)
 
-    # Change to project root directory
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
-    os.chdir(project_root)
+    total_migrated = 0
+    total_failed = 0
 
+    for subdir in ["crackme", "solution"]:
+        converted_dir = OUTPUT_DIR / subdir
+        static_dir = STATIC_DIR / subdir
+        backup_subdir = BACKUP_DIR / subdir
+
+        if not converted_dir.exists():
+            print(f"\nNo converted files in {converted_dir}/")
+            continue
+
+        zip_files = sorted(converted_dir.glob("*.zip"))
+        if not zip_files:
+            print(f"\nNo converted files in {converted_dir}/")
+            continue
+
+        # Create backup directory
+        backup_subdir.mkdir(parents=True, exist_ok=True)
+
+        print(f"\nMigrating {len(zip_files)} files from {converted_dir}/")
+        print("-" * 60)
+
+        for converted_path in zip_files:
+            filename = converted_path.name
+            static_path = static_dir / filename
+            backup_path = backup_subdir / filename
+
+            print(f"  {filename}: ", end="", flush=True)
+
+            # Check if original exists
+            if not static_path.exists():
+                print(f"SKIPPED (original not found in {static_dir}/)")
+                total_failed += 1
+                continue
+
+            try:
+                # Backup original
+                shutil.copy2(static_path, backup_path)
+
+                # Copy converted to static
+                shutil.copy2(converted_path, static_path)
+
+                print(f"OK (backed up to {backup_subdir}/)")
+                total_migrated += 1
+            except Exception as e:
+                print(f"FAILED ({e})")
+                total_failed += 1
+
+    # Print summary
+    print("\n" + "=" * 60)
+    print("MIGRATION SUMMARY")
+    print("=" * 60)
+    print(f"  Migrated: {total_migrated}")
+    print(f"  Failed:   {total_failed}")
+
+    if total_migrated > 0:
+        print(f"\nBackups are in: {BACKUP_DIR.absolute()}/")
+        print(f"Converted files have been copied to: {STATIC_DIR.absolute()}/")
+
+    return 1 if total_failed > 0 else 0
+
+
+def run_conversion(dry_run: bool) -> int:
+    """Run the conversion process."""
     print("=" * 60)
     print("Zip Password Migration Script")
     print("=" * 60)
@@ -216,19 +274,19 @@ def main():
     print(f"Output directory: {OUTPUT_DIR.absolute()}")
     print(f"Using unzip: {UNZIP_CMD}")
     print(f"Using zip: {ZIP_CMD}")
-    if args.dry_run:
+    if dry_run:
         print("\n*** DRY RUN MODE - No files will be modified ***")
 
     # Create output directories
-    if not args.dry_run:
+    if not dry_run:
         (OUTPUT_DIR / "crackme").mkdir(parents=True, exist_ok=True)
         (OUTPUT_DIR / "solution").mkdir(parents=True, exist_ok=True)
 
     # Process crackmes
-    crackme_stats, crackme_results = process_directory(CRACKME_DIR, "crackme", args.dry_run)
+    crackme_stats, crackme_results = process_directory(CRACKME_DIR, "crackme", dry_run)
 
     # Process solutions
-    solution_stats, solution_results = process_directory(SOLUTION_DIR, "solution", args.dry_run)
+    solution_stats, solution_results = process_directory(SOLUTION_DIR, "solution", dry_run)
 
     # Print summary
     print("\n" + "=" * 60)
@@ -248,7 +306,7 @@ def main():
     total_failed = crackme_stats["failed"] + solution_stats["failed"]
 
     # Write log file (only in non-dry-run mode)
-    if not args.dry_run:
+    if not dry_run:
         log_data = {
             "timestamp": datetime.now().isoformat(),
             "old_password": OLD_PASSWORD,
@@ -265,7 +323,7 @@ def main():
 
         log_dir = Path("logs")
         log_dir.mkdir(exist_ok=True)
-        log_filename = f"migration_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        log_filename = f"conversion_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         log_path = log_dir / log_filename
 
         with open(log_path, "w") as f:
@@ -273,15 +331,44 @@ def main():
 
         print(f"\nLog written to: {log_path.absolute()}")
 
-    if total_converted > 0 and not args.dry_run:
-        print(f"Converted files are in: {OUTPUT_DIR.absolute()}/")
-        print("Review them and manually replace the originals when ready.")
+    if total_converted > 0 and not dry_run:
+        print(f"\nConverted files are in: {OUTPUT_DIR.absolute()}/")
+        print("Run with --migrate to move them to static/ (with backups).")
 
     if total_failed > 0:
         print(f"\nWarning: {total_failed} file(s) failed to convert!")
         return 1
 
     return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Convert zip passwords from crackmes.de to crackmes.one"
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--convert",
+        action="store_true",
+        help="Actually convert files (default is dry-run)"
+    )
+    group.add_argument(
+        "--migrate",
+        action="store_true",
+        help="Move converted files to static/, backing up originals to backup/"
+    )
+    args = parser.parse_args()
+
+    # Change to project root directory
+    script_dir = Path(__file__).parent
+    project_root = script_dir.parent
+    os.chdir(project_root)
+
+    if args.migrate:
+        return migrate_files()
+    else:
+        dry_run = not args.convert
+        return run_conversion(dry_run)
 
 
 if __name__ == "__main__":
