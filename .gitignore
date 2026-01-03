@@ -52,6 +52,8 @@ review/review_operations.log
 review/users.json
 archive/*
 !archive/.gitkeep
+converted/
+logs/
 
 # Testing
 .pytest_cache/
