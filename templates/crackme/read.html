@@ -212,7 +212,7 @@
                     <form action="/comment/{{ hexid }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div style="position: relative;">
-                            <textarea name="comment" id="comment" placeholder="An awesome comment" style="width: 100%;" rows="5"></textarea>
+                            <textarea name="comment" id="comment" placeholder="Leave a comment... use @username to mention others" style="width: 100%;" rows="5"></textarea>
                             <div id="mention-dropdown" class="mention-dropdown"></div>
                         </div>
                         <label class="form-checkbox" style="margin-top: 10px;">
