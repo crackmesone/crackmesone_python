@@ -245,7 +245,7 @@ def crackme_by_user_and_name(username, name, visible=True):
     return result
 
 
-def crackme_create(name, info, username, lang, arch, platform):
+def crackme_create(name, info, username, lang, arch, platform, size):
     """Create a new crackme."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -269,14 +269,15 @@ def crackme_create(name, info, username, lang, arch, platform):
         'nbsolutions': 0,
         'nbcomments': 0,
         'nbdownloads': 0,
-        'platform': platform
+        'platform': platform,
+        'size': size
     }
 
     collection.insert_one(crackme)
     return crackme
 
 
-def crackme_create_prepare(name, info, username, lang, arch, platform):
+def crackme_create_prepare(name, info, username, lang, arch, platform, size):
     """Prepare a crackme object without inserting it."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -299,7 +300,8 @@ def crackme_create_prepare(name, info, username, lang, arch, platform):
         'nbsolutions': 0,
         'nbcomments': 0,
         'nbdownloads': 0,
-        'platform': platform
+        'platform': platform,
+        'size': size
     }
 
 

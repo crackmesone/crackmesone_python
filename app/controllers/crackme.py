@@ -21,7 +21,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
-from app.services.archive import is_archive_password_protected
+from app.services.archive import is_archive_password_protected, is_archive, size_of_archive_contents
 from app.services.discord import notify_new_crackme
 from app.controllers.decorators import login_required
 
@@ -62,6 +62,16 @@ def crackme_view(hexid):
     mention_targets.discard('')  # Remove empty strings
     mention_targets = sorted(mention_targets)  # Sort alphabetically
 
+    if (size := crackme.get('size', 0) ) != 0: 
+        if size > 2**30:
+            size = f"{size / 2**30:.2f} GB"
+        elif size > 2**20:
+            size = f"{size / 2**20:.2f} MB"
+        elif size > 2**10:
+            size = f"{size / 2**10:.2f} KB"
+    else:
+        size = "-"
+
     return render_template('crackme/read.html',
                            info=crackme.get('info', ''),
                            name=crackme.get('name', ''),
@@ -79,6 +89,7 @@ def crackme_view(hexid):
                            nbdownloads=crackme.get('nbdownloads', 0),
                            difficulty=f"{crackme.get('difficulty', 0):.1f}",
                            quality=f"{crackme.get('quality', 0):.1f}",
+                           size=size,
                            usersess=usersess)
 
 
@@ -193,6 +204,16 @@ def upload_crackme_post():
     if is_archive_password_protected(file_data):
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
         return render_template('crackme/create.html')
+    
+    # Get size of challenge binary
+    # note: we get the size of all files in the archive, which *may* include readmes
+    # etc however they're likely negligible compared to the main binary
+    if is_archive(file_data):
+        if (size := size_of_archive_contents(file_data)) is None:
+            flash('Could not determine archive contents size. Please try again', FLASH_ERROR)
+            return render_template('crackme/create.html')
+    else: # assume its a single uncompressed file
+        size = len(file_data)
 
     # Check for duplicate pending submission
     try:
@@ -204,7 +225,7 @@ def upload_crackme_post():
 
     # Prepare crackme
     try:
-        crackme = crackme_create_prepare(name, info, username, lang, arch, platform)
+        crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size)
     except Exception as e:
         print(f"Error preparing crackme: {e}")
         abort(500)
