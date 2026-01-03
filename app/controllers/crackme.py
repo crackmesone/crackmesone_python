@@ -69,6 +69,8 @@ def crackme_view(hexid):
             size = f"{size / 2**20:.2f} MB"
         elif size > 2**10:
             size = f"{size / 2**10:.2f} KB"
+        else:
+            size = f"{size} B"
     else:
         size = "-"
 
