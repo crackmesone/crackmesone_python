@@ -199,7 +199,8 @@ def send_moderation_notification(embed: dict) -> bool:
 
 
 def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
-                       comment_text: str, is_spoiler: bool = False) -> bool:
+                       comment_text: str, is_spoiler: bool = False,
+                       comment_id: str = None, spoiler_token: str = None) -> bool:
     """Send notification for a new comment posted.
 
     Sent to MODERATION channel for monitoring user activity.
@@ -210,6 +211,8 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
         crackme_hexid: The hexid of the crackme (for link)
         comment_text: The comment content
         is_spoiler: Whether the comment is marked as spoiler
+        comment_id: The comment ID (for mark-as-spoiler link)
+        spoiler_token: Secret token for mark-as-spoiler action
 
     Returns:
         True if notification was sent successfully
@@ -232,27 +235,37 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
     if is_spoiler:
         title += " [SPOILER]"
 
+    fields = [
+        {
+            "name": "Challenge",
+            "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_hexid})",
+            "inline": True
+        },
+        {
+            "name": "Author",
+            "value": f"[{username}](https://crackmes.one/user/{username})",
+            "inline": True
+        },
+        {
+            "name": "Comment",
+            "value": truncated_comment,
+            "inline": False
+        }
+    ]
+
+    # Add mark-as-spoiler action link if not already a spoiler and token provided
+    if not is_spoiler and comment_id and spoiler_token:
+        fields.append({
+            "name": "Actions",
+            "value": f"[Mark as Spoiler](https://crackmes.one/comment/{comment_id}/spoiler-token/{spoiler_token})",
+            "inline": False
+        })
+
     embed = {
         "title": title,
         "description": f"A new comment has been posted on crackmes.one",
         "color": color,
-        "fields": [
-            {
-                "name": "Challenge",
-                "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_hexid})",
-                "inline": True
-            },
-            {
-                "name": "Author",
-                "value": f"[{username}](https://crackmes.one/user/{username})",
-                "inline": True
-            },
-            {
-                "name": "Comment",
-                "value": truncated_comment,
-                "inline": False
-            }
-        ],
+        "fields": fields,
         "footer": {
             "text": "CrackMes.One",
         },

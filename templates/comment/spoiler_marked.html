@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Spoiler Action{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    {% if success %}
+                        <h4 class="text-success">Comment Marked as Spoiler</h4>
+                        <p>The comment has been successfully marked as a spoiler.</p>
+                        {% if crackme_hexid %}
+                            <a href="/crackme/{{ crackme_hexid }}" class="btn btn-primary">View Crackme</a>
+                        {% endif %}
+                    {% else %}
+                        <h4 class="text-danger">Action Failed</h4>
+                        <p>{{ error }}</p>
+                        <a href="/" class="btn btn-secondary">Go Home</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
