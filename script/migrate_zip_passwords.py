@@ -242,31 +242,31 @@ def main():
     total_converted = crackme_stats["converted"] + solution_stats["converted"]
     total_failed = crackme_stats["failed"] + solution_stats["failed"]
 
-    # Write log file
-    log_data = {
-        "timestamp": datetime.now().isoformat(),
-        "dry_run": args.dry_run,
-        "old_password": OLD_PASSWORD,
-        "new_password": NEW_PASSWORD,
-        "crackmes": {
-            "stats": crackme_stats,
-            "files": crackme_results
-        },
-        "solutions": {
-            "stats": solution_stats,
-            "files": solution_results
+    # Write log file (only in non-dry-run mode)
+    if not args.dry_run:
+        log_data = {
+            "timestamp": datetime.now().isoformat(),
+            "old_password": OLD_PASSWORD,
+            "new_password": NEW_PASSWORD,
+            "crackmes": {
+                "stats": crackme_stats,
+                "files": crackme_results
+            },
+            "solutions": {
+                "stats": solution_stats,
+                "files": solution_results
+            }
         }
-    }
 
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
-    log_filename = f"migration_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    log_path = log_dir / log_filename
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        log_filename = f"migration_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        log_path = log_dir / log_filename
 
-    with open(log_path, "w") as f:
-        json.dump(log_data, f, indent=2)
+        with open(log_path, "w") as f:
+            json.dump(log_data, f, indent=2)
 
-    print(f"\nLog written to: {log_path.absolute()}")
+        print(f"\nLog written to: {log_path.absolute()}")
 
     if total_converted > 0 and not args.dry_run:
         print(f"Converted files are in: {OUTPUT_DIR.absolute()}/")
