@@ -20,6 +20,17 @@
         }
     }
 
+    function revealAllSpoilers() {
+        document.querySelectorAll('.spoiler-hidden').forEach(function(el) {
+            el.style.display = 'none';
+        });
+        document.querySelectorAll('[id^="spoiler-content-"]').forEach(function(el) {
+            el.style.display = 'inline';
+        });
+        var btn = document.getElementById('reveal-all-spoilers-btn');
+        if (btn) btn.style.display = 'none';
+    }
+
     function openModal(id) {
         var modal = document.getElementById(id);
         if (modal) {
@@ -179,6 +190,12 @@
                 <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal]</span><span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info|render_mentions }}</span>{% else %}<span style="white-space: pre-line">{{ comment.info|render_mentions }}</span>{% endif %}
             </div>
             {% endfor %}
+            {% set has_spoilers = comments|selectattr('spoiler', 'equalto', true)|list|length > 0 %}
+            {% if has_spoilers %}
+            <div id="reveal-all-spoilers-btn" style="text-align: center; margin-top: 0.5em;">
+                <a href="#" onclick="revealAllSpoilers(); return false;" class="text-gray" style="font-size: 0.8em;">Show all spoilers</a>
+            </div>
+            {% endif %}
         </div>
         <div class="column col-12" id="solutions" style="display:none">
             {% if AuthLevel == "auth" %}
