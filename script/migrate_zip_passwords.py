@@ -19,6 +19,7 @@ import tempfile
 import shutil
 import argparse
 import json
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
@@ -38,16 +39,14 @@ OUTPUT_DIR = Path("converted")
 
 
 def is_valid_zip(zip_path: Path) -> bool:
-    """Check if a file is a valid zip archive."""
+    """Check if a file is a valid zip archive format (doesn't require password)."""
     try:
-        result = subprocess.run(
-            [UNZIP_CMD, "-t", str(zip_path)],
-            capture_output=True,
-            timeout=30
-        )
-        # Return code 0 = OK, 1 = warning but OK, 82 = no files (empty)
-        # Return code 9 = not a zip file
-        return result.returncode not in [9, 2, 3]
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            # Just read the file list - this doesn't require decryption
+            zf.namelist()
+        return True
+    except zipfile.BadZipFile:
+        return False
     except Exception:
         return False
 
