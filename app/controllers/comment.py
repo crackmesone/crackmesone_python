@@ -109,7 +109,8 @@ def leave_comment(hexid):
                     )
 
         # Send Discord moderation notification
-        notify_new_comment(username, crackme_name, hexid, comment_text)
+        notify_new_comment(username, crackme_name, hexid, comment_text,
+                          is_spoiler=is_spoiler)
     except Exception as e:
         print(f"Notification error: {e}")
 

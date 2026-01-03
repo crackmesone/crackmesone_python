@@ -199,7 +199,7 @@ def send_moderation_notification(embed: dict) -> bool:
 
 
 def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
-                       comment_text: str) -> bool:
+                       comment_text: str, is_spoiler: bool = False) -> bool:
     """Send notification for a new comment posted.
 
     Sent to MODERATION channel for monitoring user activity.
@@ -209,6 +209,7 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
         crackme_name: The name of the crackme
         crackme_hexid: The hexid of the crackme (for link)
         comment_text: The comment content
+        is_spoiler: Whether the comment is marked as spoiler
 
     Returns:
         True if notification was sent successfully
@@ -220,14 +221,19 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
         .replace('+00:00', 'Z')
     )
 
-    # Cyan/teal color for comments
-    color = 65535
+    # Cyan/teal for normal comments, orange for spoiler-marked comments
+    color = 16753920 if is_spoiler else 65535
 
     # Truncate comment if too long
     truncated_comment = comment_text[:500] + "..." if len(comment_text) > 500 else comment_text
 
+    # Build title with spoiler indicator
+    title = "New Comment Posted"
+    if is_spoiler:
+        title += " [SPOILER]"
+
     embed = {
-        "title": "New Comment Posted",
+        "title": title,
         "description": f"A new comment has been posted on crackmes.one",
         "color": color,
         "fields": [
