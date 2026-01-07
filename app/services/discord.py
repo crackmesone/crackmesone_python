@@ -13,13 +13,21 @@ import requests
 
 # Global Discord configuration
 discord_config = {}
+site_config = {}
 
 
 def init_discord(app, config):
     """Initialize Discord configuration."""
-    global discord_config
+    global discord_config, site_config
     discord_config = config if config else {}
     app.config['DISCORD_CONFIG'] = discord_config
+    # Store site config for base URL
+    site_config = app.config.get('APP_CONFIG', {}).get('Site', {})
+
+
+def get_base_url():
+    """Get configured base URL."""
+    return site_config.get('BaseURL', 'https://crackmes.one')
 
 
 def is_enabled():
@@ -238,12 +246,12 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
     fields = [
         {
             "name": "Challenge",
-            "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_hexid})",
+            "value": f"[{crackme_name}]({get_base_url()}/crackme/{crackme_hexid})",
             "inline": True
         },
         {
             "name": "Author",
-            "value": f"[{username}](https://crackmes.one/user/{username})",
+            "value": f"[{username}]({get_base_url()}/user/{username})",
             "inline": True
         },
         {
@@ -257,7 +265,7 @@ def notify_new_comment(username: str, crackme_name: str, crackme_hexid: str,
     if not is_spoiler and comment_id and spoiler_token:
         fields.append({
             "name": "Actions",
-            "value": f"[Mark as Spoiler](https://crackmes.one/comment/{comment_id}/spoiler-token/{spoiler_token})",
+            "value": f"[Mark as Spoiler]({get_base_url()}/comment/{comment_id}/spoiler-token/{spoiler_token})",
             "inline": False
         })
 

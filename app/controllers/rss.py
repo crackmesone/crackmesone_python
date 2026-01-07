@@ -2,9 +2,15 @@
 RSS controller - RSS feed for crackmes.
 """
 
-from flask import Blueprint, Response
+from flask import Blueprint, Response, current_app
 from app.models.crackme import last_crackmes
 from app.models.rating import rating_difficulty_by_crackme
+
+
+def get_base_url():
+    """Get configured base URL."""
+    site_config = current_app.config.get('APP_CONFIG', {}).get('Site', {})
+    return site_config.get('BaseURL', 'https://crackmes.one')
 
 rss_bp = Blueprint('rss', __name__)
 
@@ -42,7 +48,8 @@ def rss_crackmes():
             pub_date = ''
 
         title = f"{crackme.get('name', '')} [{crackme.get('platform', '')} - {crackme.get('lang', '')} - {diff_name}]"
-        link = f"https://crackmes.one/crackme/{crackme.get('hexid', '')}"
+        base_url = get_base_url()
+        link = f"{base_url}/crackme/{crackme.get('hexid', '')}"
 
         item = f"""    <item>
       <title>{escape_xml(title)}</title>
@@ -55,11 +62,12 @@ def rss_crackmes():
     </item>"""
         items_xml.append(item)
 
+    base_url = get_base_url()
     rss_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
     <title>Latest crackmes - crackmes.one</title>
-    <link>https://crackmes.one/lasts</link>
+    <link>{base_url}/lasts</link>
     <description>The latest 50 crackmes from crackmes.one</description>
 {chr(10).join(items_xml)}
   </channel>

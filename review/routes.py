@@ -45,6 +45,7 @@ reviewer_bp = Blueprint('reviewer', __name__,
 # Module-level configuration (set by init_reviewer)
 PASSWORD_SALT = None
 DISCORD_WEBHOOK_PUBLIC = None
+SITE_BASE_URL = 'https://crackmes.one'
 g_crackmesone_db = None
 users = {}
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
@@ -74,7 +75,7 @@ def init_reviewer(app):
             - REVIEWER_PASSWORD_SALT: Salt for hashing reviewer passwords
             - DISCORD_CONFIG: Dict with Enabled and WebhookPublic keys
     """
-    global PASSWORD_SALT, DISCORD_WEBHOOK_PUBLIC, g_crackmesone_db, users
+    global PASSWORD_SALT, DISCORD_WEBHOOK_PUBLIC, SITE_BASE_URL, g_crackmesone_db, users
 
     PASSWORD_SALT = app.config.get(
         'REVIEWER_PASSWORD_SALT',
@@ -84,6 +85,9 @@ def init_reviewer(app):
     discord_config = app.config.get('DISCORD_CONFIG', {})
     if discord_config.get('Enabled', False):
         DISCORD_WEBHOOK_PUBLIC = discord_config.get('WebhookPublic', '')
+
+    site_config = app.config.get('APP_CONFIG', {}).get('Site', {})
+    SITE_BASE_URL = site_config.get('BaseURL', 'https://crackmes.one')
 
     from app.services.database import get_db
     g_crackmesone_db = get_db()
@@ -394,7 +398,7 @@ def post_discord_notification(title, description, fields):
             "color": 65280,  # Green
             "author": {
                 "name": "crackmes.one",
-                "url": "https://crackmes.one",
+                "url": SITE_BASE_URL,
                 "icon_url": "https://i.imgur.com/YORPaBo.png"
             },
             "fields": fields,
@@ -427,17 +431,17 @@ def notify_crackme_approved(crackme_name, crackme_uuid, author):
         [
             {
                 "name": "Challenge",
-                "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_uuid})",
+                "value": f"[{crackme_name}]({SITE_BASE_URL}/crackme/{crackme_uuid})",
                 "inline": True
             },
             {
                 "name": "Crackme author",
-                "value": f"[{author}](https://crackmes.one/user/{author})",
+                "value": f"[{author}]({SITE_BASE_URL}/user/{author})",
                 "inline": True
             },
             {
                 "name": "Download crackme",
-                "value": f"[Link](https://crackmes.one/static/crackme/{crackme_uuid}.zip)",
+                "value": f"[Link]({SITE_BASE_URL}/static/crackme/{crackme_uuid}.zip)",
                 "inline": True
             }
         ]
@@ -460,17 +464,17 @@ def notify_solution_approved(crackme_name, crackme_uuid, solution_uuid, author):
         [
             {
                 "name": "Challenge",
-                "value": f"[{crackme_name}](https://crackmes.one/crackme/{crackme_uuid})",
+                "value": f"[{crackme_name}]({SITE_BASE_URL}/crackme/{crackme_uuid})",
                 "inline": True
             },
             {
                 "name": "Solution author",
-                "value": f"[{author}](https://crackmes.one/user/{author})",
+                "value": f"[{author}]({SITE_BASE_URL}/user/{author})",
                 "inline": True
             },
             {
                 "name": "Download solution",
-                "value": f"[Link](https://crackmes.one/static/solution/{solution_uuid}.zip)",
+                "value": f"[Link]({SITE_BASE_URL}/static/solution/{solution_uuid}.zip)",
                 "inline": True
             }
         ]
