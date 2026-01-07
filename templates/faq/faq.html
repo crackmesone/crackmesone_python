@@ -148,6 +148,19 @@
         <h3 id="discord-verify">I cannot speak or see most channels on Discord. <a href="#discord-verify" class="anchor-link">#</a></h3>
         <p>If you cannot speak or see most of the channels on our Discord server, this is because you have not verified your account yet. Please check the <b>#verify</b> channel and follow the verification steps.</p>
         <div class="divider"></div>
+        <h3 id="vcredist">A crackme won't run or shows a DLL error. <a href="#vcredist" class="anchor-link">#</a></h3>
+        <p>If a Windows crackme fails to start or shows errors like "VCRUNTIME140.dll not found", "MSVCP140.dll is missing", or similar DLL errors, you likely need to install the <b>Microsoft Visual C++ Redistributable</b> packages.</p>
+        <p>Many crackmes are compiled with Visual Studio and require these runtime libraries to run. To fix this:</p>
+        <ol>
+            <li>Download the latest Visual C++ Redistributable from Microsoft's official site: <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" target="_blank">https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist</a></li>
+            <li>Install <b>both</b> the x86 (32-bit) and x64 (64-bit) versions, as crackmes may be compiled for either architecture</li>
+            <li>Restart your system or VM after installation</li>
+        </ol>
+        <p><b>Tip:</b> If you're setting up a fresh VM for reverse engineering, installing all available Visual C++ Redistributable versions (2015-2022, 2013, 2012, 2010, etc.) upfront will save you from encountering these errors later.</p>
+        <p><b>Note for crackme authors:</b> If your crackme requires a specific runtime to run, please mention it in the description. This is especially important for less common or non-standard runtimes that users may not have installed.</p>
+        <p>A common issue is crackmes compiled in Debug mode, which require the Debug version of the Visual C++ runtime (e.g., VCRUNTIME140<b>D</b>.dll). These debug runtimes are only included with Visual Studio and are not available through the standard redistributable packages, making your crackme much harder for others to run. If you want to include symbols to make your crackme easier to analyze, consider compiling in Release mode and including the PDB file alongside your executable instead.</p>
+        <p>Similarly, crackmes compiled with Cygwin will require <code>cygwin1.dll</code> (and possibly other Cygwin DLLs) to run. If you're distributing a Cygwin-compiled crackme, either mention this requirement or consider including the necessary DLLs.</p>
+        <div class="divider"></div>
         <h3 id="are-crackmes-safe">Are the crackmes safe to run? <a href="#are-crackmes-safe" class="anchor-link">#</a></h3>
         <p>We manually review every crackme and solution submission before it appears on the website to prevent malware and viruses. However, there is always a small chance that something could be missed. For your safety, we strongly recommend:</p>
         <ul>
@@ -172,6 +185,16 @@
             <li>Report it on our Discord server in the appropriate channel</li>
         </ul>
         <p>Please provide as much detail as possible, including what makes you believe the crackme is problematic. We take security seriously and will investigate all reports promptly.</p>
+        <div class="divider"></div>
+        <h3 id="reset-password">How do I reset my password? <a href="#reset-password" class="anchor-link">#</a></h3>
+        <p>If you still remember your password: log in, click "Profile", scroll to the bottom of the page, click "Change Password", and provide your current and new password.</p>
+        <p>If you do not remember your current password: please email crackmesone@gmail.com from the email address you used when you registered your account for assistance.</p>
+        <div class="divider"></div>
+        <h3 id="delete-account">How do I delete my account? <a href="#delete-account" class="anchor-link">#</a></h3>
+        <p>Please to email us at crackmesone@gmail.com to request account deletion.</p>
+        <div class="divider"></div>
+        <h3 id="discord-verify">I cannot speak or see most channels on Discord. <a href="#discord-verify" class="anchor-link">#</a></h3>
+        <p>If you cannot speak or see most of the channels on our Discord server, this is because you have not verified your account yet. Please check the <b>#verify</b> channel and follow the verification steps.</p>
         <div class="divider"></div>
         <h3 id="github-repo">Where is the source code? Can I contribute? <a href="#github-repo" class="anchor-link">#</a></h3>
         <p>The source code for crackmes.one is available on GitHub at <a href="https://github.com/crackmesone/crackmesone_python" target="_blank">https://github.com/crackmesone/crackmesone_python</a>.</p>
