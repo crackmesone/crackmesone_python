@@ -29,7 +29,7 @@ crackme_bp = Blueprint('crackme', __name__)
 
 # Upload folder for crackmes
 UPLOAD_FOLDER = 'tmp/crackme'
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
 @crackme_bp.route('/crackme/<hexid>')
