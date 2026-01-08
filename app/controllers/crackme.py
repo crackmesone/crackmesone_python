@@ -21,7 +21,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
-from app.services.archive import is_archive_password_protected, is_archive, size_of_archive_contents
+from app.services.archive import is_archive_password_protected
 from app.services.discord import notify_new_crackme
 from app.controllers.decorators import login_required
 
@@ -62,7 +62,7 @@ def crackme_view(hexid):
     mention_targets.discard('')  # Remove empty strings
     mention_targets = sorted(mention_targets)  # Sort alphabetically
 
-    if (size := crackme.get('size', 0) ) != 0: 
+    if (size := crackme.get('size', 0)) != 0:
         if size > 2**30:
             size = f"{size / 2**30:.2f} GB"
         elif size > 2**20:
@@ -207,15 +207,8 @@ def upload_crackme_post():
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
         return render_template('crackme/create.html')
     
-    # Get size of challenge binary
-    # note: we get the size of all files in the archive, which *may* include readmes
-    # etc however they're likely negligible compared to the main binary
-    if is_archive(file_data):
-        if (size := size_of_archive_contents(file_data)) is None:
-            flash('Could not determine archive contents size. Please try again', FLASH_ERROR)
-            return render_template('crackme/create.html')
-    else: # assume its a single uncompressed file
-        size = len(file_data)
+    # Store the uploaded file size
+    size = len(file_data)
 
     # Check for duplicate pending submission
     try:

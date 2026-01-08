@@ -5,7 +5,6 @@ Archive service for validating uploaded archive files.
 import zipfile
 import io
 import struct
-from typing import Optional
 
 # PE file extensions (case-insensitive)
 PE_EXTENSIONS = {'.exe', '.dll', '.sys', '.scr', '.ocx', '.com', '.drv', '.cpl', '.efi'}
@@ -87,39 +86,3 @@ def is_archive_password_protected(file_data: bytes) -> bool:
         pass
 
     return False
-
-def is_archive(file_data: bytes) -> bool:
-    """Check if the provided file data is a recognized archive format.
-
-    Args:
-        file_data: The binary content of the archive file
-    """
-    try: 
-        with zipfile.ZipFile(io.BytesIO(file_data), 'r') as zf:
-            # read the list of files to confirm it's a valid archive
-            _ = zf.namelist()
-            return True
-    except Exception: # May not be a archive or some other error
-        pass
-    return False
-
-def size_of_archive_contents(file_data: bytes) -> Optional[int]:
-    """Calculate the total uncompressed size of all files within the archive..
-
-    Args:
-        file_data: The binary content of the archive file
-
-    Returns:
-        Total size in bytes of all files within the archive if successful, None otherwise
-    """
-    total_size = 0
-    try:
-        with zipfile.ZipFile(io.BytesIO(file_data), 'r') as zf:
-            for info in zf.infolist():
-                total_size += info.file_size
-        return total_size
-    except zipfile.BadZipFile:
-        pass
-    except Exception:
-        pass
-    return None

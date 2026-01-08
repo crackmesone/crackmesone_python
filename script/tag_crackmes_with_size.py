@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Calculate and add uncompressed archive sizes to crackmes.
+Add file sizes to crackmes in the database.
 
 This script:
 1. Finds all crackmes without a 'size' field (or with size=0)
-2. Calculates the uncompressed size from the archive files
-3. Updates the database with the calculated sizes
+2. For approved crackmes: extracts the password-protected zip and measures contents
+3. For unapproved crackmes: measures the raw uploaded file
+4. Updates the database with the sizes
 
 Usage:
     cd /path/to/crackmesone_python/script
@@ -17,72 +18,39 @@ import json
 import sys
 import os
 import zipfile
-import io
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pymongo import MongoClient
 
+# Password used for approved crackme archives
+ARCHIVE_PASSWORD = b"crackmes.one"
 
-def get_uncompressed_size(zip_path):
-    """Calculate the total uncompressed size of a crackme archive.
 
-    The outer zip is always password-protected with 'crackmes.one'.
-    Inside, there can be:
-    1. Another zip file (no password) - return sum of files within it
-    2. A raw file - return its uncompressed size
+def get_size_from_encrypted_zip(zip_path):
+    """Get the total size of contents inside a password-protected zip.
 
-    Returns total uncompressed size in bytes, or None on error.
+    Approved crackmes are stored as password-protected zips.
+    This extracts and measures the contents to match what len(file_data)
+    would have been at upload time.
+
+    Returns size in bytes, or None on error.
     """
     try:
-        with zipfile.ZipFile(zip_path, "r") as outer_zip:
+        with zipfile.ZipFile(zip_path, "r") as zf:
             total_size = 0
-            for info in outer_zip.infolist():
-                try:
-                    # Extract file data from outer zip using password
-                    size = _calculate_archive_size(outer_zip.read(info.filename, pwd=b"crackmes.one"))
-                    if size is None: return None
-                    total_size += size
-                except Exception as e:
-                    print(f"    Error reading {zip_path}/{info.filename}: {e}")
-                    return None
+            for info in zf.infolist():
+                # file_size is the uncompressed size
+                total_size += info.file_size
             return total_size
     except Exception as e:
         print(f"    Error reading {zip_path}: {e}")
         return None
 
 
-def get_uncompressed_size_from_raw(file_path):
-    """Calculate the total uncompressed size from a raw archive file (no outer encryption).
-
-    For unapproved crackmes, the file is the raw upload without password protection.
-    Inside, there can be:
-    1. A zip file - return sum of files within it
-    2. A raw file - return its uncompressed size
-
-    Returns total uncompressed size in bytes, or None on error.
-    """
-    try:
-        file_data = open(file_path, "rb").read()
-        return _calculate_archive_size(file_data)
-    except Exception as e:
-        print(f"    Error reading {file_path}: {e}")
-        return None
-
-
-def _calculate_archive_size(file_data):
-    try:
-        with zipfile.ZipFile(io.BytesIO(file_data), "r") as zip_obj:
-            return sum(info.file_size for info in zip_obj.infolist())
-    except zipfile.BadZipFile:
-        return len(file_data)
-    except Exception:
-        return None
-
-
 def find_crackme_file(static_dir, hexid):
-    """Trys to find the crackme zip file for a given hexid."""
+    """Find a crackme zip file for a given hexid."""
     static_path = os.path.join(static_dir, f"{hexid}.zip")
     if os.path.exists(static_path):
         return static_path
@@ -97,7 +65,8 @@ def find_unapproved_crackme_file(tmp_dir, author, hexid):
 
     Returns the full path if found, None otherwise.
     """
-    if not os.path.exists(tmp_dir): return None
+    if not os.path.exists(tmp_dir):
+        return None
 
     try:
         prefix = f"{author}+++{hexid}+++"
@@ -122,7 +91,12 @@ def format_size(size_bytes):
 
 
 def main():
-    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),"config","config.json"), "r") as f:
+    config_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "config",
+        "config.json"
+    )
+    with open(config_path, "r") as f:
         config = json.load(f)
 
     # Connect to MongoDB
@@ -168,26 +142,35 @@ def main():
         hexid = crackme.get("hexid")
         is_visible = crackme.get("visible", False)
 
-        # Determine location and size calculation method
+        # Determine location and how to get size
         if is_visible:
-            # Approved crackme - look in static/crackme/
+            # Approved crackme - stored as password-protected zip in static/crackme/
             location = "approved"
-            fn = get_uncompressed_size
             file_path = find_crackme_file(static_dir, hexid)
+            if file_path:
+                size = get_size_from_encrypted_zip(file_path)
+            else:
+                size = None
         else:
-            # Unapproved crackme - look in tmp/crackme/
+            # Unapproved crackme - raw uploaded file in tmp/crackme/
             location = "unapproved"
-            fn = get_uncompressed_size_from_raw
             file_path = find_unapproved_crackme_file(
                 tmp_dir, crackme.get("author", ""), hexid
             )
+            if file_path:
+                try:
+                    size = os.path.getsize(file_path)
+                except Exception as e:
+                    print(f"  {hexid} ({location}): Error getting size: {e}")
+                    size = None
+            else:
+                size = None
 
         if file_path is None:
             print(f"  {hexid} ({location}): File not found")
             not_found += 1
             continue
 
-        size = fn(file_path)
         if size is None:
             errors += 1
             continue
@@ -202,7 +185,7 @@ def main():
         updated += 1
 
     print(f"\n{'=' * 70}")
-    print(f"Summary:")
+    print("Summary:")
     print(f"  Updated: {updated}")
     print(f"  Not found: {not_found}")
     print(f"  Errors: {errors}")
