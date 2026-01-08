@@ -37,7 +37,7 @@
                     <td> {{ crackme.platform }} </td>
                     <td> {{ crackme.size|default(0)|FILESIZE }} </td>
                     <td> {{ crackme.created_at|PRETTYTIME }} </td>
-                    <td> {{ crackme.nbdownloads|default(0) }} </td>
+                    <td> {{ crackme.nbdownloads|default(0) }} <a href="/download/crackme/{{ crackme.hexid }}" title="Download (password: crackmes.one)">[↓]</a></td>
                     <td> {{ crackme.nbsolutions }} </td>
                     <td> {{ crackme.nbcomments }} </td>
                 </tr>
