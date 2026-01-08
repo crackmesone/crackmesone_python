@@ -90,6 +90,28 @@
         </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
+                <label class="form-label">Size between</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <input class="form-input" type="number" id="size-min" name="size-min" min="0" step="any" placeholder="any" value="{{ search_params.get('size-min', '') }}" style="width: 15%; display: inline-block;">
+                <select class="form-select" id="size-min-unit" name="size-min-unit" style="width: 70px; display: inline-block;">
+                    <option value="B" {{ 'selected' if search_params.get('size-min-unit', 'KB') == 'B' else '' }}>B</option>
+                    <option value="KB" {{ 'selected' if search_params.get('size-min-unit', 'KB') == 'KB' else '' }}>KB</option>
+                    <option value="MB" {{ 'selected' if search_params.get('size-min-unit', 'KB') == 'MB' else '' }}>MB</option>
+                    <option value="GB" {{ 'selected' if search_params.get('size-min-unit', 'KB') == 'GB' else '' }}>GB</option>
+                </select>
+                and
+                <input class="form-input" type="number" id="size-max" name="size-max" min="0" step="any" placeholder="any" value="{{ search_params.get('size-max', '') }}" style="width: 15%; display: inline-block;">
+                <select class="form-select" id="size-max-unit" name="size-max-unit" style="width: 70px; display: inline-block;">
+                    <option value="B" {{ 'selected' if search_params.get('size-max-unit', 'MB') == 'B' else '' }}>B</option>
+                    <option value="KB" {{ 'selected' if search_params.get('size-max-unit', 'MB') == 'KB' else '' }}>KB</option>
+                    <option value="MB" {{ 'selected' if search_params.get('size-max-unit', 'MB') == 'MB' else '' }}>MB</option>
+                    <option value="GB" {{ 'selected' if search_params.get('size-max-unit', 'MB') == 'GB' else '' }}>GB</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
                 <label class="form-label" for="lang">Language</label>
             </div>
             <div class="col-9 col-sm-12">
@@ -152,13 +174,14 @@
         <table class="table table-striped">
             <thead>
                 <tr style="text-align: center;">
-                    <th style="width: 18%;">Name</th>
-                    <th style="width: 15%;">Author</th>
-                    <th style="width: 9%;">Language</th>
-                    <th style="width: 7%;">Arch</th>
+                    <th style="width: 17%;">Name</th>
+                    <th style="width: 14%;">Author</th>
+                    <th style="width: 8%;">Language</th>
+                    <th style="width: 6%;">Arch</th>
                     <th style="width: 4%;">Difficulty</th>
                     <th style="width: 4%;">Quality</th>
-                    <th style="width: 9%;">Platform</th>
+                    <th style="width: 8%;">Platform</th>
+                    <th style="width: 6%;">Size</th>
                     <th style="width: 9%;">Date</th>
                     <th style="width: 5%;">Downloads</th>
                     <th style="width: 5%;">Writeups</th>
@@ -175,6 +198,7 @@
                     <td> {{ "%.1f"|format(crackme.difficulty) }} </td>
                     <td> {{ "%.1f"|format(crackme.quality) }} </td>
                     <td> {{ crackme.platform }} </td>
+                    <td> {{ crackme.size|default(0)|FILESIZE }} </td>
                     <td> {{ crackme.created_at|PRETTYTIME }} </td>
                     <td> {{ crackme.nbdownloads|default(0) }} </td>
                     <td> {{ crackme.nbsolutions }} </td>
@@ -204,6 +228,10 @@
             <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
             <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
             <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
+            <input type="hidden" name="size-min" value="{{ search_params['size-min'] }}">
+            <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
+            <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
+            <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
             <input type="hidden" name="page" value="1">
             <button type="submit" class="btn active">Show Pages</button>
         </form>
@@ -228,6 +256,10 @@
             <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
             <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
             <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
+            <input type="hidden" name="size-min" value="{{ search_params['size-min'] }}">
+            <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
+            <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
+            <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
             <input type="hidden" name="show_all" value="1">
             <button type="submit" class="btn active">Show All</button>
         </form>
@@ -249,6 +281,10 @@
             <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
             <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
             <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
+            <input type="hidden" name="size-min" value="{{ search_params['size-min'] }}">
+            <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
+            <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
+            <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
             <input type="hidden" name="page" value="{{ page - 1 }}">
             <button type="submit" class="btn active">Previous</button>
         </form>
@@ -274,6 +310,10 @@
             <input type="hidden" name="solutions-max" value="{{ search_params['solutions-max'] }}">
             <input type="hidden" name="comments-min" value="{{ search_params['comments-min'] }}">
             <input type="hidden" name="comments-max" value="{{ search_params['comments-max'] }}">
+            <input type="hidden" name="size-min" value="{{ search_params['size-min'] }}">
+            <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
+            <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
+            <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
             <input type="hidden" name="page" value="{{ page + 1 }}">
             <button type="submit" class="btn active">Next</button>
         </form>

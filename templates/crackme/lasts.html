@@ -11,13 +11,14 @@
         <table class="table table-striped">
             <thead>
                 <tr style="text-align: center;">
-                    <th style="width: 18%;">Name</th>
-                    <th style="width: 15%;">Author</th>
-                    <th style="width: 9%;">Language</th>
-                    <th style="width: 7%;">Arch</th>
+                    <th style="width: 17%;">Name</th>
+                    <th style="width: 14%;">Author</th>
+                    <th style="width: 8%;">Language</th>
+                    <th style="width: 6%;">Arch</th>
                     <th style="width: 4%;">Difficulty</th>
                     <th style="width: 4%;">Quality</th>
-                    <th style="width: 9%;">Platform</th>
+                    <th style="width: 8%;">Platform</th>
+                    <th style="width: 6%;">Size</th>
                     <th style="width: 9%;">Date</th>
                     <th style="width: 5%;">Downloads</th>
                     <th style="width: 5%;">Writeups</th>
@@ -34,6 +35,7 @@
                     <td> {{ "%.1f"|format(crackme.difficulty) }} </td>
                     <td> {{ "%.1f"|format(crackme.quality) }} </td>
                     <td> {{ crackme.platform }} </td>
+                    <td> {{ crackme.size|default(0)|FILESIZE }} </td>
                     <td> {{ crackme.created_at|PRETTYTIME }} </td>
                     <td> {{ crackme.nbdownloads|default(0) }} </td>
                     <td> {{ crackme.nbsolutions }} </td>

@@ -120,6 +120,7 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
                    downloads_min=0, downloads_max=None,
                    solutions_min=0, solutions_max=None,
                    comments_min=0, comments_max=None,
+                   size_min=0, size_max=None,
                    page=1, per_page=50):
     """Search crackmes with filters and pagination.
 
@@ -153,6 +154,12 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
         if comments_max is not None:
             comments_query['$lte'] = comments_max
         query['nbcomments'] = comments_query
+
+    if size_min > 0 or size_max is not None:
+        size_query = {'$gte': size_min}
+        if size_max is not None:
+            size_query['$lte'] = size_max
+        query['size'] = size_query
 
     if name:
         query['name'] = {'$regex': name, '$options': 'i'}
@@ -245,7 +252,7 @@ def crackme_by_user_and_name(username, name, visible=True):
     return result
 
 
-def crackme_create(name, info, username, lang, arch, platform):
+def crackme_create(name, info, username, lang, arch, platform, size):
     """Create a new crackme."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -269,14 +276,15 @@ def crackme_create(name, info, username, lang, arch, platform):
         'nbsolutions': 0,
         'nbcomments': 0,
         'nbdownloads': 0,
-        'platform': platform
+        'platform': platform,
+        'size': size
     }
 
     collection.insert_one(crackme)
     return crackme
 
 
-def crackme_create_prepare(name, info, username, lang, arch, platform):
+def crackme_create_prepare(name, info, username, lang, arch, platform, size):
     """Prepare a crackme object without inserting it."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -299,7 +307,8 @@ def crackme_create_prepare(name, info, username, lang, arch, platform):
         'nbsolutions': 0,
         'nbcomments': 0,
         'nbdownloads': 0,
-        'platform': platform
+        'platform': platform,
+        'size': size
     }
 
 

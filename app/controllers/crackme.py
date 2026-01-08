@@ -79,6 +79,7 @@ def crackme_view(hexid):
                            nbdownloads=crackme.get('nbdownloads', 0),
                            difficulty=f"{crackme.get('difficulty', 0):.1f}",
                            quality=f"{crackme.get('quality', 0):.1f}",
+                           size=crackme.get('size', 0),
                            usersess=usersess)
 
 
@@ -193,6 +194,9 @@ def upload_crackme_post():
     if is_archive_password_protected(file_data):
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
         return render_template('crackme/create.html')
+    
+    # Store the uploaded file size
+    size = len(file_data)
 
     # Check for duplicate pending submission
     try:
@@ -204,7 +208,7 @@ def upload_crackme_post():
 
     # Prepare crackme
     try:
-        crackme = crackme_create_prepare(name, info, username, lang, arch, platform)
+        crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size)
     except Exception as e:
         print(f"Error preparing crackme: {e}")
         abort(500)

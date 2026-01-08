@@ -103,6 +103,37 @@ def search_post():
         except (ValueError, TypeError):
             comments_max = None
 
+    # Get size range (convert from user units to bytes)
+    def parse_size_with_unit(value_str, unit_str):
+        """Parse size value and unit, return bytes."""
+        if not value_str or value_str.strip() == '':
+            return None
+        try:
+            value = float(value_str)
+            if value < 0:
+                return None
+            unit = unit_str.upper() if unit_str else 'B'
+            if unit == 'KB':
+                return int(value * 1024)
+            elif unit == 'MB':
+                return int(value * 1024 * 1024)
+            elif unit == 'GB':
+                return int(value * 1024 * 1024 * 1024)
+            else:  # Bytes
+                return int(value)
+        except (ValueError, TypeError):
+            return None
+
+    size_min_str = request.form.get('size-min', '')
+    size_min_unit = request.form.get('size-min-unit', 'KB')
+    size_min = parse_size_with_unit(size_min_str, size_min_unit)
+    if size_min is None:
+        size_min = 0
+
+    size_max_str = request.form.get('size-max', '')
+    size_max_unit = request.form.get('size-max-unit', 'MB')
+    size_max = parse_size_with_unit(size_max_str, size_max_unit)
+
     # Get page number and show_all flag
     try:
         page = int(request.form.get('page', 1))
@@ -129,7 +160,11 @@ def search_post():
         'solutions-min': solutions_min,
         'solutions-max': solutions_max if solutions_max is not None else '',
         'comments-min': comments_min,
-        'comments-max': comments_max if comments_max is not None else ''
+        'comments-max': comments_max if comments_max is not None else '',
+        'size-min': size_min_str,
+        'size-min-unit': size_min_unit,
+        'size-max': size_max_str,
+        'size-max-unit': size_max_unit
     }
 
     try:
@@ -150,6 +185,8 @@ def search_post():
                 solutions_max=solutions_max,
                 comments_min=comments_min,
                 comments_max=comments_max,
+                size_min=size_min,
+                size_max=size_max,
                 page=1,
                 per_page=10000
             )
@@ -171,6 +208,8 @@ def search_post():
                 solutions_max=solutions_max,
                 comments_min=comments_min,
                 comments_max=comments_max,
+                size_min=size_min,
+                size_max=size_max,
                 page=page
             )
     except Exception as e:
