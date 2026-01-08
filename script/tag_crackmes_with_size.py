@@ -167,13 +167,13 @@ def main():
                 size = None
 
         if file_path is None:
-            print(f"  {hexid} ({location}): File not found")
+            print(f"  {hexid} ({location}): File not found, setting size to 0")
             not_found += 1
-            continue
-
-        if size is None:
+            size = 0
+        elif size is None:
+            print(f"  {hexid} ({location}): Error reading file, setting size to 0")
             errors += 1
-            continue
+            size = 0
 
         size_str = format_size(size)
         if dry_run:

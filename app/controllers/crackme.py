@@ -62,18 +62,6 @@ def crackme_view(hexid):
     mention_targets.discard('')  # Remove empty strings
     mention_targets = sorted(mention_targets)  # Sort alphabetically
 
-    if (size := crackme.get('size', 0)) != 0:
-        if size > 2**30:
-            size = f"{size / 2**30:.2f} GB"
-        elif size > 2**20:
-            size = f"{size / 2**20:.2f} MB"
-        elif size > 2**10:
-            size = f"{size / 2**10:.2f} KB"
-        else:
-            size = f"{size} B"
-    else:
-        size = "-"
-
     return render_template('crackme/read.html',
                            info=crackme.get('info', ''),
                            name=crackme.get('name', ''),
@@ -91,7 +79,7 @@ def crackme_view(hexid):
                            nbdownloads=crackme.get('nbdownloads', 0),
                            difficulty=f"{crackme.get('difficulty', 0):.1f}",
                            quality=f"{crackme.get('quality', 0):.1f}",
-                           size=size,
+                           size=crackme.get('size', 0),
                            usersess=usersess)
 
 

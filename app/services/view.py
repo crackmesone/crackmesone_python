@@ -132,6 +132,20 @@ def register_filters(app):
         """Mark a value as safe (no HTML escaping)."""
         return Markup(value)
 
+    @app.template_filter('FILESIZE')
+    def format_filesize(size):
+        """Format bytes to human-readable file size."""
+        if size is None or size == 0:
+            return '-'
+        if size > 2**30:
+            return f"{size / 2**30:.2f} GB"
+        elif size > 2**20:
+            return f"{size / 2**20:.2f} MB"
+        elif size > 2**10:
+            return f"{size / 2**10:.2f} KB"
+        else:
+            return f"{size} B"
+
     @app.template_filter('render_mentions')
     def render_mentions(text):
         """Convert @mentions to user profile links.
