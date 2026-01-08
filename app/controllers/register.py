@@ -18,6 +18,12 @@ register_bp = Blueprint('register', __name__)
 @anonymous_required
 def register_get():
     """Display the registration page."""
+    referrer = request.referrer or '/'
+    # Only update redirect if referrer is not an auth-related page
+    excluded_pages = ['/login', '/register', '/logout', '/forgot-password', '/reset-password']
+    if not any(page in referrer for page in excluded_pages):
+        session['login_redirect'] = referrer
+    
     return render_template('register/register.html')
 
 

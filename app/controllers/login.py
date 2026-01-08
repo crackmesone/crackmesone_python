@@ -24,6 +24,12 @@ def clear_main_auth():
 @anonymous_required
 def login_get():
     """Display the login page."""
+    referrer = request.referrer or '/'
+    # Only update redirect if referrer is not an auth-related page
+    excluded_pages = ['/login', '/register', '/logout', '/forgot-password', '/reset-password']
+    if not any(page in referrer for page in excluded_pages):
+        session['login_redirect'] = referrer
+    
     return render_template('login/login.html')
 
 
@@ -59,7 +65,13 @@ def login_post():
             session['email'] = user['email']
             session['name'] = user['name']
             flash('Login successful!', FLASH_SUCCESS)
-            return redirect('/')
+            
+            # Retrieve and clear the redirect from session
+            # Only allow relative URLs to prevent redirecting to external sites
+            redirect_url = session.pop('login_redirect', '/')
+            if not redirect_url.startswith('/'):
+                redirect_url = '/'
+            return redirect(redirect_url)
         else:
             attempts += 1
             session['login_attempt'] = attempts
