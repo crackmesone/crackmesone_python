@@ -2,6 +2,8 @@
 Login controller - User authentication.
 """
 
+from urllib.parse import urlparse
+
 from flask import Blueprint, render_template, request, redirect, flash, session
 from app.models.user import user_by_name
 from app.models.errors import ErrNoResult
@@ -24,7 +26,16 @@ def clear_main_auth():
 @anonymous_required
 def login_get():
     """Display the login page."""
-    referrer = request.referrer or '/'
+    # Extract path from referrer URL, but only if it's from our own site
+    referrer = request.referrer
+    if referrer:
+        parsed = urlparse(referrer)
+        if parsed.netloc == request.host:
+            referrer = parsed.path or '/'
+        else:
+            referrer = '/'
+    else:
+        referrer = '/'
     # Only update redirect if referrer is not an auth-related page
     excluded_pages = ['/login', '/register', '/logout', '/forgot-password', '/reset-password']
     if not any(page in referrer for page in excluded_pages):

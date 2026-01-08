@@ -2,6 +2,8 @@
 Register controller - User registration.
 """
 
+from urllib.parse import urlparse
+
 from flask import Blueprint, render_template, request, redirect, flash, session
 from app.models.user import user_by_name, user_by_mail, user_create
 from app.models.errors import ErrNoResult
@@ -18,7 +20,16 @@ register_bp = Blueprint('register', __name__)
 @anonymous_required
 def register_get():
     """Display the registration page."""
-    referrer = request.referrer or '/'
+    # Extract path from referrer URL, but only if it's from our own site
+    referrer = request.referrer
+    if referrer:
+        parsed = urlparse(referrer)
+        if parsed.netloc == request.host:
+            referrer = parsed.path or '/'
+        else:
+            referrer = '/'
+    else:
+        referrer = '/'
     # Only update redirect if referrer is not an auth-related page
     excluded_pages = ['/login', '/register', '/logout', '/forgot-password', '/reset-password']
     if not any(page in referrer for page in excluded_pages):
