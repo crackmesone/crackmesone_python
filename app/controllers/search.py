@@ -227,9 +227,27 @@ def search_post():
 
 @search_bp.route('/random', methods=['GET'])
 def random_get():
-    """Redirect to a random crackme."""
+    """Display 10 random crackmes in search results (no duplicates)."""
+    crackmes = []
+    seen_ids = set()
     try:
-        crackme = random_crackme()
-        return redirect(f"/crackme/{crackme['hexid']}")
-    except ErrNoResult:
+        attempts = 0
+        max_attempts = 50
+        while len(crackmes) < 50 and attempts < max_attempts:
+            try:
+                crackme = random_crackme()
+                crackme_id = crackme.get('hexid')
+                if crackme_id and crackme_id not in seen_ids:
+                    crackmes.append(crackme)
+                    seen_ids.add(crackme_id)
+            except ErrNoResult:
+                break
+            attempts += 1
+        
+        if not crackmes:
+            return redirect(url_for('search.search_get'))
+        
+        return render_template('search/search.html', crackmes=crackmes, page=1, has_more=False, show_all=False, search_params={})
+    except Exception as e:
+        print(f"Random crackmes error: {e}")
         return redirect(url_for('search.search_get'))
