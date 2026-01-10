@@ -327,20 +327,17 @@ def crackme_delete_by_hexid(hexid):
     collection.delete_one({'hexid': hexid})
 
 
-def random_crackme():
-    """Get a random visible crackme."""
+def random_crackmes(count=50):
+    """Get multiple random visible crackmes."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('crackme')
     pipeline = [
         {'$match': {'visible': True}},
-        {'$sample': {'size': 1}}
+        {'$sample': {'size': count}}
     ]
-    results = list(collection.aggregate(pipeline))
-    if not results:
-        raise ErrNoResult("No crackmes found")
-    return results[0]
+    return list(collection.aggregate(pipeline))
 
 
 def crackme_update(hexid, updates):

@@ -3,8 +3,8 @@ Search controller - Searching crackmes.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for
-from app.models.crackme import search_crackme, random_crackme
-from app.models.errors import ErrNoResult
+from app.models.crackme import search_crackme, random_crackmes
+from app.models.errors import ErrUnavailable
 
 search_bp = Blueprint('search', __name__)
 
@@ -227,9 +227,15 @@ def search_post():
 
 @search_bp.route('/random', methods=['GET'])
 def random_get():
-    """Redirect to a random crackme."""
+    """Display 50 random crackmes."""
     try:
-        crackme = random_crackme()
-        return redirect(f"/crackme/{crackme['hexid']}")
-    except ErrNoResult:
-        return redirect(url_for('search.search_get'))
+        crackmes = random_crackmes(50)
+    except ErrUnavailable:
+        crackmes = []
+
+    return render_template('search/search.html',
+                           crackmes=crackmes,
+                           page=1,
+                           has_more=False,
+                           show_all=True,
+                           search_params={})
