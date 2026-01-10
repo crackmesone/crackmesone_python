@@ -10,15 +10,12 @@ from app.models.errors import ErrNoResult, ErrUnavailable
 
 
 def count_users():
-    """Return the total number of users.
-
-    Uses estimated count for performance (O(1) vs O(n)).
-    """
+    """Return the total number of users."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
-    return collection.estimated_document_count()
+    return collection.count_documents({})
 
 
 def user_by_name(name):

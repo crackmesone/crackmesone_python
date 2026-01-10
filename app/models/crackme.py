@@ -11,15 +11,12 @@ from app.models.errors import ErrNoResult, ErrUnavailable
 
 
 def count_crackmes():
-    """Return the total number of crackmes.
-
-    Uses estimated count for performance.
-    """
+    """Return the total number of approved crackmes."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('crackme')
-    return collection.estimated_document_count()
+    return collection.count_documents({'visible': True})
 
 
 def count_crackmes_by_user(username):
