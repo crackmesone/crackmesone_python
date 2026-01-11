@@ -105,7 +105,7 @@
                         <tr class="text-center">
                             <td><a href="/crackme/{{ sol.crackmeshexid }}">{{ sol.crackmename }}</a></td>
                             <td>{{ sol.solution.created_at|PRETTYTIME }}</td>
-                            <td> <span style="white-space: pre-line">{{ sol.solution.info }}</span></td>
+                            <td style="max-height: 80px; overflow-y: auto;"> <span style="white-space: pre-line">{{ sol.solution.info|truncate(90) }}</span></td>
                             <td> <a href="/static/solution/{{ sol.solution.hexid }}.zip" title="Password: crackmes.one">[↓]</a></td>
                         </tr>
                         {% endfor %}
@@ -129,7 +129,7 @@
                         {% for comment in comments %}
                         <tr class="text-center">
                             <td><a href="/crackme/{{ comment.crackmehexid }}">{{ comment.crackmename }}</a></td>
-                            <td> <span style="white-space: pre-line">{{ comment.info }}</span> </td>
+                            <td style="max-height: 80px; overflow-y: auto;"> <span style="white-space: pre-line">{{ comment.info|truncate(90) }}</span> </td>
                             <td>{{ comment.created_at|PRETTYTIME }}</td>
                         </tr>
                         {% endfor %}
