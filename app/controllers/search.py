@@ -144,6 +144,14 @@ def search_post():
 
     show_all = request.form.get('show_all') == '1'
 
+    # Get sort options
+    sort_by = request.form.get('sort_by', 'date')
+    if sort_by not in ('date', 'size', 'downloads', 'solutions', 'comments', 'quality', 'difficulty'):
+        sort_by = 'date'
+    sort_order = request.form.get('sort_order', 'desc')
+    if sort_order not in ('asc', 'desc'):
+        sort_order = 'desc'
+
     # Store search params for pagination
     search_params = {
         'name': name,
@@ -164,7 +172,9 @@ def search_post():
         'size-min': size_min_str,
         'size-min-unit': size_min_unit,
         'size-max': size_max_str,
-        'size-max-unit': size_max_unit
+        'size-max-unit': size_max_unit,
+        'sort_by': sort_by,
+        'sort_order': sort_order
     }
 
     try:
@@ -187,6 +197,8 @@ def search_post():
                 comments_max=comments_max,
                 size_min=size_min,
                 size_max=size_max,
+                sort_by=sort_by,
+                sort_order=sort_order,
                 page=1,
                 per_page=10000
             )
@@ -210,6 +222,8 @@ def search_post():
                 comments_max=comments_max,
                 size_min=size_min,
                 size_max=size_max,
+                sort_by=sort_by,
+                sort_order=sort_order,
                 page=page
             )
     except Exception as e:

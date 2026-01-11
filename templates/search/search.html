@@ -166,6 +166,26 @@
                 </select>
             </div>
         </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Sort by</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <select class="form-select" id="sort_by" name="sort_by" style="width: 150px; display: inline-block;">
+                    <option value="date" {{ 'selected' if search_params.get('sort_by', 'date') == 'date' else '' }}>Date</option>
+                    <option value="difficulty" {{ 'selected' if search_params.get('sort_by') == 'difficulty' else '' }}>Difficulty</option>
+                    <option value="quality" {{ 'selected' if search_params.get('sort_by') == 'quality' else '' }}>Quality</option>
+                    <option value="size" {{ 'selected' if search_params.get('sort_by') == 'size' else '' }}>Size</option>
+                    <option value="downloads" {{ 'selected' if search_params.get('sort_by') == 'downloads' else '' }}>Downloads</option>
+                    <option value="solutions" {{ 'selected' if search_params.get('sort_by') == 'solutions' else '' }}>Writeups</option>
+                    <option value="comments" {{ 'selected' if search_params.get('sort_by') == 'comments' else '' }}>Comments</option>
+                </select>
+                <select class="form-select" id="sort_order" name="sort_order" style="width: 130px; display: inline-block;">
+                    <option value="desc" {{ 'selected' if search_params.get('sort_order', 'desc') == 'desc' else '' }}>Descending</option>
+                    <option value="asc" {{ 'selected' if search_params.get('sort_order') == 'asc' else '' }}>Ascending</option>
+                </select>
+            </div>
+        </div>
         <input type="submit" class="btn active float-right" value="Search">
         <a href="/random" class="btn active float-right" style="margin-right: 10px;">I'm feeling cracky</a>
     </form>
@@ -232,6 +252,8 @@
             <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
             <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
             <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
+            <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
+            <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="page" value="1">
             <button type="submit" class="btn active">Show Pages</button>
         </form>
@@ -260,6 +282,8 @@
             <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
             <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
             <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
+            <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
+            <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="show_all" value="1">
             <button type="submit" class="btn active">Show All</button>
         </form>
@@ -285,6 +309,8 @@
             <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
             <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
             <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
+            <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
+            <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="page" value="{{ page - 1 }}">
             <button type="submit" class="btn active">Previous</button>
         </form>
@@ -314,6 +340,8 @@
             <input type="hidden" name="size-min-unit" value="{{ search_params['size-min-unit'] }}">
             <input type="hidden" name="size-max" value="{{ search_params['size-max'] }}">
             <input type="hidden" name="size-max-unit" value="{{ search_params['size-max-unit'] }}">
+            <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
+            <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="page" value="{{ page + 1 }}">
             <button type="submit" class="btn active">Next</button>
         </form>
