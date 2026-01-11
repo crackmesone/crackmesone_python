@@ -108,6 +108,30 @@ def solutions_by_crackme(crackme_object_id):
     }))
 
 
+def last_solutions(page=1):
+    """Get latest solutions with pagination.
+
+    Returns (results, has_more) where has_more indicates if there are more pages.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('solution')
+    skip = (page - 1) * 50
+
+    # Fetch one extra to check if there are more results
+    results = list(collection.find({'visible': True})
+                   .sort('created_at', DESCENDING)
+                   .skip(skip)
+                   .limit(51))
+
+    has_more = len(results) > 50
+    if has_more:
+        results = results[:50]
+
+    return results, has_more
+
+
 def get_solution_authors(crackme_hexid):
     """Get all unique usernames who have submitted solutions for a crackme.
 

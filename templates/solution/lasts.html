@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Latest writeups{% endblock %}
+{% block page_title %}Latest writeups{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div style="max-width: 80%" class="container d-flex-row wrapper">
+
+    <h2>Latest Writeups <a href="/rss/solution"><img src="/static/img/rss.svg" width="16" height="16" /></a></h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr style="text-align: center;">
+                    <th style="width: 18%;">Crackme</th>
+                    <th style="width: 12%;">Author</th>
+                    <th style="width: 50%; text-align: left;">Info</th>
+                    <th style="width: 10%;">Date</th>
+                    <th style="width: 10%;">Download</th>
+                </tr>
+            </thead>
+            <tbody id="content-list">
+                {% for solution in solutions %}
+                <tr class="text-center">
+                    <td> <a href="/crackme/{{ solution.crackmehexid }}">{{ solution.crackmename }}</a></td>
+                    <td> <a href="/user/{{ solution.author }}">{{ solution.author }}</a> </td>
+                    <td style="text-align: left;"> {{ solution.info|safe }} </td>
+                    <td> {{ solution.created_at|PRETTYTIME }} </td>
+                    <td> <a href="/static/solution/{{ solution.hexid }}.zip" title="Password: crackmes.one">[↓]</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination-controls">
+        {% if page > 1 %}
+        <a href="/writeups/{{ page - 1 }}" class="btn active">Previous</a>
+        {% else %}
+        <button class="btn" disabled>Previous</button>
+        {% endif %}
+        <span class="pagination-info">Page {{ page }}</span>
+        {% if has_more %}
+        <a href="/writeups/{{ page + 1 }}" class="btn active">Next</a>
+        {% else %}
+        <button class="btn" disabled>Next</button>
+        {% endif %}
+    </div>
+
+</div>
+
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}
+
