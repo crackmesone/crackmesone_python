@@ -8,7 +8,7 @@ from flask import Blueprint, render_template, request, redirect, flash, session,
 from werkzeug.utils import secure_filename
 import bleach
 from app.models.crackme import crackme_by_hexid
-from app.models.solution import solution_create, solutions_by_user_and_crackme
+from app.models.solution import solution_create, solutions_by_user_and_crackme, last_solutions
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
@@ -23,6 +23,31 @@ solution_bp = Blueprint('solution', __name__)
 # Upload folder for solutions
 UPLOAD_FOLDER = 'tmp/solution'
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+@solution_bp.route('/writeups')
+def last_writeups_redirect():
+    """Redirect /writeups to /writeups/1."""
+    return redirect('/writeups/1')
+
+
+@solution_bp.route('/writeups/<int:page>')
+def last_writeups_page(page):
+    """Display latest writeups with pagination."""
+    if page < 1:
+        page = 1
+
+    try:
+        solutions, has_more = last_solutions(page)
+    except Exception as e:
+        print(f"Error getting solutions: {e}")
+        abort(500)
+
+    return render_template('solution/lasts.html',
+                           solutions=solutions,
+                           page=page,
+                           has_more=has_more)
+
 
 
 @solution_bp.route('/upload/solution/<hexidcrackme>', methods=['GET'])
