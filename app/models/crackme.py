@@ -5,7 +5,7 @@ Crackme model for database operations.
 import re
 from datetime import datetime
 from bson import ObjectId
-from pymongo import DESCENDING
+from pymongo import ASCENDING, DESCENDING
 from app.services.database import get_collection, check_connection
 from app.models.errors import ErrNoResult, ErrUnavailable
 
@@ -111,6 +111,17 @@ def crackme_increment_downloads(crackme_hexid):
     )
 
 
+SORT_FIELDS = {
+    'date': 'created_at',
+    'size': 'size',
+    'downloads': 'nbdownloads',
+    'solutions': 'nbsolutions',
+    'comments': 'nbcomments',
+    'quality': 'quality',
+    'difficulty': 'difficulty',
+}
+
+
 def search_crackme(name='', author='', lang='', arch='', platform='',
                    difficulty_min=0, difficulty_max=6,
                    quality_min=0, quality_max=6,
@@ -118,8 +129,9 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
                    solutions_min=0, solutions_max=None,
                    comments_min=0, comments_max=None,
                    size_min=0, size_max=None,
+                   sort_by='date', sort_order='desc',
                    page=1, per_page=50):
-    """Search crackmes with filters and pagination.
+    """Search crackmes with filters, sorting, and pagination.
 
     Returns (results, has_more) where has_more indicates if there are more pages.
     """
@@ -170,9 +182,12 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
         query['platform'] = {'$regex': platform, '$options': 'i'}
 
     skip = (page - 1) * per_page
+    # Determine sort field and direction
+    sort_field = SORT_FIELDS.get(sort_by, 'created_at')
+    sort_direction = ASCENDING if sort_order == 'asc' else DESCENDING
     # Fetch one extra to check if there are more results
     results = list(collection.find(query)
-                   .sort('created_at', DESCENDING)
+                   .sort(sort_field, sort_direction)
                    .skip(skip)
                    .limit(per_page + 1))
 
