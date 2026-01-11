@@ -23,7 +23,7 @@
                 <tr class="text-center">
                     <td> <a href="/crackme/{{ solution.crackmehexid }}">{{ solution.crackmename }}</a></td>
                     <td> <a href="/user/{{ solution.author }}">{{ solution.author }}</a> </td>
-                    <td style="text-align: left;"> {{ solution.info|safe }} </td>
+                    <td style="text-align: left; max-height: 80px; overflow-y: auto;"> {{ solution.info|safe|truncate(90) }} </td>
                     <td> {{ solution.created_at|PRETTYTIME }} </td>
                     <td> <a href="/static/solution/{{ solution.hexid }}.zip" title="Password: crackmes.one">[↓]</a></td>
                 </tr>
