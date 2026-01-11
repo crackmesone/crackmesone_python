@@ -242,14 +242,36 @@ def search_post():
 @search_bp.route('/random', methods=['GET'])
 def random_get():
     """Display 50 random crackmes."""
+    # Get sort options from query params
+    sort_by = request.args.get('sort_by', 'date')
+    if sort_by not in ('date', 'size', 'downloads', 'solutions', 'comments', 'quality', 'difficulty'):
+        sort_by = 'date'
+    sort_order = request.args.get('sort_order', 'desc')
+    if sort_order not in ('asc', 'desc'):
+        sort_order = 'desc'
+
     try:
         crackmes = random_crackmes(50)
+        # Sort the random results
+        sort_key_map = {
+            'date': 'created_at',
+            'size': 'size',
+            'downloads': 'nbdownloads',
+            'solutions': 'nbsolutions',
+            'comments': 'nbcomments',
+            'quality': 'quality',
+            'difficulty': 'difficulty',
+        }
+        sort_key = sort_key_map.get(sort_by, 'created_at')
+        crackmes.sort(key=lambda x: x.get(sort_key) or 0, reverse=(sort_order == 'desc'))
     except ErrUnavailable:
         crackmes = []
+
+    search_params = {'sort_by': sort_by, 'sort_order': sort_order}
 
     return render_template('search/search.html',
                            crackmes=crackmes,
                            page=1,
                            has_more=False,
                            show_all=True,
-                           search_params={})
+                           search_params=search_params)
