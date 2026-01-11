@@ -198,14 +198,14 @@
                     <th style="width: 14%;">Author</th>
                     <th style="width: 8%;">Language</th>
                     <th style="width: 6%;">Arch</th>
-                    <th style="width: 4%;">Difficulty</th>
-                    <th style="width: 4%;">Quality</th>
+                    <th style="width: 4%; cursor: pointer;" onclick="sortBy('difficulty')">Difficulty {% if search_params.get('sort_by') == 'difficulty' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
+                    <th style="width: 4%; cursor: pointer;" onclick="sortBy('quality')">Quality {% if search_params.get('sort_by') == 'quality' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
                     <th style="width: 8%;">Platform</th>
-                    <th style="width: 6%;">Size</th>
-                    <th style="width: 9%;">Date</th>
-                    <th style="width: 5%;">Downloads</th>
-                    <th style="width: 5%;">Writeups</th>
-                    <th style="width: 5%;">Comments</th>
+                    <th style="width: 6%; cursor: pointer;" onclick="sortBy('size')">Size {% if search_params.get('sort_by') == 'size' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
+                    <th style="width: 9%; cursor: pointer;" onclick="sortBy('date')">Date {% if search_params.get('sort_by', 'date') == 'date' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
+                    <th style="width: 5%; cursor: pointer;" onclick="sortBy('downloads')">Downloads {% if search_params.get('sort_by') == 'downloads' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
+                    <th style="width: 5%; cursor: pointer;" onclick="sortBy('solutions')">Writeups {% if search_params.get('sort_by') == 'solutions' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
+                    <th style="width: 5%; cursor: pointer;" onclick="sortBy('comments')">Comments {% if search_params.get('sort_by') == 'comments' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
                 </tr>
             </thead>
             <tbody id="search-results">
@@ -355,4 +355,20 @@
 {% include 'partial/footer.html' %}
 
 {% endblock %}
-{% block foot %}{% endblock %}
+{% block foot %}
+<script>
+function sortBy(field) {
+    var currentSort = '{{ search_params.get("sort_by", "date") }}';
+    var currentOrder = '{{ search_params.get("sort_order", "desc") }}';
+    var newOrder = 'desc';
+
+    if (field === currentSort) {
+        newOrder = (currentOrder === 'desc') ? 'asc' : 'desc';
+    }
+
+    document.getElementById('sort_by').value = field;
+    document.getElementById('sort_order').value = newOrder;
+    document.querySelector('form.form-horizontal').submit();
+}
+</script>
+{% endblock %}
