@@ -5,7 +5,7 @@ A platform for sharing and solving reverse engineering challenges.
 
 import json
 import os
-from flask import Flask
+from flask import Flask, render_template
 from flask_wtf.csrf import CSRFProtect
 
 from app.services.database import init_db
@@ -96,5 +96,10 @@ def create_app(config_path=None):
 
     # Register template filters
     register_filters(app)
+
+    # Register error handlers
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template('404.html'), 404
 
     return app
