@@ -6,7 +6,7 @@
 
 <div style="max-width: 80%" class="container d-flex-row wrapper">
 
-    <h2>Latest Writeups <a href="/rss/solution"><img src="/static/img/rss.svg" width="16" height="16" /></a></h2>
+    <h2>Latest Writeups</h2>
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
@@ -23,7 +23,7 @@
                 <tr class="text-center">
                     <td> <a href="/crackme/{{ solution.crackmehexid }}">{{ solution.crackmename }}</a></td>
                     <td> <a href="/user/{{ solution.author }}">{{ solution.author }}</a> </td>
-                    <td style="text-align: left; max-height: 80px; overflow-y: auto;"> {{ solution.info|safe|truncate(90) }} </td>
+                    <td style="text-align: left; max-height: 80px; overflow-y: auto;"> {{ solution.info|truncate(90) }} </td>
                     <td> {{ solution.created_at|PRETTYTIME }} </td>
                     <td> <a href="/static/solution/{{ solution.hexid }}.zip" title="Password: crackmes.one">[↓]</a></td>
                 </tr>
