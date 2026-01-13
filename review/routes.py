@@ -499,18 +499,30 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
         Tuple of (success: bool, error_message: str or None)
     """
     dest_path = dest_path_without_ext + '.zip'
-    temp_path = os.path.join(CRACKMESONE_DIR, filename_in_archive)
+
+    # Use hexid from dest path to create unique temp directory, avoiding race conditions
+    # when multiple submissions have the same original filename
+    hexid = os.path.basename(dest_path_without_ext)
+    temp_dir = os.path.join(CRACKMESONE_DIR, 'tmp', f'archive_{hexid}')
+    os.makedirs(temp_dir, exist_ok=True)
+    temp_path = os.path.join(temp_dir, filename_in_archive)
 
     try:
         shutil.move(source_path, temp_path)
-        pyminizip.compress(temp_path, None, dest_path, ARCHIVE_PASSWORD, 6) #https://linux.die.net/man/1/zip default before was 6, this follows on pyminizip
+        pyminizip.compress(temp_path, None, dest_path, ARCHIVE_PASSWORD, 6)
         os.remove(temp_path)
+        os.rmdir(temp_dir)
         return True, None
 
     except Exception as e:
         if os.path.exists(temp_path):
             try:
                 shutil.move(temp_path, source_path)
+            except Exception:
+                pass
+        if os.path.exists(temp_dir):
+            try:
+                shutil.rmtree(temp_dir)
             except Exception:
                 pass
         if os.path.exists(dest_path):
@@ -1557,6 +1569,9 @@ def downloadreview(current_user):
         doc = g_crackmesone_db.crackme.find_one({'hexid': uuid})
     else:
         doc = g_crackmesone_db.solution.find_one({'hexid': uuid})
+
+    if not doc:
+        print(f"Warning: Orphaned {download_type} file {uuid} exists on disk but not in database")
 
     original_filename = (doc.get('original_filename') if doc else None) or uuid
 

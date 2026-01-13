@@ -206,8 +206,8 @@ def upload_crackme_post():
     except ErrNoResult:
         pass  # No duplicate, continue
 
-    # Secure filename
-    original_filename = secure_filename(file.filename)
+    # Secure filename (fallback to "unnamed" if filename has only unsafe characters)
+    original_filename = secure_filename(file.filename) or "unnamed"
 
     # Prepare crackme
     try:

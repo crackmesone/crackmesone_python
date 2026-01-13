@@ -101,8 +101,8 @@ def upload_solution_post(hexidcrackme):
               'Please submit a writeup that analyzes the algorithm instead of a patched binary.', FLASH_ERROR)
         return redirect(f'/upload/solution/{hexidcrackme}')
 
-    # Secure filename
-    original_filename = secure_filename(file.filename)
+    # Secure filename (fallback to "unnamed" if filename has only unsafe characters)
+    original_filename = secure_filename(file.filename) or "unnamed"
 
     # Create solution
     try:
