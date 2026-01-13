@@ -108,6 +108,18 @@ def save_users():
         json.dump(users, f, indent=2)
 
 
+def reload_users():
+    """
+    Reload reviewer users from users.json file.
+
+    Updates the global users dict with the current contents of the file.
+    """
+    if os.path.exists(USERS_FILE):
+        with open(USERS_FILE, 'r') as f:
+            users.clear()
+            users.update(json.load(f))
+
+
 # =============================================================================
 # Authentication Helpers
 # =============================================================================
@@ -133,6 +145,7 @@ def get_current_reviewer():
         Dict with 'username' and 'is_admin' keys if authenticated,
         None if not authenticated or user no longer exists.
     """
+    reload_users()
     username = session.get(REVIEWER_SESSION_KEY)
     if not username or username not in users:
         return None
@@ -1470,6 +1483,7 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
 
+        reload_users()
         expected_hash = users.get(username, {}).get("password_hash")
         if expected_hash and expected_hash == hash_string(password + PASSWORD_SALT):
             session[REVIEWER_SESSION_KEY] = username
@@ -2376,6 +2390,7 @@ def managereviewers(current_user):
             message = _handle_change_password(current_user)
 
     # Prepare reviewer list
+    reload_users()
     reviewers = sorted([
         {
             'username': username,
@@ -2412,6 +2427,7 @@ def _handle_add_reviewer(current_user):
 
     try:
         save_users()
+        reload_users()
         log_reviewer_operation(
             "add_reviewer", current_user['username'],
             {"new_reviewer": new_username, "is_admin": is_admin},
@@ -2439,6 +2455,7 @@ def _handle_delete_reviewer(current_user):
 
     try:
         save_users()
+        reload_users()
         log_reviewer_operation(
             "delete_reviewer", current_user['username'],
             {
@@ -2470,6 +2487,7 @@ def _handle_toggle_admin(current_user):
 
     try:
         save_users()
+        reload_users()
         status_text = "admin" if new_status else "regular reviewer"
         log_reviewer_operation(
             "toggle_reviewer_admin", current_user['username'],
@@ -2502,6 +2520,7 @@ def _handle_change_password(current_user):
 
     try:
         save_users()
+        reload_users()
         log_reviewer_operation(
             "change_reviewer_password", current_user['username'],
             {"target_reviewer": username},
