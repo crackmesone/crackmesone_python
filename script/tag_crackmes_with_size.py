@@ -57,25 +57,18 @@ def find_crackme_file(static_dir, hexid):
     return None
 
 
-def find_unapproved_crackme_file(tmp_dir, author, hexid):
+def find_unapproved_crackme_file(tmp_dir, hexid):
     """Find an unapproved crackme file in tmp/crackme directory.
 
-    Unapproved crackmes are stored with naming pattern: author+++hexid+++filename
-    This function finds the file matching the author and hexid prefix.
+    Unapproved crackmes are stored with filename equal to their hexid.
 
     Returns the full path if found, None otherwise.
     """
     if not os.path.exists(tmp_dir):
         return None
 
-    try:
-        prefix = f"{author}+++{hexid}+++"
-        for filename in os.listdir(tmp_dir):
-            if filename.startswith(prefix):
-                return os.path.join(tmp_dir, filename)
-    except Exception as e:
-        print(f"    Error scanning tmp directory for {author}/{hexid}: {e}")
-    return None
+    file_path = os.path.join(tmp_dir, hexid)
+    return file_path if os.path.exists(file_path) else None
 
 
 def format_size(size_bytes):
@@ -154,9 +147,7 @@ def main():
         else:
             # Unapproved crackme - raw uploaded file in tmp/crackme/
             location = "unapproved"
-            file_path = find_unapproved_crackme_file(
-                tmp_dir, crackme.get("author", ""), hexid
-            )
+            file_path = find_unapproved_crackme_file(tmp_dir, hexid)
             if file_path:
                 try:
                     size = os.path.getsize(file_path)

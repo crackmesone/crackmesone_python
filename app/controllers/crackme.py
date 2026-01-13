@@ -206,16 +206,18 @@ def upload_crackme_post():
     except ErrNoResult:
         pass  # No duplicate, continue
 
+    # Secure filename
+    original_filename = secure_filename(file.filename)
+
     # Prepare crackme
     try:
-        crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size)
+        crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename)
     except Exception as e:
         print(f"Error preparing crackme: {e}")
         abort(500)
 
-    # Secure filename and create path
-    filename = secure_filename(file.filename)
-    safe_path = os.path.join(UPLOAD_FOLDER, f"{username}+++{crackme['hexid']}+++{filename}")
+    # Create path using hexid only
+    safe_path = os.path.join(UPLOAD_FOLDER, crackme['hexid'])
 
     # Ensure upload directory exists
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)

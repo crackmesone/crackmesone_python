@@ -724,55 +724,49 @@ class DatabaseSanitizer:
                                 self.log_issue("FIX_ERROR", f"Failed to delete file {file_path}: {e}", "ERROR")
 
         # Check tmp crackme files (pending submissions)
-        # These files have format: username+++hexid+++filename
+        # Files are named by their hexid (24 hex characters)
         print("Checking tmp/crackme directory...")
         if os.path.exists(self.tmp_crackme_dir):
             for filename in os.listdir(self.tmp_crackme_dir):
-                if '+++' in filename:
-                    try:
-                        parts = filename.split('+++')
-                        if len(parts) >= 2:
-                            username, hexid = parts[0], parts[1]
-                            if hexid not in crackme_hexids:
-                                orphaned_files += 1
-                                orphaned_tmp_files += 1
-                                file_path = os.path.join(self.tmp_crackme_dir, filename)
-                                self.log_issue("ORPHANED_TMP_FILE",
-                                             f"Tmp crackme file without database entry: {file_path} (hexid: {hexid})")
+                # Valid hexid is 24 hex characters
+                if len(filename) == 24 and all(c in '0123456789abcdef' for c in filename.lower()):
+                    hexid = filename
+                    if hexid not in crackme_hexids:
+                        orphaned_files += 1
+                        orphaned_tmp_files += 1
+                        file_path = os.path.join(self.tmp_crackme_dir, filename)
+                        self.log_issue("ORPHANED_TMP_FILE",
+                                     f"Tmp crackme file without database entry: {file_path} (hexid: {hexid})")
 
-                                if not self.dry_run:
-                                    try:
-                                        os.remove(file_path)
-                                        self.log_fix(f"Deleted orphaned tmp crackme file {filename}")
-                                    except Exception as e:
-                                        self.log_issue("FIX_ERROR", f"Failed to delete file {file_path}: {e}", "ERROR")
-                    except Exception as e:
-                        self.log_issue("PARSE_ERROR", f"Failed to parse tmp filename {filename}: {e}", "WARNING")
+                        if not self.dry_run:
+                            try:
+                                os.remove(file_path)
+                                self.log_fix(f"Deleted orphaned tmp crackme file {filename}")
+                            except Exception as e:
+                                self.log_issue("FIX_ERROR", f"Failed to delete file {file_path}: {e}", "ERROR")
 
         # Check tmp solution files (pending submissions)
         print("Checking tmp/solution directory...")
         if os.path.exists(self.tmp_solution_dir):
             for filename in os.listdir(self.tmp_solution_dir):
-                if '+++' in filename:
-                    try:
-                        parts = filename.split('+++')
-                        if len(parts) >= 2:
-                            username, hexid = parts[0], parts[1]
-                            if hexid not in solution_hexids:
-                                orphaned_files += 1
-                                orphaned_tmp_files += 1
-                                file_path = os.path.join(self.tmp_solution_dir, filename)
-                                self.log_issue("ORPHANED_TMP_FILE",
-                                             f"Tmp solution file without database entry: {file_path} (hexid: {hexid})")
+                # Valid hexid is 24 hex characters
 
-                                if not self.dry_run:
-                                    try:
-                                        os.remove(file_path)
-                                        self.log_fix(f"Deleted orphaned tmp solution file {filename}")
-                                    except Exception as e:
-                                        self.log_issue("FIX_ERROR", f"Failed to delete file {file_path}: {e}", "ERROR")
-                    except Exception as e:
-                        self.log_issue("PARSE_ERROR", f"Failed to parse tmp filename {filename}: {e}", "WARNING")
+                # Here we duplicate logic for checking hexid (is_valid_hexid() is defined in review/routes.py), TODO: make a shared util module?
+                if len(filename) == 24 and all(c in '0123456789abcdef' for c in filename.lower()):
+                    hexid = filename
+                    if hexid not in solution_hexids:
+                        orphaned_files += 1
+                        orphaned_tmp_files += 1
+                        file_path = os.path.join(self.tmp_solution_dir, filename)
+                        self.log_issue("ORPHANED_TMP_FILE",
+                                     f"Tmp solution file without database entry: {file_path} (hexid: {hexid})")
+
+                        if not self.dry_run:
+                            try:
+                                os.remove(file_path)
+                                self.log_fix(f"Deleted orphaned tmp solution file {filename}")
+                            except Exception as e:
+                                self.log_issue("FIX_ERROR", f"Failed to delete file {file_path}: {e}", "ERROR")
 
         print(f"Found {orphaned_static_files} orphaned files in static directories")
         print(f"Found {orphaned_tmp_files} orphaned files in tmp directories")
@@ -919,12 +913,11 @@ class DatabaseSanitizer:
                 tmp_file_path = None
 
                 # Check if file exists in tmp directory (pending review)
-                # Tmp files have format: username+++hexid+++filename
+                # Tmp files are named by their hexid
                 if os.path.exists(self.tmp_crackme_dir):
-                    for filename in os.listdir(self.tmp_crackme_dir):
-                        if '+++' in filename and crackme_id in filename:
-                            tmp_file_path = os.path.join(self.tmp_crackme_dir, filename)
-                            break
+                    potential_tmp_path = os.path.join(self.tmp_crackme_dir, crackme_id)
+                    if os.path.exists(potential_tmp_path):
+                        tmp_file_path = potential_tmp_path
 
                 # If file is in static directory, it's inconsistent
                 if os.path.exists(static_file_path):
@@ -1345,39 +1338,31 @@ class DatabaseSanitizer:
                             'reason': f"orphaned solution file without database entry: {filename}"
                         })
 
-        # Check tmp crackme files
+        # Check tmp crackme files (named by hexid)
         if os.path.exists(self.tmp_crackme_dir):
             for filename in os.listdir(self.tmp_crackme_dir):
-                if '+++' in filename:
-                    try:
-                        parts = filename.split('+++')
-                        if len(parts) >= 2:
-                            hexid = parts[1]
-                            if hexid not in crackme_hexids:
-                                planned_operations['orphaned_tmp_files'].append({
-                                    'path': os.path.join(self.tmp_crackme_dir, filename),
-                                    'type': 'crackme',
-                                    'reason': f'no database entry for hexid {hexid}'
-                                })
-                    except:
-                        pass
+                # Valid hexid is 24 hex characters
+                if len(filename) == 24 and all(c in '0123456789abcdef' for c in filename.lower()):
+                    hexid = filename
+                    if hexid not in crackme_hexids:
+                        planned_operations['orphaned_tmp_files'].append({
+                            'path': os.path.join(self.tmp_crackme_dir, filename),
+                            'type': 'crackme',
+                            'reason': f'no database entry for hexid {hexid}'
+                        })
 
-        # Check tmp solution files
+        # Check tmp solution files (named by hexid)
         if os.path.exists(self.tmp_solution_dir):
             for filename in os.listdir(self.tmp_solution_dir):
-                if '+++' in filename:
-                    try:
-                        parts = filename.split('+++')
-                        if len(parts) >= 2:
-                            hexid = parts[1]
-                            if hexid not in solution_hexids:
-                                planned_operations['orphaned_tmp_files'].append({
-                                    'path': os.path.join(self.tmp_solution_dir, filename),
-                                    'type': 'solution',
-                                    'reason': f'no database entry for hexid {hexid}'
-                                })
-                    except:
-                        pass
+                # Valid hexid is 24 hex characters
+                if len(filename) == 24 and all(c in '0123456789abcdef' for c in filename.lower()):
+                    hexid = filename
+                    if hexid not in solution_hexids:
+                        planned_operations['orphaned_tmp_files'].append({
+                            'path': os.path.join(self.tmp_solution_dir, filename),
+                            'type': 'solution',
+                            'reason': f'no database entry for hexid {hexid}'
+                        })
 
         # Check for invalid ObjectIds in solutions
         for solution in solutions:

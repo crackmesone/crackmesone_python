@@ -129,7 +129,7 @@ def get_solution_authors(crackme_hexid):
     return set(solution['author'] for solution in solutions)
 
 
-def solution_create(info, username, crackme_hexid):
+def solution_create(info, username, crackme_hexid, original_filename):
     """Create a new solution."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -151,7 +151,8 @@ def solution_create(info, username, crackme_hexid):
         'created_at': datetime.utcnow(),
         'author': username,
         'visible': False,
-        'deleted': False
+        'deleted': False,
+        'original_filename': original_filename
     }
 
     collection.insert_one(solution)

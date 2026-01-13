@@ -101,16 +101,18 @@ def upload_solution_post(hexidcrackme):
               'Please submit a writeup that analyzes the algorithm instead of a patched binary.', FLASH_ERROR)
         return redirect(f'/upload/solution/{hexidcrackme}')
 
+    # Secure filename
+    original_filename = secure_filename(file.filename)
+
     # Create solution
     try:
-        solution = solution_create(info, username, hexidcrackme)
+        solution = solution_create(info, username, hexidcrackme, original_filename)
     except Exception as e:
         print(f"Error creating solution: {e}")
         abort(500)
 
-    # Secure filename and create path
-    filename = secure_filename(file.filename)
-    safe_path = os.path.join(UPLOAD_FOLDER, f"{username}+++{solution['hexid']}+++{filename}")
+    # Create path using hexid only
+    safe_path = os.path.join(UPLOAD_FOLDER, solution['hexid'])
 
     # Ensure upload directory exists
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)

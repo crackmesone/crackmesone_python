@@ -10,23 +10,26 @@ This module provides a web interface for reviewers and admins to:
 
 from flask import (
     Blueprint, render_template, request, redirect,
-    url_for, abort, send_file, session
+    url_for, abort, send_file, session, jsonify
 )
 from functools import wraps
 from html import escape as html_escape
 import datetime
 from datetime import timezone
 import hashlib
-import os
 import json
-import re
-import requests
-import pyminizip
-from bson.objectid import ObjectId
-import shutil
+import os
 import random
+import re
+import shutil
 import string
+import threading
+
 import bcrypt
+import pyminizip
+import requests
+from bson.objectid import ObjectId
+
 from review.logger import log_reviewer_operation
 
 
@@ -248,44 +251,39 @@ def get_static_dir(item_type):
     return os.path.join(CRACKMESONE_DIR, 'static', item_type)
 
 
-def parse_pending_filename(filename):
-    """
-    Parse a pending submission filename into components.
+HEX_CHARS = set('0123456789abcdef')
 
-    Pending files are named: author+++hexid+++original_filename
+
+def is_valid_hexid(hexid):
+    """
+    Check if a string is a valid MongoDB ObjectId hex representation (24 hex characters).
 
     Args:
-        filename: The pending file's name
+        hexid: The string to validate
 
     Returns:
-        Tuple of (author, hexid, original_filename) or None if invalid
+        True if valid hexid, False otherwise
     """
-    parts = filename.split('+++')
-    if len(parts) != 3:
-        return None
-    return tuple(parts)
+    return bool(hexid) and len(hexid) == 24 and all(c in HEX_CHARS for c in hexid.lower())
 
 
-def find_pending_file(item_type, target_uuid):
+def find_pending_file(item_type, hexid):
     """
-    Find a pending submission file by its UUID.
+    Find a pending submission file by its hexid.
 
     Args:
         item_type: Either 'crackme' or 'solution'
-        target_uuid: The hexid to search for
+        hexid: The hexid to search for
 
     Returns:
-        Filename if found, empty string if not found
+        The hexid (lowercase) if file exists, empty string if not found
     """
-    tmp_dir = get_tmp_dir(item_type)
-    if not os.path.exists(tmp_dir):
+    if not is_valid_hexid(hexid):
         return ""
 
-    for filename in os.listdir(tmp_dir):
-        parsed = parse_pending_filename(filename)
-        if parsed and parsed[1] == target_uuid:
-            return filename
-    return ""
+    hexid = hexid.lower()
+    file_path = os.path.join(get_tmp_dir(item_type), hexid)
+    return hexid if os.path.exists(file_path) else ""
 
 
 def count_pending_items(item_type):
@@ -303,7 +301,7 @@ def count_pending_items(item_type):
         return 0
     return sum(
         1 for f in os.listdir(tmp_dir)
-        if parse_pending_filename(f) is not None
+        if is_valid_hexid(f)
     )
 
 
@@ -546,16 +544,11 @@ def get_pending_solutions():
     errors = []
 
     for filename in os.listdir(tmp_dir):
-        parsed = parse_pending_filename(filename)
-        if not parsed:
+        if not is_valid_hexid(filename):
             continue
 
-        author, solution_uuid, _ = parsed
-
-        if not ObjectId.is_valid(solution_uuid):
-            errors.append(f"File {filename} has invalid uuid")
-            continue
-
+        # is_valid_hexid guarantees valid ObjectId format (24 hex chars)
+        solution_uuid = filename
         solution_obj = g_crackmesone_db.solution.find_one({
             "_id": ObjectId(solution_uuid)
         })
@@ -576,7 +569,7 @@ def get_pending_solutions():
 
         solutions.append({
             "crackme_name": crackme_obj["name"],
-            "solution_author": author,
+            "solution_author": solution_obj["author"],
             "solution_uuid": solution_uuid,
             "crackme_uuid": crackme_obj["hexid"],
             "date": solution_obj["created_at"]
@@ -603,16 +596,11 @@ def get_pending_crackmes():
     errors = []
 
     for filename in os.listdir(tmp_dir):
-        parsed = parse_pending_filename(filename)
-        if not parsed:
+        if not is_valid_hexid(filename):
             continue
 
-        _, crackme_uuid, _ = parsed
-
-        if not ObjectId.is_valid(crackme_uuid):
-            errors.append(f"File {filename} has invalid uuid")
-            continue
-
+        # is_valid_hexid guarantees valid ObjectId format (24 hex chars)
+        crackme_uuid = filename
         crackme_obj = g_crackmesone_db.crackme.find_one({
             "_id": ObjectId(crackme_uuid)
         })
@@ -699,7 +687,7 @@ def get_crackme_details(uuid):
     }, None
 
 
-def reject_pending_crackme(file_loc, reject_reason=None):
+def reject_pending_crackme(hexid, reject_reason=None):
     """
     Reject a pending crackme submission.
 
@@ -707,17 +695,14 @@ def reject_pending_crackme(file_loc, reject_reason=None):
     deletes the file from tmp/, and notifies the author.
 
     Args:
-        file_loc: Pending filename (author+++hexid+++filename format)
+        hexid: The hexid of the pending crackme
         reject_reason: Optional reason to include in notification
 
     Returns:
         Tuple of (success: bool, message: str)
     """
-    parsed = parse_pending_filename(file_loc)
-    if not parsed:
-        return False, "Invalid file format"
-
-    _, hexid, _ = parsed
+    if not is_valid_hexid(hexid):
+        return False, "Invalid hexid format"
 
     try:
         crackme = g_crackmesone_db.crackme.find_one({'hexid': hexid})
@@ -730,7 +715,7 @@ def reject_pending_crackme(file_loc, reject_reason=None):
         g_crackmesone_db.rating_quality.delete_many({"crackmehexid": hexid})
 
         # Remove file
-        file_path = os.path.join(get_tmp_dir('crackme'), file_loc)
+        file_path = os.path.join(get_tmp_dir('crackme'), hexid)
         if os.path.exists(file_path):
             os.remove(file_path)
 
@@ -746,7 +731,7 @@ def reject_pending_crackme(file_loc, reject_reason=None):
         return False, f"Error rejecting crackme: {str(e)}"
 
 
-def reject_pending_solution(file_loc, reject_reason=None):
+def reject_pending_solution(hexid, reject_reason=None):
     """
     Reject a pending solution submission.
 
@@ -754,17 +739,14 @@ def reject_pending_solution(file_loc, reject_reason=None):
     and notifies the author.
 
     Args:
-        file_loc: Pending filename (author+++hexid+++filename format)
+        hexid: The hexid of the pending solution
         reject_reason: Optional reason to include in notification
 
     Returns:
         Tuple of (success: bool, message: str)
     """
-    parsed = parse_pending_filename(file_loc)
-    if not parsed:
-        return False, "Invalid file format"
-
-    _, hexid, _ = parsed
+    if not is_valid_hexid(hexid):
+        return False, "Invalid hexid format"
 
     try:
         solution = g_crackmesone_db.solution.find_one({'hexid': hexid})
@@ -781,7 +763,7 @@ def reject_pending_solution(file_loc, reject_reason=None):
         g_crackmesone_db.solution.delete_one({'hexid': hexid})
 
         # Remove file
-        file_path = os.path.join(get_tmp_dir('solution'), file_loc)
+        file_path = os.path.join(get_tmp_dir('solution'), hexid)
         if os.path.exists(file_path):
             os.remove(file_path)
 
@@ -797,7 +779,7 @@ def reject_pending_solution(file_loc, reject_reason=None):
         return False, f"Error rejecting solution: {str(e)}"
 
 
-def approve_pending_crackme(file_loc):
+def approve_pending_crackme(hexid):
     """
     Approve a pending crackme submission.
 
@@ -805,21 +787,21 @@ def approve_pending_crackme(file_loc):
     static/crackme/, and notifies the author.
 
     Args:
-        file_loc: Pending filename (author+++hexid+++filename format)
+        hexid: The hexid of the pending crackme
 
     Returns:
         Tuple of (success: bool, message: str)
     """
-    parsed = parse_pending_filename(file_loc)
-    if not parsed:
-        return False, "Invalid file format"
-
-    _, hexid, original_filename = parsed
+    if not is_valid_hexid(hexid):
+        return False, "Invalid hexid format"
 
     try:
         crackme = g_crackmesone_db.crackme.find_one({'hexid': hexid})
         if not crackme:
             return False, "Crackme not found in database"
+
+        # Get original filename from database
+        original_filename = crackme.get('original_filename') or hexid
 
         # Set visible
         g_crackmesone_db.crackme.update_one(
@@ -828,7 +810,7 @@ def approve_pending_crackme(file_loc):
         )
 
         # Create archive
-        source_path = os.path.join(get_tmp_dir('crackme'), file_loc)
+        source_path = os.path.join(get_tmp_dir('crackme'), hexid)
         if not os.path.exists(source_path):
             return False, "Crackme file not found in tmp directory"
 
@@ -857,7 +839,7 @@ def approve_pending_crackme(file_loc):
         return False, f"Error approving crackme: {str(e)}"
 
 
-def approve_pending_solution(file_loc):
+def approve_pending_solution(hexid):
     """
     Approve a pending solution submission.
 
@@ -866,21 +848,21 @@ def approve_pending_solution(file_loc):
     and increments the crackme's solution count.
 
     Args:
-        file_loc: Pending filename (author+++hexid+++filename format)
+        hexid: The hexid of the pending solution
 
     Returns:
         Tuple of (success: bool, message: str)
     """
-    parsed = parse_pending_filename(file_loc)
-    if not parsed:
-        return False, "Invalid file format"
-
-    _, hexid, original_filename = parsed
+    if not is_valid_hexid(hexid):
+        return False, "Invalid hexid format"
 
     try:
         solution = g_crackmesone_db.solution.find_one({'hexid': hexid})
         if not solution:
             return False, "Solution not found in database"
+
+        # Get original filename from database
+        original_filename = solution.get('original_filename') or hexid
 
         crackme = g_crackmesone_db.crackme.find_one({
             '_id': solution["crackmeid"]
@@ -897,7 +879,7 @@ def approve_pending_solution(file_loc):
         )
 
         # Create archive
-        source_path = os.path.join(get_tmp_dir('solution'), file_loc)
+        source_path = os.path.join(get_tmp_dir('solution'), hexid)
         if not os.path.exists(source_path):
             return False, "Solution file not found in tmp directory"
 
@@ -1560,19 +1542,29 @@ def downloadreview(current_user):
     if download_type not in ('solution', 'crackme'):
         abort(404)
 
-    tmp_dir = get_tmp_dir(download_type)
-    if not os.path.exists(tmp_dir):
+    if not is_valid_hexid(uuid):
         abort(404)
 
-    for filename in os.listdir(tmp_dir):
-        parsed = parse_pending_filename(filename)
-        if parsed and parsed[1] == uuid:
-            return send_file(
-                os.path.join(tmp_dir, filename),
-                as_attachment=True
-            )
+    uuid = uuid.lower()
+    tmp_dir = get_tmp_dir(download_type)
+    file_path = os.path.join(tmp_dir, uuid)
 
-    abort(404)
+    if not os.path.exists(file_path):
+        abort(404)
+
+    # Get original filename from database
+    if download_type == 'crackme':
+        doc = g_crackmesone_db.crackme.find_one({'hexid': uuid})
+    else:
+        doc = g_crackmesone_db.solution.find_one({'hexid': uuid})
+
+    original_filename = (doc.get('original_filename') if doc else None) or uuid
+
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name=original_filename
+    )
 
 
 # =============================================================================

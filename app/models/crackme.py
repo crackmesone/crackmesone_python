@@ -264,39 +264,7 @@ def crackme_by_user_and_name(username, name, visible=True):
     return result
 
 
-def crackme_create(name, info, username, lang, arch, platform, size):
-    """Create a new crackme."""
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
-
-    collection = get_collection('crackme')
-    obj_id = ObjectId()
-
-    crackme = {
-        '_id': obj_id,
-        'hexid': str(obj_id),
-        'name': name,
-        'info': info,
-        'lang': lang,
-        'arch': arch,
-        'author': username,
-        'created_at': datetime.utcnow(),
-        'visible': False,
-        'deleted': False,
-        'difficulty': 0.0,
-        'quality': 0.0,
-        'nbsolutions': 0,
-        'nbcomments': 0,
-        'nbdownloads': 0,
-        'platform': platform,
-        'size': size
-    }
-
-    collection.insert_one(crackme)
-    return crackme
-
-
-def crackme_create_prepare(name, info, username, lang, arch, platform, size):
+def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename):
     """Prepare a crackme object without inserting it."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -320,7 +288,8 @@ def crackme_create_prepare(name, info, username, lang, arch, platform, size):
         'nbcomments': 0,
         'nbdownloads': 0,
         'platform': platform,
-        'size': size
+        'size': size,
+        'original_filename': original_filename
     }
 
 
