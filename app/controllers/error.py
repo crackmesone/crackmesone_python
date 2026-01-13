@@ -18,8 +18,8 @@ MESSAGES_404 = [
     "Invalid opcode at address 0x404.",
     "The keygen for this page doesn't exist yet.",
     "0x404: mov eax, PAGE | 0x408: jmp NOWHERE",
-    "Symbol 'page' not found in symbol table."
-    "Single-stepped right past this page."
+    "Symbol 'page' not found in symbol table.",
+    "Single-stepped right past this page.",
 ]
 
 
