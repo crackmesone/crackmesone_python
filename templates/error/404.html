@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}404 - Page Not Found{% endblock %}
+{% block page_title %}404 - Page Not Found{% endblock %}
+{% block content %}
+<div class="container grid-lg wrapper" style="display: flex; align-items: center; justify-content: center;">
+    <div class="empty">
+        <div class="empty-icon">
+            <h1 style="font-size: 8rem; margin: 0; color: #9acc14;">404</h1>
+        </div>
+        <p class="empty-title h5">Page Not Found</p>
+        <p class="empty-subtitle">{{ message }}</p>
+        <div class="empty-action">
+            <a class="btn btn-primary" href="/">Go Home</a>
+        </div>
+    </div>
+</div>
+{% include 'partial/footer.html' %}
+{% endblock %}
