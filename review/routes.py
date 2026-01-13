@@ -26,8 +26,8 @@ import string
 import threading
 
 import bcrypt
-import pyminizip
 import requests
+from subprocess import call
 from bson.objectid import ObjectId
 
 from review.logger import log_reviewer_operation
@@ -498,39 +498,56 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
     Returns:
         Tuple of (success: bool, error_message: str or None)
     """
-    dest_path = dest_path_without_ext + '.zip'
-
-    # Use hexid from dest path to create unique temp directory, avoiding race conditions
-    # when multiple submissions have the same original filename
-    hexid = os.path.basename(dest_path_without_ext)
-    temp_dir = os.path.join(CRACKMESONE_DIR, 'tmp', f'archive_{hexid}')
-    os.makedirs(temp_dir, exist_ok=True)
-    temp_path = os.path.join(temp_dir, filename_in_archive)
+    # Move to temp location with desired filename
+    temp_path = os.path.join(CRACKMESONE_DIR, filename_in_archive)
+    shutil.move(source_path, temp_path)
 
     try:
-        shutil.move(source_path, temp_path)
-        pyminizip.compress(temp_path, None, dest_path, ARCHIVE_PASSWORD, 6)
-        os.remove(temp_path)
-        os.rmdir(temp_dir)
+        # Find zip command (use full path to avoid PATH issues in web server)
+        zip_cmd = shutil.which("zip") or "/usr/bin/zip"
+
+        # Create password-protected zip
+        ret = call([
+            zip_cmd, "-j", "--password", ARCHIVE_PASSWORD,
+            dest_path_without_ext, "--", temp_path
+        ])
+
+        if ret != 0:
+            # Move file back on failure
+            if os.path.exists(temp_path):
+                try:
+                    shutil.move(temp_path, source_path)
+                except Exception:
+                    pass
+            return False, "Failed to create zip archive"
+
         return True, None
 
-    except Exception as e:
+    except FileNotFoundError:
+        # zip command not found - move file back
         if os.path.exists(temp_path):
             try:
                 shutil.move(temp_path, source_path)
             except Exception:
                 pass
-        if os.path.exists(temp_dir):
+        return False, "zip command not found"
+
+    except Exception as e:
+        # Other errors - move file back
+        if os.path.exists(temp_path):
             try:
-                shutil.rmtree(temp_dir)
-            except Exception:
-                pass
-        if os.path.exists(dest_path):
-            try:
-                os.remove(dest_path)
+                shutil.move(temp_path, source_path)
             except Exception:
                 pass
         return False, f"Error creating zip: {str(e)}"
+
+    finally:
+        # Clean up temp file (only if zip succeeded, file was moved to archive)
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
 
 
 # =============================================================================
