@@ -228,6 +228,10 @@ Alternatively, an existing admin can add new reviewers through the web interface
 | Reset user passwords | No | Yes |
 | Manage reviewer accounts | No | Yes |
 
+## Contributing
+
+Interested in contributing? Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. **Note:** You must contact the maintainer before starting any work.
+
 ## FAQ
 
 **How do I report a security vulnerability?**

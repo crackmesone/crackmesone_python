@@ -10,7 +10,11 @@ Thank you for your interest in contributing to crackmes.one!
 
 ## Before You Start
 
-If you're planning to contribute code, **please reach out first** via [Discord](https://discord.gg/2pPV3yq) or email (crackmesone@gmail.com) — especially if your contribution isn't already tracked by an existing issue. This helps us:
+**Important:** If you're planning to contribute code, you **must** contact the project maintainer first via [Discord](https://discord.gg/2pPV3yq) or email (crackmesone@gmail.com) before starting any work. This applies to all contributions, whether or not they're tracked by an existing issue.
+
+**Pull requests submitted without prior communication may be rejected without consideration.**
+
+This requirement helps us:
 
 - Avoid duplicate work
 - Discuss the best approach
