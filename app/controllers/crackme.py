@@ -38,7 +38,7 @@ def crackme_view(hexid):
     try:
         crackme = crackme_by_hexid(hexid)
     except ErrNoResult:
-        abort(500)
+        abort(404)
     except Exception as e:
         print(f"Error getting crackme: {e}")
         abort(500)
