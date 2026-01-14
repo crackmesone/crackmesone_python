@@ -9,7 +9,6 @@ bleach==6.1.0
 requests==2.31.0
 Werkzeug==3.0.1
 resend==2.0.0
-rustyzipper==1.0.5
 
 # Testing
 pytest==7.4.3
