@@ -5,7 +5,7 @@ Login controller - User authentication.
 from urllib.parse import urlparse
 
 from flask import Blueprint, render_template, request, redirect, flash, session
-from app.models.user import user_by_name
+from app.models.user import user_by_name, user_by_mail
 from app.models.errors import ErrNoResult
 from app.services.passhash import match_string
 from app.services.limiter import limit
@@ -66,9 +66,21 @@ def login_post():
     # Track login attempts
     attempts = session.get('login_attempt', 0)
 
+    # Try email lookup first, then username (email takes precedence)
+    user = None
     try:
-        user = user_by_name(name)
+        try:
+            user = user_by_mail(name)
+        except ErrNoResult:
+            user = user_by_name(name)
+    except ErrNoResult:
+        pass  # Neither found, user stays None
+    except Exception as e:
+        print(f"Login error: {e}")
+        flash('There was an error. Please try again later.', FLASH_ERROR)
+        return render_template('login/login.html')
 
+    if user:
         # Check password
         if match_string(user['password'], password):
             # Login successful
@@ -76,7 +88,7 @@ def login_post():
             session['email'] = user['email']
             session['name'] = user['name']
             flash('Login successful!', FLASH_SUCCESS)
-            
+
             # Retrieve and clear the redirect from session
             # Only allow relative URLs to prevent redirecting to external sites
             redirect_url = session.pop('login_redirect', '/')
@@ -87,15 +99,10 @@ def login_post():
             attempts += 1
             session['login_attempt'] = attempts
             flash(f'Password is incorrect - Attempt: {attempts}', FLASH_WARNING)
-
-    except ErrNoResult:
+    else:
         attempts += 1
         session['login_attempt'] = attempts
         flash(f'Password is incorrect - Attempt: {attempts}', FLASH_WARNING)
-
-    except Exception as e:
-        print(f"Login error: {e}")
-        flash('There was an error. Please try again later.', FLASH_ERROR)
 
     return render_template('login/login.html')
 

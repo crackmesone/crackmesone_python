@@ -77,7 +77,7 @@ def register_post():
         flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
         return redirect('/register')
 
-    # Check if email already exists
+    # Check if email already exists as an email
     try:
         user_by_mail(email)
         flash(f'Account already exists for: {email}', FLASH_ERROR)
@@ -89,22 +89,49 @@ def register_post():
         flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
         return render_template('register/register.html', name=name, email=email)
 
-    # Check if username already exists
+    # Check if username already exists as a username
     try:
         user_by_name(name)
         flash(f'Account already exists for: {name}', FLASH_ERROR)
         return render_template('register/register.html', name=name, email=email)
     except ErrNoResult:
-        # Username not taken, create account
-        try:
-            user_create(name, email, hashed_password)
-            flash(f'Account created successfully for: {name}', FLASH_SUCCESS)
-            return redirect('/login')
-        except Exception as e:
-            print(f"User creation error: {e}")
-            flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
+        pass  # Username not taken, continue
     except Exception as e:
         print(f"Database error: {e}")
+        flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
+        return render_template('register/register.html', name=name, email=email)
+
+    # Cross-check: username must not match an existing user's email
+    try:
+        user_by_mail(name)
+        flash('This username is not available', FLASH_ERROR)
+        return render_template('register/register.html', name=name, email=email)
+    except ErrNoResult:
+        pass  # No conflict, continue
+    except Exception as e:
+        print(f"Database error: {e}")
+        flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
+        return render_template('register/register.html', name=name, email=email)
+
+    # Cross-check: email must not match an existing user's username
+    try:
+        user_by_name(email)
+        flash('This email is not available', FLASH_ERROR)
+        return render_template('register/register.html', name=name, email=email)
+    except ErrNoResult:
+        pass  # No conflict, continue
+    except Exception as e:
+        print(f"Database error: {e}")
+        flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
+        return render_template('register/register.html', name=name, email=email)
+
+    # All checks passed, create account
+    try:
+        user_create(name, email, hashed_password)
+        flash(f'Account created successfully for: {name}', FLASH_SUCCESS)
+        return redirect('/login')
+    except Exception as e:
+        print(f"User creation error: {e}")
         flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
 
     return render_template('register/register.html', name=name, email=email)

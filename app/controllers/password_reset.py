@@ -74,9 +74,11 @@ def forgot_password_post():
 
         # Send email
         subject = "Password Reset Request - crackmes.one"
-        body = f"""Hello,
+        body = f"""Hello {user['name']},
 
 You have requested to reset your password on crackmes.one.
+
+Your username is: {user['name']}
 
 Click the link below to reset your password:
 {reset_url}
@@ -113,8 +115,10 @@ def reset_password_get(token):
     """Display the reset password form."""
     try:
         # Validate token exists and is not expired
-        get_reset_token(token)
-        return render_template('password_reset/reset.html', token=token)
+        token_doc = get_reset_token(token)
+        # Look up user to get username
+        user = user_by_mail(token_doc['email'])
+        return render_template('password_reset/reset.html', token=token, username=user['name'])
     except ErrNoResult:
         flash('This password reset link is invalid or has expired.', FLASH_ERROR)
         return redirect('/forgot-password')
@@ -131,46 +135,50 @@ def reset_password_post(token):
     new_password = request.form.get('new_password', '')
     new_password_verify = request.form.get('new_password_verify', '')
 
+    # Validate token and get user first (so we can show username in error messages)
+    try:
+        token_doc = get_reset_token(token)
+        email = token_doc['email']
+        user = user_by_mail(email)
+        username = user['name']
+    except ErrNoResult:
+        flash('This password reset link is invalid or has expired.', FLASH_ERROR)
+        return redirect('/forgot-password')
+    except Exception as e:
+        print(f"Error validating reset token: {e}")
+        flash('An error occurred. Please try again.', FLASH_ERROR)
+        return redirect('/forgot-password')
+
     # Validate passwords
     if not new_password or not new_password_verify:
         flash('Please fill in all password fields', FLASH_ERROR)
-        return render_template('password_reset/reset.html', token=token)
+        return render_template('password_reset/reset.html', token=token, username=username)
 
     if new_password != new_password_verify:
         flash('Passwords do not match', FLASH_ERROR)
-        return render_template('password_reset/reset.html', token=token)
+        return render_template('password_reset/reset.html', token=token, username=username)
 
     if len(new_password) < 8:
         flash('Password must be at least 8 characters long', FLASH_ERROR)
-        return render_template('password_reset/reset.html', token=token)
+        return render_template('password_reset/reset.html', token=token, username=username)
 
     try:
-        # Validate token and get associated email
-        token_doc = get_reset_token(token)
-        email = token_doc['email']
-
-        # Find user by email
-        user = user_by_mail(email)
-
         # Hash new password
         hashed_password = hash_string(new_password)
 
         # Update user's password
-        update_user_password(user['name'], hashed_password)
+        update_user_password(username, hashed_password)
 
         # Delete the used token
         delete_reset_token(token)
 
         # Notify moderation channel
-        notify_password_reset_complete(user['name'], email)
+        notify_password_reset_complete(username, email)
 
-        flash('Your password has been reset successfully. You can now log in.', FLASH_SUCCESS)
+        flash(f'Password reset successfully for {username}. You can now log in.', FLASH_SUCCESS)
         return redirect('/login')
 
-    except ErrNoResult:
-        flash('This password reset link is invalid or has expired.', FLASH_ERROR)
-        return redirect('/forgot-password')
     except Exception as e:
         print(f"Error resetting password: {e}")
         flash('An error occurred while resetting your password. Please try again.', FLASH_ERROR)
-        return render_template('password_reset/reset.html', token=token)
+        return render_template('password_reset/reset.html', token=token, username=username)
