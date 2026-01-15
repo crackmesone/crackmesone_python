@@ -74,11 +74,9 @@ def forgot_password_post():
 
         # Send email
         subject = "Password Reset Request - crackmes.one"
-        body = f"""Hello {user['name']},
+        body = f"""Hello,
 
 You have requested to reset your password on crackmes.one.
-
-Your username is: {user['name']}
 
 Click the link below to reset your password:
 {reset_url}
