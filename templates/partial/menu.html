@@ -27,6 +27,7 @@
 
     <div id="sidebar-id" class="off-canvas-sidebar">
         <ul class="nav">
+            <li class="nav"><a href="{{ BaseURI }}" class="btn btn-link">Home</a></li>
             <li class="nav"><a href="{{ BaseURI }}notifications" class="btn btn-link notif-link"><i class="icon icon-message"></i>{% if unread_notifications > 0 %}<span class="notif-badge">{{ unread_notifications }}</span>{% endif %}</a>
             <li class="nav"><a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
             <li class="nav"><a href="{{ BaseURI }}upload/crackme" class="btn btn-link">Upload crackme</a>
@@ -61,6 +62,7 @@
 
     <div id="sidebar-id-guest" class="off-canvas-sidebar">
         <ul class="nav">
+            <li class="nav"><a href="{{ BaseURI }}" class="btn btn-link">Home</a></li>
             <li class="nav"><a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
             <li class="nav"><a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a></li>
             <li class="nav"><a href="{{ BaseURI }}faq" class="btn btn-link">Faq</a></li>
