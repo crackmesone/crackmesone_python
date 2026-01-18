@@ -51,7 +51,9 @@ def forgot_password_post():
         return render_template('password_reset/forgot.html')
 
     # Always show success message to prevent email enumeration
-    success_message = 'If an account with that email exists, a password reset link has been sent.'
+    success_message = ('If an account with that email exists, a password reset link has been sent. '
+                       'Please check your spam/junk folder if you don\'t see it in your inbox. '
+                       'If you find it in spam, please mark it as "Not Spam" to help our emails reach you in the future.')
 
     # Check per-email quota first (prevents spam to single address)
     # We check this before user lookup to prevent timing-based enumeration
