@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Password Reset Requested{% endblock %}
+{% block page_title %}Password Reset Requested{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="columns" style="justify-content: center;">
+        <div class="column col-8 col-xs-12 panel-input">
+            <h4>Check Your Email</h4>
+            <p>If an account with that email exists, a password reset link has been sent.</p>
+
+            <h5>What to do next:</h5>
+            <ol>
+                <li><b>Check your inbox</b> for an email from crackmes.one.</li>
+                <li><b>Check your spam/junk folder</b> if you don't see it in your inbox. Password reset emails sometimes get filtered as spam.</li>
+                <li><b>Mark as "Not Spam"</b> if you find our email in spam. This helps train your email provider to deliver our emails correctly in the future.</li>
+                <li><b>Wait a few minutes</b> if you don't see the email right away. Email delivery can sometimes be delayed.</li>
+            </ol>
+
+            <p>The reset link will expire in 1 hour.</p>
+
+            <h5>Still having trouble?</h5>
+            <ul>
+                <li>Make sure you entered the same email address you used when registering.</li>
+                <li>Check the <a href="/faq#reset-email-not-received">FAQ</a> for more troubleshooting tips.</li>
+                <li>Contact us at <a href="mailto:crackmesone@gmail.com">crackmesone@gmail.com</a> for assistance.</li>
+            </ul>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
+                <a href="/login" class="btn active">Back to Login</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}{% endblock %}

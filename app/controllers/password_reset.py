@@ -50,15 +50,11 @@ def forgot_password_post():
         flash('Password reset is currently unavailable. Please contact support.', FLASH_ERROR)
         return render_template('password_reset/forgot.html')
 
-    # Always show success message to prevent email enumeration
-    success_message = 'If an account with that email exists, a password reset link has been sent.'
-
     # Check per-email quota first (prevents spam to single address)
     # We check this before user lookup to prevent timing-based enumeration
     if email_quota_exceeded(email):
-        # Don't reveal rate limiting - show same success message
-        flash(success_message, FLASH_SUCCESS)
-        return render_template('password_reset/forgot.html')
+        # Don't reveal rate limiting - show same success page
+        return render_template('password_reset/email_sent.html')
 
     try:
         # Check if user exists
@@ -103,8 +99,8 @@ The crackmes.one team
     except Exception as e:
         print(f"Error during password reset request: {e}")
 
-    flash(success_message, FLASH_SUCCESS)
-    return render_template('password_reset/forgot.html')
+    # Show landing page with instructions (prevents email enumeration)
+    return render_template('password_reset/email_sent.html')
 
 
 @password_reset_bp.route('/reset-password/<token>', methods=['GET'])
