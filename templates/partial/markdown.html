@@ -1,0 +1,32 @@
+{# Shared markdown rendering utilities - include in {% block foot %} #}
+<script>
+var MarkdownRenderer = {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr',
+                   'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
+                   'strong', 'em', 'a', 'img', 'table', 'thead',
+                   'tbody', 'tr', 'th', 'td', 'del', 'sup', 'sub'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class'],
+
+    render: function(markdown) {
+        var html = marked.parse(markdown);
+        return DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: this.ALLOWED_TAGS,
+            ALLOWED_ATTR: this.ALLOWED_ATTR
+        });
+    },
+
+    copyToClipboard: function(text) {
+        if (navigator.clipboard) {
+            return navigator.clipboard.writeText(text);
+        }
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.cssText = 'position:fixed;opacity:0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return Promise.resolve();
+    }
+};
+</script>

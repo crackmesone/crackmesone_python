@@ -17,6 +17,9 @@ FLASH_WARNING = 'alert-warning'
 # Authorized characters for usernames/emails
 AUTHORIZED_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-@.+"
 
+# Valid hex characters for MongoDB ObjectId validation
+HEX_CHARS = frozenset('0123456789abcdef')
+
 # Global view configuration
 view_config = {}
 
@@ -38,6 +41,11 @@ def authorized_chars_only(s: str) -> bool:
         if char not in AUTHORIZED_CHARS:
             return False
     return True
+
+
+def is_valid_hexid(hexid: str) -> bool:
+    """Check if a string is a valid MongoDB ObjectId (24 hex characters)."""
+    return bool(hexid) and len(hexid) == 24 and all(c in HEX_CHARS for c in hexid.lower())
 
 
 def validate_required(form, required_fields):
