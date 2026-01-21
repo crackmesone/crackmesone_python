@@ -72,24 +72,22 @@ def solutions_by_user(username):
     return solutions
 
 
-def solution_exists(username, crackme_hexid):
+def solution_exists(username, crackme_id):
     """Check if a user has already submitted a solution for a crackme.
 
-    Raises:
-        ErrNoResult: If the crackme doesn't exist
-        ErrUnavailable: If the database is unavailable
+    Args:
+        username: The username to check
+        crackme_id: The crackme's ObjectId (not hexid)
+
+    Returns:
+        True if a solution exists, False otherwise
     """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
-    crackme_collection = get_collection('crackme')
-    crackme = crackme_collection.find_one({'hexid': crackme_hexid}, {'_id': 1})
-    if not crackme:
-        raise ErrNoResult("Crackme not found")
-
     collection = get_collection('solution')
     return collection.find_one(
-        {'crackmeid': crackme['_id'], 'author': username},
+        {'crackmeid': crackme_id, 'author': username},
         {'_id': 1}
     ) is not None
 

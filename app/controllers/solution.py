@@ -84,17 +84,14 @@ def upload_solution_get(hexidcrackme):
 @limit("20 per day", key_func=lambda: session.get('name'))
 def upload_solution_post(hexidcrackme):
     """Handle solution file upload."""
-    _get_crackme_or_abort(hexidcrackme)  # Validate crackme exists
+    crackme = _get_crackme_or_abort(hexidcrackme)
     username = session.get('name')
     redirect_url = f'/upload/solution/{hexidcrackme}'
 
     # Check if user already submitted a solution
-    try:
-        if solution_exists(username, hexidcrackme):
-            flash("You've already submitted a solution to this crackme", FLASH_ERROR)
-            return redirect(redirect_url)
-    except ErrNoResult:
-        abort(404)
+    if solution_exists(username, crackme['_id']):
+        flash("You've already submitted a solution to this crackme", FLASH_ERROR)
+        return redirect(redirect_url)
 
     if not verify_recaptcha(request):
         flash('reCAPTCHA invalid!', FLASH_ERROR)
@@ -198,17 +195,14 @@ def editor_solution_get(hexidcrackme):
 @limit("20 per day", key_func=lambda: session.get('name'))
 def editor_solution_post(hexidcrackme):
     """Handle solution submission from the web editor."""
-    _get_crackme_or_abort(hexidcrackme)  # Validate crackme exists
+    crackme = _get_crackme_or_abort(hexidcrackme)
     username = session.get('name')
     redirect_url = f'/upload/solution/{hexidcrackme}/editor'
 
     # Check if user already submitted a solution
-    try:
-        if solution_exists(username, hexidcrackme):
-            flash("You've already submitted a solution to this crackme", FLASH_ERROR)
-            return redirect(redirect_url)
-    except ErrNoResult:
-        abort(404)
+    if solution_exists(username, crackme['_id']):
+        flash("You've already submitted a solution to this crackme", FLASH_ERROR)
+        return redirect(redirect_url)
 
     if not verify_recaptcha(request):
         flash('reCAPTCHA invalid!', FLASH_ERROR)
