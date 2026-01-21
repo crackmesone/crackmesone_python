@@ -19,6 +19,16 @@
     <p>Read a full list of rules <a href="/upload/writeuprules">here</a></p>
 
     <div class="divider"></div>
+
+    <div class="columns" style="margin-bottom: 1rem;">
+        <div class="column col-12">
+            <p><strong>Prefer to write directly on the site?</strong>
+            <a href="/upload/solution/{{ hexidcrackme }}/editor" class="btn active" style="margin-left: 10px;">Use Web Editor</a></p>
+            <p class="text-gray" style="font-size: 0.9em;">Write your writeup in Markdown with live preview. Recommended for text-based writeups.</p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
     <form class="form-horizontal" method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
@@ -46,7 +56,6 @@
         </br></br></br></br>
         {% endif %}
         <input type="submit" class="btn active float-right" value="Upload a solution">
-        <input type="hidden" id="hexidcrackme" name="hexidcrackme" value="{{ hexidcrackme }}">
     </form>
 </div>
 {% include 'partial/footer.html' %}

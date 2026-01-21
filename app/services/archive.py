@@ -9,7 +9,7 @@ import struct
 
 
 # PE file extensions (case-insensitive)
-PE_EXTENSIONS = {'.exe', '.dll', '.sys', '.scr', '.ocx', '.com', '.drv', '.cpl', '.efi'}
+PE_EXTENSIONS = frozenset({'.exe', '.dll', '.sys', '.scr', '.ocx', '.com', '.drv', '.cpl', '.efi'})
 
 
 def is_pe_file(filename: str, file_data: bytes) -> bool:

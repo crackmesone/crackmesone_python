@@ -27,10 +27,12 @@ import threading
 
 import bcrypt
 import requests
-from rustyzipper import compress_file, EncryptionMethod
+from rustyzipper import compress_file, EncryptionMethod, open_zip_stream_from_file
 from bson.objectid import ObjectId
 
 from review.logger import log_reviewer_operation
+from app.services.crypto import obfuscate_writeup, get_obfuscation_salt
+from app.services.view import is_valid_hexid
 
 
 # =============================================================================
@@ -49,6 +51,7 @@ reviewer_bp = Blueprint('reviewer', __name__,
 PASSWORD_SALT = None
 DISCORD_WEBHOOK_PUBLIC = None
 SITE_BASE_URL = 'https://crackmes.one'
+WRITEUP_OBFUSCATION_SALT = None
 g_crackmesone_db = None
 users = {}
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
@@ -60,6 +63,12 @@ REVIEWER_CSRF_KEY = '_reviewer_csrf_token'
 
 # Archive password for approved submissions
 ARCHIVE_PASSWORD = 'crackmes.one'
+
+# Markdown file extensions for inline viewing
+MARKDOWN_EXTENSIONS = frozenset({'.md', '.txt', '.markdown'})
+
+# Max size for inline writeup content (1MB)
+MAX_INLINE_CONTENT_SIZE = 1 * 1024 * 1024
 
 
 # =============================================================================
@@ -78,7 +87,7 @@ def init_reviewer(app):
             - REVIEWER_PASSWORD_SALT: Salt for hashing reviewer passwords
             - DISCORD_CONFIG: Dict with Enabled and WebhookPublic keys
     """
-    global PASSWORD_SALT, DISCORD_WEBHOOK_PUBLIC, SITE_BASE_URL, g_crackmesone_db, users
+    global PASSWORD_SALT, DISCORD_WEBHOOK_PUBLIC, SITE_BASE_URL, WRITEUP_OBFUSCATION_SALT, g_crackmesone_db, users
 
     PASSWORD_SALT = app.config.get(
         'REVIEWER_PASSWORD_SALT',
@@ -91,6 +100,8 @@ def init_reviewer(app):
 
     site_config = app.config.get('APP_CONFIG', {}).get('Site', {})
     SITE_BASE_URL = site_config.get('BaseURL', 'https://crackmes.one')
+
+    WRITEUP_OBFUSCATION_SALT = get_obfuscation_salt(app.config)
 
     from app.services.database import get_db
     g_crackmesone_db = get_db()
@@ -249,22 +260,6 @@ def get_static_dir(item_type):
         Absolute path to the static directory for that item type
     """
     return os.path.join(CRACKMESONE_DIR, 'static', item_type)
-
-
-HEX_CHARS = set('0123456789abcdef')
-
-
-def is_valid_hexid(hexid):
-    """
-    Check if a string is a valid MongoDB ObjectId hex representation (24 hex characters).
-
-    Args:
-        hexid: The string to validate
-
-    Returns:
-        True if valid hexid, False otherwise
-    """
-    return bool(hexid) and len(hexid) == 24 and all(c in HEX_CHARS for c in hexid.lower())
 
 
 def find_pending_file(item_type, hexid):
@@ -519,6 +514,48 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
             except Exception:
                 pass
         return False, f"Error creating zip: {str(e)}"
+
+
+def extract_markdown_content(source_path, original_filename):
+    """
+    Extract markdown/text content from a file for inline viewing.
+
+    Returns None if the file is too large, not a supported format, or on error.
+    """
+    ext = os.path.splitext(original_filename)[1].lower() if original_filename else ''
+
+    if ext in MARKDOWN_EXTENSIONS:
+        try:
+            # Check file size before reading
+            if os.path.getsize(source_path) > MAX_INLINE_CONTENT_SIZE:
+                return None
+            with open(source_path, 'r', encoding='utf-8', errors='replace') as f:
+                return f.read()
+        except Exception as e:
+            print(f"Could not read solution file: {e}")
+            return None
+
+    if ext == '.zip':
+        try:
+            with open(source_path, 'rb') as f:
+                reader = open_zip_stream_from_file(f)
+                for name in reader.namelist():
+                    # Skip directories and hidden files
+                    basename = os.path.basename(name)
+                    if not basename or basename.startswith('.'):
+                        continue
+
+                    file_ext = os.path.splitext(basename)[1].lower()
+                    if file_ext in MARKDOWN_EXTENSIONS:
+                        file_bytes = reader.read(name)
+                        # Skip if content too large
+                        if len(file_bytes) > MAX_INLINE_CONTENT_SIZE:
+                            return None
+                        return file_bytes.decode('utf-8', errors='replace')
+        except Exception as e:
+            print(f"Could not extract text content from zip: {e}")
+
+    return None
 
 
 # =============================================================================
@@ -872,17 +909,27 @@ def approve_pending_solution(hexid):
 
         crackme_name = crackme["name"]
 
+        source_path = os.path.join(get_tmp_dir('solution'), hexid)
+        if not os.path.exists(source_path):
+            return False, "Solution file not found in tmp directory"
+
         # Set visible
         g_crackmesone_db.solution.update_one(
             {'hexid': hexid},
             {'$set': {'visible': True}}
         )
 
-        # Create archive
-        source_path = os.path.join(get_tmp_dir('solution'), hexid)
-        if not os.path.exists(source_path):
-            return False, "Solution file not found in tmp directory"
+        raw_content = extract_markdown_content(source_path, original_filename)
+        if raw_content:
+            try:
+                obfuscated = obfuscate_writeup(raw_content, hexid, WRITEUP_OBFUSCATION_SALT)
+                raw_dest_path = os.path.join(get_static_dir('solution'), f"{hexid}.bin")
+                with open(raw_dest_path, 'wb') as f:
+                    f.write(obfuscated)
+            except Exception as e:
+                print(f"Could not save solution for inline viewing: {e}")
 
+        # Create password-protected archive
         dest_path = os.path.join(get_static_dir('solution'), hexid)
         success, error = create_password_protected_zip(
             source_path, dest_path, original_filename
@@ -950,6 +997,13 @@ def delete_approved_solution(solution_uuid):
     # Delete zip file (if exists)
     try:
         os.remove(zip_path)
+    except Exception:
+        pass
+
+    # Delete encrypted .bin file (if exists)
+    bin_path = os.path.join(get_static_dir('solution'), f"{solution_uuid}.bin")
+    try:
+        os.remove(bin_path)
     except Exception:
         pass
 

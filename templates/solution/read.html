@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Writeup for {{ solution.crackmename }}{% endblock %}
+{% block page_title %}Writeup{% endblock %}
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.0/marked.min.js" integrity="sha384-5S+6C4bM5PFDRwie5G8wVUoq/5EzdFEaE2bg7xLLhNiz4fjj7fsecAfOl8VzZ/co" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu" crossorigin="anonymous"></script>
+{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <h2>Writeup for <a href="/crackme/{{ solution.crackmehexid }}">{{ solution.crackmename }}</a></h2>
+
+    <div class="columns" style="margin-bottom: 1rem;">
+        <div class="column col-12">
+            <p>
+                <strong>Author:</strong> <a href="/user/{{ solution.author }}">{{ solution.author }}</a><br>
+                <strong>Date:</strong> {{ solution.created_at|PRETTYTIME }}<br>
+                {% if solution.info %}
+                <strong>Summary:</strong> <span style="white-space: pre-line">{{ solution.info }}</span>
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div id="writeup-loading" style="text-align: center; padding: 2rem;">
+        <p>Loading writeup...</p>
+    </div>
+
+    <div id="writeup-content" style="display: none;"></div>
+
+    <div id="writeup-fallback" style="display: none;">
+        <p>This writeup is only available for download.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="columns">
+        <div class="column col-12">
+            <a href="/static/solution/{{ solution.hexid }}.zip" class="btn" title="Password: crackmes.one">Download Archive</a>
+            <a href="/crackme/{{ solution.crackmehexid }}" class="btn">Back to Crackme</a>
+        </div>
+    </div>
+</div>
+
+{% include 'partial/footer.html' %}
+
+{% endblock %}
+{% block foot %}
+{% include 'partial/markdown.html' %}
+<script>
+(function() {
+    var hexid = {{ solution.hexid|tojson }};
+    var obfuscationKey = {{ obfuscation_key|tojson }};
+    var hasMarkdown = {{ solution.has_markdown|default(false)|tojson }};
+    var loadingEl = document.getElementById('writeup-loading');
+    var contentEl = document.getElementById('writeup-content');
+    var fallbackEl = document.getElementById('writeup-fallback');
+
+    if (!hasMarkdown) {
+        loadingEl.style.display = 'none';
+        fallbackEl.style.display = 'block';
+        return;
+    }
+
+    function base64ToBytes(base64) {
+        var bin = atob(base64);
+        var bytes = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        return bytes;
+    }
+
+    function deobfuscate(data, key) {
+        var result = new Uint8Array(data.length);
+        var keyLen = key.length;
+        for (var i = 0; i < data.length; i++) result[i] = data[i] ^ key[i % keyLen];
+        return new TextDecoder().decode(result);
+    }
+
+    function addCopyButtons() {
+        document.querySelectorAll('#writeup-content pre').forEach(function(pre) {
+            if (pre.parentElement.classList.contains('code-block-wrapper')) return;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'code-block-wrapper';
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(pre);
+
+            var btn = document.createElement('button');
+            btn.className = 'copy-code-btn';
+            btn.textContent = 'Copy';
+            btn.onclick = function() {
+                var text = (pre.querySelector('code') || pre).textContent;
+                MarkdownRenderer.copyToClipboard(text).then(function() {
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(function() {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                });
+            };
+            wrapper.appendChild(btn);
+        });
+    }
+
+    fetch('/static/solution/' + hexid + '.bin')
+        .then(function(r) { if (!r.ok) throw new Error(); return r.arrayBuffer(); })
+        .then(function(buffer) {
+            var markdown = deobfuscate(new Uint8Array(buffer), base64ToBytes(obfuscationKey));
+            loadingEl.style.display = 'none';
+            contentEl.innerHTML = MarkdownRenderer.render(markdown);
+            contentEl.style.display = 'block';
+            addCopyButtons();
+        })
+        .catch(function() {
+            loadingEl.style.display = 'none';
+            fallbackEl.style.display = 'block';
+        });
+})();
+</script>
+{% endblock %}

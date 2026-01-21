@@ -2,7 +2,7 @@
 Solution model for database operations.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from pymongo import DESCENDING
 from app.services.database import get_collection, check_connection
@@ -72,28 +72,26 @@ def solutions_by_user(username):
     return solutions
 
 
-def solutions_by_user_and_crackme(username, crackme_hexid):
-    """Get solution by user and crackme."""
+def solution_exists(username, crackme_hexid):
+    """Check if a user has already submitted a solution for a crackme.
+
+    Raises:
+        ErrNoResult: If the crackme doesn't exist
+        ErrUnavailable: If the database is unavailable
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
-    # First get the crackme
-    from app.models.crackme import crackme_by_hexid
-    try:
-        crackme = crackme_by_hexid(crackme_hexid)
-    except ErrNoResult:
-        raise ErrNoResult("Solution not found")
+    crackme_collection = get_collection('crackme')
+    crackme = crackme_collection.find_one({'hexid': crackme_hexid}, {'_id': 1})
+    if not crackme:
+        raise ErrNoResult("Crackme not found")
 
     collection = get_collection('solution')
-    result = collection.find_one({
-        'crackmeid': crackme['_id'],
-        'author': username
-    })
-
-    if result is None:
-        raise ErrNoResult("Solution not found")
-
-    return result
+    return collection.find_one(
+        {'crackmeid': crackme['_id'], 'author': username},
+        {'_id': 1}
+    ) is not None
 
 
 def solutions_by_crackme(crackme_object_id):
@@ -129,7 +127,7 @@ def get_solution_authors(crackme_hexid):
     return set(solution['author'] for solution in solutions)
 
 
-def solution_create(info, username, crackme_hexid, original_filename):
+def solution_create(info, username, crackme_hexid, original_filename=None, has_markdown=False):
     """Create a new solution."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -148,12 +146,13 @@ def solution_create(info, username, crackme_hexid, original_filename):
         'crackmeid': crackme['_id'],
         'crackmehexid': crackme['hexid'],
         'crackmename': crackme['name'],
-        'created_at': datetime.utcnow(),
+        'created_at': datetime.now(timezone.utc),
         'author': username,
         'visible': False,
         'deleted': False,
-        'original_filename': original_filename
+        'original_filename': original_filename,
+        'has_markdown': has_markdown
     }
 
     collection.insert_one(solution)
-    return solution
+    return solution, crackme
