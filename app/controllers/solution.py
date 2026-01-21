@@ -26,6 +26,7 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 MAX_INFO_LENGTH = 200
 MAX_CONTENT_LENGTH = 50000
 MIN_CONTENT_LENGTH = 200
+MARKDOWN_EXTENSIONS = frozenset({'.md', '.txt', '.markdown'})
 
 
 def _get_crackme_or_abort(hexid):
@@ -145,9 +146,11 @@ def upload_solution_post(hexidcrackme):
         return redirect(redirect_url)
 
     original_filename = secure_filename(file.filename) or "unnamed"
+    ext = os.path.splitext(original_filename)[1].lower()
+    has_markdown = ext in MARKDOWN_EXTENSIONS
 
     try:
-        solution, crackme = solution_create(info, username, hexidcrackme, original_filename)
+        solution = solution_create(info, username, crackme, original_filename, has_markdown)
     except Exception as e:
         print(f"Error creating solution: {e}")
         abort(500)
@@ -225,7 +228,7 @@ def editor_solution_post(hexidcrackme):
         return redirect(redirect_url)
 
     try:
-        solution, crackme = solution_create(info, username, hexidcrackme, original_filename='writeup.md', has_markdown=True)
+        solution = solution_create(info, username, crackme, 'writeup.md', has_markdown=True)
     except Exception as e:
         print(f"Error creating solution: {e}")
         abort(500)
