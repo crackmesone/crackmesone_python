@@ -125,14 +125,10 @@ def get_solution_authors(crackme_hexid):
     return set(solution['author'] for solution in solutions)
 
 
-def solution_create(info, username, crackme_hexid, original_filename=None, has_markdown=False):
+def solution_create(info, username, crackme, original_filename=None, has_markdown=False):
     """Create a new solution."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
-
-    # Get the crackme
-    from app.models.crackme import crackme_by_hexid
-    crackme = crackme_by_hexid(crackme_hexid)
 
     collection = get_collection('solution')
     obj_id = ObjectId()
@@ -153,4 +149,4 @@ def solution_create(info, username, crackme_hexid, original_filename=None, has_m
     }
 
     collection.insert_one(solution)
-    return solution, crackme
+    return solution
