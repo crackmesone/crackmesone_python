@@ -21,7 +21,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
-from app.services.archive import is_archive_password_protected
+from app.services.archive import is_archive_password_protected, is_single_file_archive, is_unsupported_archive
 from app.services.discord import notify_new_crackme
 from app.controllers.decorators import login_required
 
@@ -190,11 +190,21 @@ def upload_crackme_post():
         flash('This file is too large!', FLASH_ERROR)
         return render_template('crackme/create.html')
 
+    # Check for unsupported archive formats (RAR, tar, etc.)
+    if is_unsupported_archive(file_data):
+        flash('RAR and tar archives are not supported. Please upload a ZIP file for multiple files, or upload single files directly.', FLASH_ERROR)
+        return render_template('crackme/create.html')
+
     # Check for password protection
     if is_archive_password_protected(file_data):
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
         return render_template('crackme/create.html')
-    
+
+    # Check for single-file archives
+    if is_single_file_archive(file_data):
+        flash('Archives containing only one file are not allowed. Please upload the file directly without wrapping it in an archive.', FLASH_ERROR)
+        return render_template('crackme/create.html')
+
     # Store the uploaded file size
     size = len(file_data)
 
