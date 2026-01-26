@@ -116,17 +116,17 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="lang" name="lang" multiple="">
-                    <option value="C/C++" {{ 'selected' if search_params.lang == 'C/C++' else '' }}>C/C++</option>
-                    <option value="Assembler" {{ 'selected' if search_params.lang == 'Assembler' else '' }}>Assembler</option>
-                    <option value="Java" {{ 'selected' if search_params.lang == 'Java' else '' }}>Java</option>
-                    <option value="Go" {{ 'selected' if search_params.lang == 'Go' else '' }}>Go</option>
-                    <option value="Rust" {{ 'selected' if search_params.lang == 'Rust' else '' }}>Rust</option>
-                    <option value="WebAssembly" {{ 'selected' if search_params.lang == 'WebAssembly' else '' }}>WebAssembly</option>
-                    <option value="(Visual) Basic" {{ 'selected' if search_params.lang == '(Visual) Basic' else '' }}>(Visual) Basic</option>
-                    <option value="Borland Delphi" {{ 'selected' if search_params.lang == 'Borland Delphi' else '' }}>Borland Delphi</option>
-                    <option value="Turbo Pascal" {{ 'selected' if search_params.lang == 'Turbo Pascal' else '' }}>Turbo Pascal</option>
-                    <option value=".NET" {{ 'selected' if search_params.lang == '.NET' else '' }}>.NET</option>
-                    <option value="Unspecified/other" {{ 'selected' if search_params.lang == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                    <option value="C/C++" {{ 'selected' if 'C/C++' in search_params.get('lang', []) else '' }}>C/C++</option>
+                    <option value="Assembler" {{ 'selected' if 'Assembler' in search_params.get('lang', []) else '' }}>Assembler</option>
+                    <option value="Java" {{ 'selected' if 'Java' in search_params.get('lang', []) else '' }}>Java</option>
+                    <option value="Go" {{ 'selected' if 'Go' in search_params.get('lang', []) else '' }}>Go</option>
+                    <option value="Rust" {{ 'selected' if 'Rust' in search_params.get('lang', []) else '' }}>Rust</option>
+                    <option value="WebAssembly" {{ 'selected' if 'WebAssembly' in search_params.get('lang', []) else '' }}>WebAssembly</option>
+                    <option value="(Visual) Basic" {{ 'selected' if '(Visual) Basic' in search_params.get('lang', []) else '' }}>(Visual) Basic</option>
+                    <option value="Borland Delphi" {{ 'selected' if 'Borland Delphi' in search_params.get('lang', []) else '' }}>Borland Delphi</option>
+                    <option value="Turbo Pascal" {{ 'selected' if 'Turbo Pascal' in search_params.get('lang', []) else '' }}>Turbo Pascal</option>
+                    <option value=".NET" {{ 'selected' if '.NET' in search_params.get('lang', []) else '' }}>.NET</option>
+                    <option value="Unspecified/other" {{ 'selected' if 'Unspecified/other' in search_params.get('lang', []) else '' }}>Unspecified/other</option>
                 </select>
             </div>
         </div>
@@ -136,13 +136,13 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="arch" name="arch" multiple="">
-                    <option value="x86" {{ 'selected' if search_params.arch == 'x86' else '' }}>x86</option>
-                    <option value="x86-64" {{ 'selected' if search_params.arch == 'x86-64' else '' }}>x86-64</option>
-                    <option value="java" {{ 'selected' if search_params.arch == 'java' else '' }}>java</option>
-                    <option value="ARM" {{ 'selected' if search_params.arch == 'ARM' else '' }}>ARM</option>
-                    <option value="MIPS" {{ 'selected' if search_params.arch == 'MIPS' else '' }}>MIPS</option>
-                    <option value="RISC-V" {{ 'selected' if search_params.arch == 'RISC-V' else '' }}>RISC-V</option>
-                    <option value="other" {{ 'selected' if search_params.arch == 'other' else '' }}>other</option>
+                    <option value="x86" {{ 'selected' if 'x86' in search_params.get('arch', []) else '' }}>x86</option>
+                    <option value="x86-64" {{ 'selected' if 'x86-64' in search_params.get('arch', []) else '' }}>x86-64</option>
+                    <option value="java" {{ 'selected' if 'java' in search_params.get('arch', []) else '' }}>java</option>
+                    <option value="ARM" {{ 'selected' if 'ARM' in search_params.get('arch', []) else '' }}>ARM</option>
+                    <option value="MIPS" {{ 'selected' if 'MIPS' in search_params.get('arch', []) else '' }}>MIPS</option>
+                    <option value="RISC-V" {{ 'selected' if 'RISC-V' in search_params.get('arch', []) else '' }}>RISC-V</option>
+                    <option value="other" {{ 'selected' if 'other' in search_params.get('arch', []) else '' }}>other</option>
                 </select>
             </div>
         </div>
@@ -152,17 +152,17 @@
             </div>
             <div class="col-9 col-sm-12">
                 <select class="form-select" id="platform" name="platform" multiple="">
-                    <option value="DOS" {{ 'selected' if search_params.platform == 'DOS' else '' }}>DOS</option>
-                    <option value="Mac OS X" {{ 'selected' if search_params.platform == 'Mac OS X' else '' }}>Mac OS X</option>
-                    <option value="Multiplatform" {{ 'selected' if search_params.platform == 'Multiplatform' else '' }}>Multiplatform</option>
-                    <option value="Unix/linux etc." {{ 'selected' if search_params.platform == 'Unix/linux etc.' else '' }}>Unix/linux etc.</option>
-                    <option value="Windows" {{ 'selected' if search_params.platform == 'Windows' else '' }}>Windows</option>
-                    <option value="Windows 2000/XP only" {{ 'selected' if search_params.platform == 'Windows 2000/XP only' else '' }}>Windows 2000/XP only</option>
-                    <option value="Windows 7 Only" {{ 'selected' if search_params.platform == 'Windows 7 Only' else '' }}>Windows 7 Only</option>
-                    <option value="Windows Vista Only" {{ 'selected' if search_params.platform == 'Windows Vista Only' else '' }}>Windows Vista Only</option>
-                    <option value="Android" {{ 'selected' if search_params.platform == 'Android' else '' }}>Android</option>
-                    <option value="iOS" {{ 'selected' if search_params.platform == 'iOS' else '' }}>iOS</option>
-                    <option value="Unspecified/other" {{ 'selected' if search_params.platform == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                    <option value="DOS" {{ 'selected' if 'DOS' in search_params.get('platform', []) else '' }}>DOS</option>
+                    <option value="Mac OS X" {{ 'selected' if 'Mac OS X' in search_params.get('platform', []) else '' }}>Mac OS X</option>
+                    <option value="Multiplatform" {{ 'selected' if 'Multiplatform' in search_params.get('platform', []) else '' }}>Multiplatform</option>
+                    <option value="Unix/linux etc." {{ 'selected' if 'Unix/linux etc.' in search_params.get('platform', []) else '' }}>Unix/linux etc.</option>
+                    <option value="Windows" {{ 'selected' if 'Windows' in search_params.get('platform', []) else '' }}>Windows</option>
+                    <option value="Windows 2000/XP only" {{ 'selected' if 'Windows 2000/XP only' in search_params.get('platform', []) else '' }}>Windows 2000/XP only</option>
+                    <option value="Windows 7 Only" {{ 'selected' if 'Windows 7 Only' in search_params.get('platform', []) else '' }}>Windows 7 Only</option>
+                    <option value="Windows Vista Only" {{ 'selected' if 'Windows Vista Only' in search_params.get('platform', []) else '' }}>Windows Vista Only</option>
+                    <option value="Android" {{ 'selected' if 'Android' in search_params.get('platform', []) else '' }}>Android</option>
+                    <option value="iOS" {{ 'selected' if 'iOS' in search_params.get('platform', []) else '' }}>iOS</option>
+                    <option value="Unspecified/other" {{ 'selected' if 'Unspecified/other' in search_params.get('platform', []) else '' }}>Unspecified/other</option>
                 </select>
             </div>
         </div>
@@ -236,9 +236,9 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
-            <input type="hidden" name="lang" value="{{ search_params.lang }}">
-            <input type="hidden" name="arch" value="{{ search_params.arch }}">
-            <input type="hidden" name="platform" value="{{ search_params.platform }}">
+            {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -266,9 +266,9 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
-            <input type="hidden" name="lang" value="{{ search_params.lang }}">
-            <input type="hidden" name="arch" value="{{ search_params.arch }}">
-            <input type="hidden" name="platform" value="{{ search_params.platform }}">
+            {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -293,9 +293,9 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
-            <input type="hidden" name="lang" value="{{ search_params.lang }}">
-            <input type="hidden" name="arch" value="{{ search_params.arch }}">
-            <input type="hidden" name="platform" value="{{ search_params.platform }}">
+            {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -324,9 +324,9 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
-            <input type="hidden" name="lang" value="{{ search_params.lang }}">
-            <input type="hidden" name="arch" value="{{ search_params.arch }}">
-            <input type="hidden" name="platform" value="{{ search_params.platform }}">
+            {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">

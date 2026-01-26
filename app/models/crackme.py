@@ -174,12 +174,22 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
         query['name'] = {'$regex': name, '$options': 'i'}
     if author:
         query['author'] = {'$regex': author, '$options': 'i'}
+    # lang, arch, platform support multiple values (lists) with exact matching
     if lang:
-        query['lang'] = {'$regex': lang, '$options': 'i'}
+        if isinstance(lang, list):
+            query['lang'] = {'$in': lang}
+        else:
+            query['lang'] = lang
     if arch:
-        query['arch'] = {'$regex': arch, '$options': 'i'}
+        if isinstance(arch, list):
+            query['arch'] = {'$in': arch}
+        else:
+            query['arch'] = arch
     if platform:
-        query['platform'] = {'$regex': platform, '$options': 'i'}
+        if isinstance(platform, list):
+            query['platform'] = {'$in': platform}
+        else:
+            query['platform'] = platform
 
     skip = (page - 1) * per_page
     # Determine sort field and direction
