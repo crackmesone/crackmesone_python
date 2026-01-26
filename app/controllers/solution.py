@@ -14,7 +14,7 @@ from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS
-from app.services.archive import is_archive_password_protected, is_pe_file
+from app.services.archive import is_archive_password_protected, is_pe_file, is_single_file_archive, is_unsupported_archive
 from app.services.discord import notify_new_solution
 from app.controllers.decorators import login_required
 
@@ -90,9 +90,19 @@ def upload_solution_post(hexidcrackme):
         print(f"Error reading file: {e}")
         abort(500)
 
+    # Check for unsupported archive formats (RAR, tar, etc.)
+    if is_unsupported_archive(data):
+        flash('RAR and tar archives are not supported. Please upload a ZIP file for multiple files, or upload single files directly.', FLASH_ERROR)
+        return redirect(f'/upload/solution/{hexidcrackme}')
+
     # Check for password-protected archives
     if is_archive_password_protected(data):
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
+        return redirect(f'/upload/solution/{hexidcrackme}')
+
+    # Check for single-file archives
+    if is_single_file_archive(data):
+        flash('Archives containing only one file are not allowed. Please upload the file directly without wrapping it in an archive.', FLASH_ERROR)
         return redirect(f'/upload/solution/{hexidcrackme}')
 
     # Check for PE files (patched binaries are not allowed)
