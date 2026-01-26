@@ -20,9 +20,10 @@ def search_post():
     """Handle search form submission."""
     name = request.form.get('name', '')
     author = request.form.get('author', '')
-    lang = request.form.get('lang', '')
-    arch = request.form.get('arch', '')
-    platform = request.form.get('platform', '')
+    # Use getlist() for multi-select fields
+    lang = request.form.getlist('lang')
+    arch = request.form.getlist('arch')
+    platform = request.form.getlist('platform')
 
     # Get difficulty range
     try:
@@ -153,12 +154,13 @@ def search_post():
         sort_order = 'desc'
 
     # Store search params for pagination
+    # lang, arch, platform are lists for multi-select support
     search_params = {
         'name': name,
         'author': author,
-        'lang': lang,
-        'arch': arch,
-        'platform': platform,
+        'lang': lang,  # list
+        'arch': arch,  # list
+        'platform': platform,  # list
         'difficulty-min': difficulty_min,
         'difficulty-max': difficulty_max,
         'quality-min': quality_min,
