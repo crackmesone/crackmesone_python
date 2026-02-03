@@ -5,73 +5,101 @@
     <section class="navbar-center">
         -
     </section>
-
     {% if AuthLevel == "auth" %}
     <section class="navbar-section">
         <a href="{{ BaseURI }}notifications" class="btn btn-link notif-link"><i class="icon icon-message"></i>{% if unread_notifications > 0 %}<span class="notif-badge">{{ unread_notifications }}</span>{% endif %}</a>
         <a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
         <a href="{{ BaseURI }}upload/crackme" class="btn btn-link">Upload crackme</a>
         <a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a>
-        <a href="{{ BaseURI }}faq" class="btn btn-link">Faq</a>
+        <a href="{{ BaseURI }}faq" class="btn btn-link">FAQ</a>
         <a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a>
-        <a href="https://crackmesone.ctfd.io/" class="btn btn-link" target="_blank" style="color: #9acc14; font-weight: bold;">🏆 CTF (Feb 2026)</a>
+        <a href="https://crackmesone.ctfd.io/" class="btn btn-link nav-highlight" target="_blank">CTF (Feb 2026)</a>
         <a href="{{ BaseURI }}user/{{ usersess }}" class="btn btn-link">Profile</a>
         <a href="{{ BaseURI }}logout" class="btn btn-link">Logout</a>
     </section>
+    {% else %}
+    <section class="navbar-section">
+        <a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
+        <a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a>
+        <a href="{{ BaseURI }}faq" class="btn btn-link">FAQ</a>
+        <a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a>
+        <a href="https://crackmesone.ctfd.io/" class="btn btn-link nav-highlight" target="_blank">CTF (Feb 2026)</a>
+        <a href="{{ BaseURI }}login" class="btn btn-link">Login</a>
+        <a href="{{ BaseURI }}register" class="btn btn-link">Register</a>
+    </section>
+    {% endif %}
 </header>
+
+{% if AuthLevel == "auth" %}
 <div class="off-canvas show-xs">
     <h2 class="text-center"><a href="/" class="title-navbar">crackmes.one</a></h2>
-    <a class="off-canvas-toggle btn btn-primary btn-action" href="#" onclick="toggleSidebar('sidebar-id'); return false;">
+    <a class="off-canvas-toggle btn btn-primary btn-action" href="javascript:void(0)" onclick="toggleSidebar('sidebar-id')">
         <i class="icon icon-menu"></i>
     </a>
-
     <div id="sidebar-id" class="off-canvas-sidebar">
         <ul class="nav">
-            <li class="nav"><a href="{{ BaseURI }}" class="btn btn-link">Home</a></li>
-            <li class="nav"><a href="{{ BaseURI }}notifications" class="btn btn-link notif-link"><i class="icon icon-message"></i>{% if unread_notifications > 0 %}<span class="notif-badge">{{ unread_notifications }}</span>{% endif %}</a>
-            <li class="nav"><a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
-            <li class="nav"><a href="{{ BaseURI }}upload/crackme" class="btn btn-link">Upload crackme</a>
-            <li class="nav"><a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a></li>
-            <li class="nav"><a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a></li>
-            <li class="nav"><a href="{{ BaseURI }}faq" class="btn btn-link">Faq</a></li>
-            <li class="nav"><a href="https://crackmesone.ctfd.io/" class="btn btn-link" target="_blank" style="color: #9acc14; font-weight: bold;">CTF (Feb 2026)</a></li>
-            <li class="nav"><a href="{{ BaseURI }}user/{{ usersess }}" class="btn btn-link">Profile</a></li>
-            <li class="nav"><a href="{{ BaseURI }}logout" class="btn btn-link">Logout</a></li>
+            <li class="nav-item"><a href="{{ BaseURI }}" class="btn btn-link">Home</a></li>
+            <li class="nav-item"><a href="{{ BaseURI }}notifications" class="btn btn-link notif-link"><i class="icon icon-message"></i> Notifications {% if unread_notifications > 0 %}<span class="notif-badge">{{ unread_notifications }}</span>{% endif %}</a></li>
+            <li class="nav-item nav-dropdown">
+                <a href="javascript:void(0)" class="btn btn-link nav-dropdown-toggle" role="button" aria-expanded="false" onclick="toggleNavDropdown(this)">Crackmes <span class="nav-arrow">&gt;</span></a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="{{ BaseURI }}search" class="btn btn-link">Search</a></li>
+                    <li><a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a></li>
+                    <li><a href="{{ BaseURI }}upload/crackme" class="btn btn-link">Upload crackme</a></li>
+                </ul>
+            </li>
+            <li class="nav-item nav-dropdown">
+                <a href="javascript:void(0)" class="btn btn-link nav-dropdown-toggle" role="button" aria-expanded="false" onclick="toggleNavDropdown(this)">Community <span class="nav-arrow">&gt;</span></a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="{{ BaseURI }}faq" class="btn btn-link">FAQ</a></li>
+                    <li><a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a></li>
+                    <li><a href="https://crackmesone.ctfd.io/" class="btn btn-link nav-highlight" target="_blank">CTF (Feb 2026)</a></li>
+                </ul>
+            </li>
+            <li class="nav-item nav-dropdown">
+                <a href="javascript:void(0)" class="btn btn-link nav-dropdown-toggle" role="button" aria-expanded="false" onclick="toggleNavDropdown(this)">Account <span class="nav-arrow">&gt;</span></a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="{{ BaseURI }}user/{{ usersess }}" class="btn btn-link">Profile</a></li>
+                    <li><a href="{{ BaseURI }}logout" class="btn btn-link">Logout</a></li>
+                </ul>
+            </li>
         </ul>
     </div>
-    <a class="off-canvas-overlay" href="#" onclick="closeSidebar(); return false;"></a>
+    <a class="off-canvas-overlay" href="javascript:void(0)" onclick="closeSidebar()"></a>
 </div>
-
 {% else %}
-
-<section class="navbar-section">
-    <a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
-    <a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a>
-    <a href="{{ BaseURI }}faq" class="btn btn-link">Faq</a>
-    <a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a>
-    <a href="https://crackmesone.ctfd.io/" class="btn btn-link" target="_blank" style="color: #9acc14; font-weight: bold;">CTF (Feb 2026)</a>
-    <a href="{{ BaseURI }}login" class="btn btn-link">Login</a>
-    <a href="{{ BaseURI }}register" class="btn btn-link">Register</a>
-</section>
-</header>
 <div class="off-canvas show-xs">
     <h2 class="text-center"><a href="/" class="title-navbar">crackmes.one</a></h2>
-    <a class="off-canvas-toggle btn btn-primary btn-action" href="#" onclick="toggleSidebar('sidebar-id-guest'); return false;">
+    <a class="off-canvas-toggle btn btn-primary btn-action" href="javascript:void(0)" onclick="toggleSidebar('sidebar-id-guest')">
         <i class="icon icon-menu"></i>
     </a>
-
     <div id="sidebar-id-guest" class="off-canvas-sidebar">
         <ul class="nav">
-            <li class="nav"><a href="{{ BaseURI }}" class="btn btn-link">Home</a></li>
-            <li class="nav"><a href="{{ BaseURI }}search" class="btn btn-link">Search</a>
-            <li class="nav"><a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a></li>
-            <li class="nav"><a href="{{ BaseURI }}faq" class="btn btn-link">Faq</a></li>
-            <li class="nav"><a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a></li>
-            <li class="nav"><a href="https://crackmesone.ctfd.io/" class="btn btn-link" target="_blank" style="color: #9acc14; font-weight: bold;">CTF (Feb 2026)</a></li>
-            <li class="nav"><a href="{{ BaseURI }}login" class="btn btn-link">Login</a></li>
-            <li class="nav"><a href="{{ BaseURI }}register" class="btn btn-link">Register</a></li>
+            <li class="nav-item"><a href="{{ BaseURI }}" class="btn btn-link">Home</a></li>
+            <li class="nav-item nav-dropdown">
+                <a href="javascript:void(0)" class="btn btn-link nav-dropdown-toggle" role="button" aria-expanded="false" onclick="toggleNavDropdown(this)">Crackmes <span class="nav-arrow">&gt;</span></a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="{{ BaseURI }}search" class="btn btn-link">Search</a></li>
+                    <li><a href="{{ BaseURI }}lasts/1" class="btn btn-link">Latest Crackmes</a></li>
+                </ul>
+            </li>
+            <li class="nav-item nav-dropdown">
+                <a href="javascript:void(0)" class="btn btn-link nav-dropdown-toggle" role="button" aria-expanded="false" onclick="toggleNavDropdown(this)">Community <span class="nav-arrow">&gt;</span></a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="{{ BaseURI }}faq" class="btn btn-link">FAQ</a></li>
+                    <li><a href="https://discord.gg/2pPV3yq" class="btn btn-link">Discord</a></li>
+                    <li><a href="https://crackmesone.ctfd.io/" class="btn btn-link nav-highlight" target="_blank">CTF (Feb 2026)</a></li>
+                </ul>
+            </li>
+            <li class="nav-item nav-dropdown">
+                <a href="javascript:void(0)" class="btn btn-link nav-dropdown-toggle" role="button" aria-expanded="false" onclick="toggleNavDropdown(this)">Account <span class="nav-arrow">&gt;</span></a>
+                <ul class="nav-dropdown-menu">
+                    <li><a href="{{ BaseURI }}login" class="btn btn-link">Login</a></li>
+                    <li><a href="{{ BaseURI }}register" class="btn btn-link">Register</a></li>
+                </ul>
+            </li>
         </ul>
     </div>
-    <a class="off-canvas-overlay" href="#" onclick="closeSidebar(); return false;"></a>
+    <a class="off-canvas-overlay" href="javascript:void(0)" onclick="closeSidebar()"></a>
 </div>
 {% endif %}

@@ -172,6 +172,68 @@ tbody tr:first-child td .tile .tile-content:before {
     background: #2a2b2c;
 }
 
+.off-canvas-sidebar.active {
+    transform: translateX(0);
+}
+
+.off-canvas-sidebar.active ~ .off-canvas-overlay {
+    display: block;
+}
+
+/* MOBILE NAV DROPDOWNS */
+.nav-dropdown-menu {
+    display: none;
+    list-style: none;
+    padding-left: 1rem;
+    margin: 0;
+}
+
+.nav-dropdown.active .nav-dropdown-menu {
+    display: block;
+}
+
+.nav-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.nav-arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+
+.nav-dropdown.active .nav-arrow {
+    transform: rotate(90deg);
+}
+
+.nav-item {
+    padding: 0.3rem 0;
+}
+
+.nav-dropdown-menu li {
+    padding: 0.2rem 0;
+}
+
+.off-canvas .off-canvas-sidebar .nav-dropdown-menu .btn.btn-link,
+.off-canvas .off-canvas-sidebar .nav-dropdown-toggle.btn.btn-link,
+.off-canvas .off-canvas-sidebar .nav-item > .btn.btn-link {
+    color: #9acc14;
+}
+
+.off-canvas .off-canvas-sidebar .btn.btn-link:hover,
+.off-canvas .off-canvas-sidebar .btn.btn-link:focus {
+    background: #3a3b3c;
+    color: #9acc14;
+}
+
+a.nav-highlight,
+.btn.btn-link.nav-highlight {
+    color: #9acc14;
+    font-weight: bold;
+}
+
 /* UPLOAD BUTTON */
 .upload-btn {
     background: transparent;

@@ -19,14 +19,6 @@
         {% block head %}{% endblock %}
     </head>
     <body>
-        <style>
-            .off-canvas-sidebar.active {
-                transform: translateX(0);
-            }
-            .off-canvas-sidebar.active ~ .off-canvas-overlay {
-                display: block;
-            }
-        </style>
         <script>
             function toggleSidebar(id) {
                 var sidebar = document.getElementById(id);
@@ -38,6 +30,13 @@
                 });
                 if (window.location.hash) {
                     history.replaceState(null, '', window.location.pathname + window.location.search);
+                }
+            }
+            function toggleNavDropdown(el) {
+                var dropdown = el.closest('.nav-dropdown');
+                if (dropdown) {
+                    dropdown.classList.toggle('active');
+                    el.setAttribute('aria-expanded', dropdown.classList.contains('active'));
                 }
             }
         </script>
