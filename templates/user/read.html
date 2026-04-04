@@ -11,7 +11,15 @@
     }
 </script>
 <div class="container grid-lg wrapper">
-    <h3><a href="">{{ username }}</a>'s profile</h3>
+    <h3><a href="">{{ username }}</a>'s profile
+        {% if not viewingOwnPage %}
+            <form id="sub_form" style="display: inline;">
+                <button id="sub_btn" class="subscribe-btn"></button>
+                <input type="hidden" name="to" value="{{ username }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            </form>
+        {% endif %}
+    </h3>
     <div class="columns col-12 ">
         <div class="column col-4">
             <div class="column col-12 panel-background">
@@ -144,6 +152,38 @@
     {% endif %}
 
 </div>
+{% if not viewingOwnPage %}
+<script>
+    let isSubbed = {{ isSubscribed | tojson }};
+    const subForm = document.getElementById("sub_form");
+    const subBtn = document.getElementById("sub_btn");
+
+    function update_btn() {
+        subBtn.textContent = isSubbed ? "Unsubscribe" : "Subscribe";
+    }
+
+    update_btn();
+    subForm.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const url = `/subscriptions/${isSubbed ? 'un' : ''}subscribe`;
+        const data = new FormData(subForm);
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                body: data
+            });
+            const result = await response.json();
+            if (result.status === "ok") {
+                isSubbed = !isSubbed;
+                update_btn();
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        }
+    });
+</script>
+{% endif %}
+
 
 {% include 'partial/footer.html' %}
 {% endblock %}

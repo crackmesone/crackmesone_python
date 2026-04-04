@@ -7,6 +7,7 @@ from app.models.user import user_by_name
 from app.models.crackme import crackmes_by_user
 from app.models.solution import solutions_by_user
 from app.models.comment import comments_by_user
+from app.models.subscription import get_user_subs
 from app.models.errors import ErrNoResult
 
 user_bp = Blueprint('user', __name__)
@@ -50,6 +51,11 @@ def user_profile(name):
         session_username = session.get('name', '')
         viewing_own_page = session_username and session_username == actual_username
 
+        # Check wether USER has subscribed to NAME
+        is_subscribed = False
+        if session_username and not viewing_own_page:
+            is_subscribed = user['name'] in get_user_subs(session_username)
+
         return render_template('user/read.html',
                                username=user['name'],
                                NbCrackmes=nb_crackmes,
@@ -58,7 +64,8 @@ def user_profile(name):
                                crackmes=crackmes,
                                solutions=solutions_extended,
                                comments=comments,
-                               viewingOwnPage=viewing_own_page)
+                               viewingOwnPage=viewing_own_page,
+                               isSubscribed=is_subscribed)
 
     except Exception as e:
         print(f"Error getting user data: {e}")

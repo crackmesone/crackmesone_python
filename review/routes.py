@@ -32,6 +32,7 @@ from bson.objectid import ObjectId
 
 from review.logger import log_reviewer_operation
 
+from app.models.subscription import get_users_subbed_to
 
 # =============================================================================
 # Configuration and Constants
@@ -832,6 +833,16 @@ def approve_pending_crackme(hexid):
             crackme["author"],
             f"Your crackme '<a href=\"/crackme/{crackme['hexid']}\">{html_escape(crackme['name'])}</a>' has been accepted!"
         )
+        
+        #TODO: maybe make this async
+        # Notify people that have subscribed to author
+        users_subbed = get_users_subbed_to(crackme["author"])
+        for user in users_subbed:
+            send_user_notification(
+                user,
+                f"User <a href=\"/user/{crackme['author']}\">{crackme['author']}</a>, you've subscribed to, uploaded a new crackme '<a href=\"/crackme/{crackme['hexid']}\">{html_escape(crackme['name'])}</a>'!"
+            )
+
 
         return True, f"Crackme '{crackme['name']}' approved successfully"
 
