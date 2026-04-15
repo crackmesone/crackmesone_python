@@ -13,6 +13,7 @@ from app.models.errors import ErrNoResult
 from app.services.passhash import hash_string
 from app.services.email import send_email, is_configured as email_is_configured
 from app.services.discord import notify_password_reset_request, notify_password_reset_complete
+from app.services.recaptcha import verify as verify_recaptcha
 from app.controllers.decorators import anonymous_required
 
 password_reset_bp = Blueprint('password_reset', __name__)
@@ -43,6 +44,11 @@ def forgot_password_post():
 
     if not email:
         flash('Please enter your email address', FLASH_ERROR)
+        return render_template('password_reset/forgot.html')
+
+    # Validate reCAPTCHA
+    if not verify_recaptcha(request):
+        flash('reCAPTCHA invalid!', FLASH_ERROR)
         return render_template('password_reset/forgot.html')
 
     # Check if email service is configured
