@@ -48,7 +48,7 @@ def forgot_password_post():
 
     # Validate reCAPTCHA
     if not verify_recaptcha(request):
-        flash('reCAPTCHA invalid!', FLASH_ERROR)
+        flash('Verification failed. Please complete the challenge and try again.', FLASH_ERROR)
         return render_template('password_reset/forgot.html')
 
     # Check if email service is configured

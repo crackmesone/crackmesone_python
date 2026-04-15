@@ -19,8 +19,11 @@
                     </div>
                 </div>
                 {% if RECAPTCHA_SITEKEY %}
-                <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
-                </br></br></br></br>
+                <label class="form-label float-right" id="forgot-password-captcha-label">Human verification</label>
+                <div id="forgot-password-recaptcha" role="group" aria-labelledby="forgot-password-captcha-label" style="clear: both;">
+                    <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
+                </div>
+                <div style="clear: both; margin-bottom: 1rem;"></div>
                 {% endif %}
                 <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem;">
                     <a href="/login" class="btn active">Back to Login</a>
