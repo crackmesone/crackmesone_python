@@ -7,70 +7,109 @@
     <div class="page-header">
         <h1>FAQ</h1>
         <h3 id="where-am-i">Where am I? <a href="#where-am-i" class="anchor-link">#</a></h3>
-        <p>Crackmes.de does not exist anymore. This site was created as a place for reverse engineers to upload their creations and help newcomers learn this discipline. Here you can improve your reversing skills by downloading crackmes and submitting writeups to them.</p>
+        <p>Crackmes.de does not exist anymore. This site was created as a place for reverse engineers to upload their
+            creations and help newcomers learn this discipline. Here you can improve your reversing skills by
+            downloading crackmes and submitting writeups to them.</p>
         <div class="divider"></div>
         <h3 id="what-is-crackme">What is a crackme? <a href="#what-is-crackme" class="anchor-link">#</a></h3>
-        <p>A crackme is a small program designed specifically to be reverse engineered and "cracked" as an educational exercise. Unlike real software, crackmes are purposefully created with challenges such as password validation, serial number checking, or anti-debugging techniques to help you practice reverse engineering skills. Common goals include finding the correct password, generating valid serial keys, or bypassing authentication checks. Crackmes are legal and ethical because they are made specifically for this purpose.</p>
+        <p>A crackme is a small program designed specifically to be reverse engineered and "cracked" as an educational
+            exercise. Unlike real software, crackmes are purposefully created with challenges such as password
+            validation, serial number checking, or anti-debugging techniques to help you practice reverse engineering
+            skills. Common goals include finding the correct password, generating valid serial keys, or bypassing
+            authentication checks. Crackmes are legal and ethical because they are made specifically for this purpose.
+        </p>
         <div class="divider"></div>
         <h3 id="what-is-writeup">What is a writeup? <a href="#what-is-writeup" class="anchor-link">#</a></h3>
-        <p>A writeup is a detailed explanation of how you solved a crackme. It should document your thought process, the tools you used, the techniques you applied, and the steps you took to find the solution. A good writeup helps others learn from your approach and demonstrates your understanding of reverse engineering concepts. Writeups can be in text, markdown, HTML, PDF, or even video format. Simply providing a keygen script without explanation is not considered a valid writeup.</p>
+        <p>A writeup is a detailed explanation of how you solved a crackme. It should document your thought process, the
+            tools you used, the techniques you applied, and the steps you took to find the solution. A good writeup
+            helps others learn from your approach and demonstrates your understanding of reverse engineering concepts.
+            Writeups can be in text, markdown, HTML, PDF, or even video format. Simply providing a keygen script without
+            explanation is not considered a valid writeup.</p>
         <div class="divider"></div>
         <h3 id="what-is-keygen">What is a keygen? <a href="#what-is-keygen" class="anchor-link">#</a></h3>
-        <p>A <b>keygen</b> (short for "key generator") is a program or script that generates valid serial numbers, passwords, or license keys for a crackme. Unlike patching (modifying the binary), a keygen works by understanding and reimplementing the validation algorithm to produce inputs that the crackme will accept as correct.</p>
+        <p>A <b>keygen</b> (short for "key generator") is a program or script that generates valid serial numbers,
+            passwords, or license keys for a crackme. Unlike patching (modifying the binary), a keygen works by
+            understanding and reimplementing the validation algorithm to produce inputs that the crackme will accept as
+            correct.</p>
         <p><b>Why write a keygen?</b></p>
         <ul>
-            <li><b>Demonstrates deep understanding:</b> To write a keygen, you must fully reverse engineer the validation algorithm, understand the mathematical relationships, and reimplement them correctly.</li>
-            <li><b>Educational value:</b> The process of creating a keygen teaches you about cryptography, algorithm analysis, and programming.</li>
-            <li><b>Reusable solution:</b> A keygen can generate unlimited valid keys, while a patched binary or single discovered password only works for that specific case.</li>
+            <li><b>Demonstrates deep understanding:</b> To write a keygen, you must fully reverse engineer the
+                validation algorithm, understand the mathematical relationships, and reimplement them correctly.</li>
+            <li><b>Educational value:</b> The process of creating a keygen teaches you about cryptography, algorithm
+                analysis, and programming.</li>
+            <li><b>Reusable solution:</b> A keygen can generate unlimited valid keys, while a patched binary or single
+                discovered password only works for that specific case.</li>
         </ul>
-        <p>A keygen can be written in any programming language (Python, C, JavaScript, etc.) and should be accompanied by a writeup explaining how you derived the algorithm.</p>
+        <p>A keygen can be written in any programming language (Python, C, JavaScript, etc.) and should be accompanied
+            by a writeup explaining how you derived the algorithm.</p>
         <div class="divider"></div>
         <h3 id="what-tools">What tools do I need to solve crackmes? <a href="#what-tools" class="anchor-link">#</a></h3>
         <p>You will need reverse engineering tools to analyze and solve crackmes. Here are some commonly used tools:</p>
         <p><b>Disassemblers/Decompilers:</b></p>
         <ul>
-            <li><b><a href="https://binary.ninja/">Binary Ninja</a></b> - Modern reverse engineering platform with powerful analysis capabilities</li>
-            <li><b><a href="https://hex-rays.com/ida-pro/">IDA Pro</a></b> - Classic commercial disassembler with free version available</li>
-            <li><b><a href="https://ghidra-sre.org/">Ghidra</a></b> - Free and open-source reverse engineering suite from the NSA</li>
-            <li>Others: <a href="https://rada.re/">Radare2</a>/<a href="https://rizin.re/">Rizin</a>, <a href="https://www.hopperapp.com/">Hopper</a></li>
+            <li><b><a href="https://binary.ninja/">Binary Ninja</a></b> - Modern reverse engineering platform with
+                powerful analysis capabilities</li>
+            <li><b><a href="https://hex-rays.com/ida-pro/">IDA Pro</a></b> - Classic commercial disassembler with free
+                version available</li>
+            <li><b><a href="https://ghidra-sre.org/">Ghidra</a></b> - Free and open-source reverse engineering suite
+                from the NSA</li>
+            <li>Others: <a href="https://rada.re/">Radare2</a>/<a href="https://rizin.re/">Rizin</a>, <a
+                    href="https://www.hopperapp.com/">Hopper</a></li>
         </ul>
         <p><b>Debuggers:</b></p>
         <ul>
             <li><b><a href="https://x64dbg.com/">x64dbg</a></b> - Popular open-source debugger for Windows</li>
             <li><b><a href="https://www.sourceware.org/gdb/">GDB</a></b> - GNU Debugger for Linux and Unix systems</li>
-            <li><b><a href="https://lldb.llvm.org/">LLDB</a></b> - LLVM debugger for macOS, Linux, and other platforms</li>
-            <li><b><a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/">WinDbg</a></b> - Microsoft's debugger for Windows</li>
+            <li><b><a href="https://lldb.llvm.org/">LLDB</a></b> - LLVM debugger for macOS, Linux, and other platforms
+            </li>
+            <li><b><a href="https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/">WinDbg</a></b> -
+                Microsoft's debugger for Windows</li>
         </ul>
-        <p>Other useful tools include hex editors, string analyzers, and scripting languages like Python for writing keygens. Many of these tools have free versions or are completely open-source, making reverse engineering accessible to everyone.</p>
+        <p>Other useful tools include hex editors, string analyzers, and scripting languages like Python for writing
+            keygens. Many of these tools have free versions or are completely open-source, making reverse engineering
+            accessible to everyone.</p>
         <div class="divider"></div>
         <h3 id="is-this-legal">Is this legal? <a href="#is-this-legal" class="anchor-link">#</a></h3>
         <p>Obviously, all crackmes available on this website have been made to be cracked.</p>
         <div class="divider"></div>
-        <h3 id="not-allowed">What content is not allowed on this site? <a href="#not-allowed" class="anchor-link">#</a></h3>
-        <p>This website is dedicated to educational reverse engineering challenges (crackmes) only. The following types of content are <b>strictly prohibited</b>:</p>
+        <h3 id="not-allowed">What content is not allowed on this site? <a href="#not-allowed" class="anchor-link">#</a>
+        </h3>
+        <p>This website is dedicated to educational reverse engineering challenges (crackmes) only. The following types
+            of content are <b>strictly prohibited</b>:</p>
         <ul>
-            <li><b>Game cracking, cheating, or modding</b> - Cracks, trainers, or modifications for commercial or indie games</li>
-            <li><b>Commercial software cracking or DRM circumvention</b> - Keygens, patches, or license circumvention for paid software</li>
-            <li><b>Malware or viruses</b> - Real malicious software (crackmes with simulated malware behavior for educational purposes are acceptable if clearly labeled)</li>
+            <li><b>Game cracking, cheating, or modding</b> - Cracks, trainers, or modifications for commercial or indie
+                games</li>
+            <li><b>Commercial software cracking or DRM circumvention</b> - Keygens, patches, or license circumvention
+                for paid software</li>
+            <li><b>Malware or viruses</b> - Real malicious software (crackmes with simulated malware behavior for
+                educational purposes are acceptable if clearly labeled)</li>
         </ul>
-        <p>Submissions violating these rules will be rejected and may result in account suspension. This site is for learning reverse engineering through purpose-built educational challenges only.</p>
+        <p>Submissions violating these rules will be rejected and may result in account suspension. This site is for
+            learning reverse engineering through purpose-built educational challenges only.</p>
         <div class="divider"></div>
-        <h3 id="password-protected">I downloaded a crackme but it's password-protected. <a href="#password-protected" class="anchor-link">#</a></h3>
+        <h3 id="password-protected">I downloaded a crackme but it's password-protected. <a href="#password-protected"
+                class="anchor-link">#</a></h3>
         <p>The password for all files is "<b>crackmes.one</b>".</p>
         <div class="divider"></div>
-        <h3 id="submission-not-appearing">I submitted a crackme/writeup but it does not appear on the website. <a href="#submission-not-appearing" class="anchor-link">#</a></h3>
-        <p>Every crackme and writeup is validated before appearing on the website. This may take anywhere from a few hours to a couple of days.</p>
+        <h3 id="submission-not-appearing">I submitted a crackme/writeup but it does not appear on the website. <a
+                href="#submission-not-appearing" class="anchor-link">#</a></h3>
+        <p>Every crackme and writeup is validated before appearing on the website. This may take anywhere from a few
+            hours to a couple of days.</p>
         <div class="divider"></div>
-        <h3 id="no-information">Some crackmes do not have any information. <a href="#no-information" class="anchor-link">#</a></h3>
+        <h3 id="no-information">Some crackmes do not have any information. <a href="#no-information"
+                class="anchor-link">#</a></h3>
         <p>Indeed, but in most cases there is a README or instructions file within the archive.</p>
         <div class="divider"></div>
         <h3 id="submit-writeup">How do I submit a writeup? <a href="#submit-writeup" class="anchor-link">#</a></h3>
-        <p>First, you must login or register for an account. Then, navigate to the crackme page and upload your writeup there.</p>
+        <p>First, you must login or register for an account. Then, navigate to the crackme page and upload your writeup
+            there.</p>
         <p><b>Accepted formats:</b> Text, markdown, HTML, PDF, and similar formats are preferred.</p>
-        <p><b>Important rule:</b> Don't patch! Unless the author explicitly stated that patching is a valid solution, you should write a keygen and document your process. You will learn more by doing this.</p>
+        <p><b>Important rule:</b> Don't patch! Unless the author explicitly stated that patching is a valid solution,
+            you should write a keygen and document your process. You will learn more by doing this.</p>
         <p>For complete guidelines, see the <a href="/upload/writeuprules">writeup submission rules</a>.</p>
         <div class="divider"></div>
-        <h3 id="writeup-rejected">Why was my writeup rejected? <a href="#writeup-rejected" class="anchor-link">#</a></h3>
+        <h3 id="writeup-rejected">Why was my writeup rejected? <a href="#writeup-rejected" class="anchor-link">#</a>
+        </h3>
         <p>Writeups are rejected if they don't meet our submission standards. Common reasons include:</p>
         <ul>
             <li>Only providing a password, serial, key, or executable without explanation</li>
@@ -78,27 +117,48 @@
             <li>Insufficient detail about the solving process</li>
             <li>Single file wrapped in an archive, or password-protected archive</li>
         </ul>
-        <p>Review the <a href="/upload/writeuprules">writeup submission rules</a>, improve your writeup with detailed explanations, and resubmit. Remember: we want others to learn from your solution!</p>
+        <p>Review the <a href="/upload/writeuprules">writeup submission rules</a>, improve your writeup with detailed
+            explanations, and resubmit. Remember: we want others to learn from your solution!</p>
         <div class="divider"></div>
-        <h3 id="what-is-patching">What is patching and why is it not allowed? <a href="#what-is-patching" class="anchor-link">#</a></h3>
-        <p><b>Patching</b> means modifying the binary executable to bypass its validation algorithm, typically by changing conditional jumps (e.g., replacing <code>JNZ</code> with <code>JZ</code>) or <code>NOP</code>-ing out instructions to skip validation checks entirely.</p>
-        <p>Patching to make the binary print "correct" or "success" is generally <b>not considered a valid solution</b> for crackmes because:</p>
+        <h3 id="what-is-patching">What is patching and why is it not allowed? <a href="#what-is-patching"
+                class="anchor-link">#</a></h3>
+        <p><b>Patching</b> means modifying the binary executable to bypass its validation algorithm, typically by
+            changing conditional jumps (e.g., replacing <code>JNZ</code> with <code>JZ</code>) or <code>NOP</code>-ing
+            out instructions to skip validation checks entirely.</p>
+        <p>Patching to make the binary print "correct" or "success" is generally <b>not considered a valid solution</b>
+            for crackmes because:</p>
         <ul>
-            <li><b>Crackmes are about understanding algorithms:</b> The core purpose of a crackme is to analyze the validation logic and determine the correct input (password, serial key, etc.) that satisfies the check. Patching the final check bypasses this learning entirely.</li>
-            <li><b>Limited educational value:</b> While patching demonstrates basic binary modification skills, it doesn't teach you how the algorithm works, how to reverse engineer the key generation logic, or how to write a keygen.</li>
-            <li><b>Writeups should help others learn:</b> A writeup that only shows "change byte X to Y" provides little insight compared to one that explains the algorithm and derives the solution mathematically or programmatically.</li>
+            <li><b>Crackmes are about understanding algorithms:</b> The core purpose of a crackme is to analyze the
+                validation logic and determine the correct input (password, serial key, etc.) that satisfies the check.
+                Patching the final check bypasses this learning entirely.</li>
+            <li><b>Limited educational value:</b> While patching demonstrates basic binary modification skills, it
+                doesn't teach you how the algorithm works, how to reverse engineer the key generation logic, or how to
+                write a keygen.</li>
+            <li><b>Writeups should help others learn:</b> A writeup that only shows "change byte X to Y" provides little
+                insight compared to one that explains the algorithm and derives the solution mathematically or
+                programmatically.</li>
         </ul>
         <p><b>When patching IS valid:</b></p>
         <ul>
-            <li><b>Anti-patching crackmes:</b> Some crackmes specifically feature self-protection or anti-patching mechanisms as the challenge itself. In these cases, defeating the protection and successfully patching the binary <i>is</i> the intended solution.</li>
-            <li><b>During analysis:</b> Patching the binary during your analysis process is completely fine. For example, bypassing anti-debugging checks, disabling timers, or NOPing out annoying loops to make analysis easier. This is a normal part of reverse engineering. It only becomes invalid when your <i>final solution</i> is just "patch this jump to show the success message."</li>
+            <li><b>Anti-patching crackmes:</b> Some crackmes specifically feature self-protection or anti-patching
+                mechanisms as the challenge itself. In these cases, defeating the protection and successfully patching
+                the binary <i>is</i> the intended solution.</li>
+            <li><b>During analysis:</b> Patching the binary during your analysis process is completely fine. For
+                example, bypassing anti-debugging checks, disabling timers, or NOPing out annoying loops to make
+                analysis easier. This is a normal part of reverse engineering. It only becomes invalid when your
+                <i>final solution</i> is just "patch this jump to show the success message."</li>
         </ul>
-        <p><b>Note:</b> Even if a crackme author states that patching is allowed, reviewers may still reject patch-only writeups because they make little contribution to the community's learning. If you do patch, consider also explaining the algorithm and providing a keygen alongside your patch.</p>
+        <p><b>Note:</b> Even if a crackme author states that patching is allowed, reviewers may still reject patch-only
+            writeups because they make little contribution to the community's learning. If you do patch, consider also
+            explaining the algorithm and providing a keygen alongside your patch.</p>
         <div class="divider"></div>
         <h3 id="submit-crackme">How do I submit a crackme? <a href="#submit-crackme" class="anchor-link">#</a></h3>
-        <p>To submit a crackme, you must first login or register. Then go to the <a href="/upload/crackme">Upload Crackme</a> page. Make sure to read the <a href="/upload/crackmerules">crackme submission rules</a> before uploading to ensure your submission meets the requirements.</p>
+        <p>To submit a crackme, you must first login or register. Then go to the <a href="/upload/crackme">Upload
+                Crackme</a> page. Make sure to read the <a href="/upload/crackmerules">crackme submission rules</a>
+            before uploading to ensure your submission meets the requirements.</p>
         <div class="divider"></div>
-        <h3 id="crackme-rejected">Why was my crackme rejected? <a href="#crackme-rejected" class="anchor-link">#</a></h3>
+        <h3 id="crackme-rejected">Why was my crackme rejected? <a href="#crackme-rejected" class="anchor-link">#</a>
+        </h3>
         <p>Crackmes are rejected for violating our submission rules. Common reasons include:</p>
         <ul>
             <li>Not original work (copied from elsewhere without permission)</li>
@@ -109,120 +169,193 @@
             <li>Requires excessive guessing or brute-forcing</li>
             <li>Contains actual malware or relies on hardware unique identifiers</li>
         </ul>
-        <p>Review the complete <a href="/upload/crackmerules">crackme submission rules</a>, fix the issues, and resubmit. If you're unsure why your crackme was rejected, contact us at crackmesone@gmail.com.</p>
+        <p>Review the complete <a href="/upload/crackmerules">crackme submission rules</a>, fix the issues, and
+            resubmit. If you're unsure why your crackme was rejected, contact us at crackmesone@gmail.com.</p>
         <div class="divider"></div>
-        <h3 id="upload-size-limit">What is the maximum file size for uploads? <a href="#upload-size-limit" class="anchor-link">#</a></h3>
-        <p>The maximum file size for both crackme and writeup uploads is <b>10 MB</b> (10,485,760 bytes). Upload single files directly. If you have multiple files, put them in a zip archive without a password (server handles encryption).</p>
+        <h3 id="upload-size-limit">What is the maximum file size for uploads? <a href="#upload-size-limit"
+                class="anchor-link">#</a></h3>
+        <p>The maximum file size for both crackme and writeup uploads is <b>10 MB</b> (10,485,760 bytes). Upload single
+            files directly. If you have multiple files, put them in a zip archive without a password (server handles
+            encryption).</p>
         <div class="divider"></div>
-        <h3 id="getting-started">How do I get started with reverse engineering? <a href="#getting-started" class="anchor-link">#</a></h3>
+        <h3 id="getting-started">How do I get started with reverse engineering? <a href="#getting-started"
+                class="anchor-link">#</a></h3>
         <p>If you're new to reverse engineering, here are some steps to get started:</p>
         <ol>
-            <li><b>Learn the basics:</b> Start with understanding assembly language (x86/x64), how programs are compiled, and basic debugging concepts.</li>
-            <li><b>Get tools:</b> Download a disassembler like <a href="https://binary.ninja/">Binary Ninja</a>, <a href="https://ghidra-sre.org/">Ghidra</a>, or <a href="https://hex-rays.com/ida-free/">IDA Free</a>, and a debugger like <a href="https://x64dbg.com/">x64dbg</a> or <a href="https://www.sourceware.org/gdb/">GDB</a>.</li>
-            <li><b>Start with easy crackmes:</b> Browse the <a href="/browse/1">difficulty 1 crackmes</a> on this site. These are designed for beginners and often have straightforward solutions.</li>
-            <li><b>Read writeups:</b> After attempting a crackme, read how others solved it. This helps you learn different techniques and approaches.</li>
-            <li><b>Practice regularly:</b> Reverse engineering is a skill that improves with practice. Try to solve at least one crackme per week.</li>
-            <li><b>Learn from resources:</b> Check out tutorials, books, and courses on reverse engineering. The community often shares helpful resources on our Discord server.</li>
+            <li><b>Learn the basics:</b> Start with understanding assembly language (x86/x64), how programs are
+                compiled, and basic debugging concepts.</li>
+            <li><b>Get tools:</b> Download a disassembler like <a href="https://binary.ninja/">Binary Ninja</a>, <a
+                    href="https://ghidra-sre.org/">Ghidra</a>, or <a href="https://hex-rays.com/ida-free/">IDA Free</a>,
+                and a debugger like <a href="https://x64dbg.com/">x64dbg</a> or <a
+                    href="https://www.sourceware.org/gdb/">GDB</a>.</li>
+            <li><b>Start with easy crackmes:</b> Browse the <a href="/search">search</a> on this site and search for
+                difficulty 1 crackmes. These are designed for beginners and often have straightforward solutions.</li>
+            <li><b>Read writeups:</b> After attempting a crackme, read how others solved it. This helps you learn
+                different techniques and approaches.</li>
+            <li><b>Practice regularly:</b> Reverse engineering is a skill that improves with practice. Try to solve at
+                least one crackme per week.</li>
+            <li><b>Learn from resources:</b> Check out tutorials, books, and courses on reverse engineering. The
+                community often shares helpful resources on our Discord server.</li>
         </ol>
         <p>Remember: everyone starts somewhere, and the community is here to help. Don't be afraid to ask questions!</p>
         <div class="divider"></div>
-        <h3 id="course-material">Can I use these crackmes as free course material? <a href="#course-material" class="anchor-link">#</a></h3>
-        <p>Please feel free to use crackmes available on this site for non-commercial purposes, but please mention the author.</p>
+        <h3 id="course-material">Can I use these crackmes as free course material? <a href="#course-material"
+                class="anchor-link">#</a></h3>
+        <p>Please feel free to use crackmes available on this site for non-commercial purposes, but please mention the
+            author.</p>
         <p>If you are using more than 99 crackmes for any purpose, please let us know via crackmesone@gmail.com.</p>
-        <p>Unauthorized mirroring of the website contents (including the crackmes) is not allowed without explicit permission.</p>
+        <p>Unauthorized mirroring of the website contents (including the crackmes) is not allowed without explicit
+            permission.</p>
         <div class="divider"></div>
         <h3 id="archive">Is there an archive of the site's content? <a href="#archive" class="anchor-link">#</a></h3>
-        <p>Yes! We maintain an archive of all crackmes, solutions, and comments from the website. If you wish to use a large amount of the site's content for research, analysis, or educational purposes, <b>please use the archive instead of crawling the site</b>. This helps reduce server load and ensures you get a complete snapshot of the data.</p>
-        <p><b>Archive URL:</b> <a href="https://drive.google.com/file/d/1QA7QbO5z7EAn1A5-B3AoXogJfvPmzzFL/view?usp=sharing" target="_blank" rel="noopener noreferrer">https://drive.google.com/file/d/1QA7QbO5z7EAn1A5-B3AoXogJfvPmzzFL/view?usp=sharing</a></p>
+        <p>Yes! We maintain an archive of all crackmes, solutions, and comments from the website. If you wish to use a
+            large amount of the site's content for research, analysis, or educational purposes, <b>please use the
+                archive instead of crawling the site</b>. This helps reduce server load and ensures you get a complete
+            snapshot of the data.</p>
+        <p><b>Archive URL:</b> <a
+                href="https://drive.google.com/file/d/1QA7QbO5z7EAn1A5-B3AoXogJfvPmzzFL/view?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer">https://drive.google.com/file/d/1QA7QbO5z7EAn1A5-B3AoXogJfvPmzzFL/view?usp=sharing</a>
+        </p>
         <p><b>Archive date:</b> December 21, 2025</p>
         <p>If you need a more recent archive, please contact us at crackmesone@gmail.com.</p>
         <div class="divider"></div>
         <h3 id="reset-password">How do I reset my password? <a href="#reset-password" class="anchor-link">#</a></h3>
-        <p>If you still remember your password: log in, click "Profile", scroll to the bottom of the page, click "Change Password", and provide your current and new password.</p>
-        <p>If you do not remember your current password: use the <a href="/forgot-password">Forgot Password</a> page to receive a reset link via email.</p>
-        <p>If the automated reset does not work, please email crackmesone@gmail.com from the email address you used when you registered your account for assistance.</p>
+        <p>If you still remember your password: log in, click "Profile", scroll to the bottom of the page, click "Change
+            Password", and provide your current and new password.</p>
+        <p>If you do not remember your current password: use the <a href="/forgot-password">Forgot Password</a> page to
+            receive a reset link via email.</p>
+        <p>If the automated reset does not work, please email crackmesone@gmail.com from the email address you used when
+            you registered your account for assistance.</p>
         <div class="divider"></div>
-        <h3 id="reset-email-not-received">I didn't receive the password reset email. <a href="#reset-email-not-received" class="anchor-link">#</a></h3>
+        <h3 id="reset-email-not-received">I didn't receive the password reset email. <a href="#reset-email-not-received"
+                class="anchor-link">#</a></h3>
         <p>If you requested a password reset but didn't receive the email, please check the following:</p>
         <ul>
-            <li><b>Check your spam/junk folder:</b> Password reset emails sometimes get filtered as spam. Look in your spam or junk folder for an email from crackmes.one.</li>
-            <li><b>Mark as "Not Spam":</b> If you find our email in spam, please mark it as "Not Spam" or move it to your inbox. This helps train your email provider to deliver our emails correctly in the future and improves our email server's reputation.</li>
-            <li><b>Add us to your contacts:</b> Adding crackmesone@gmail.com to your contacts can help prevent future emails from being marked as spam.</li>
-            <li><b>Wait a few minutes:</b> Email delivery can sometimes be delayed. Wait 5-10 minutes before requesting another reset.</li>
-            <li><b>Check the correct email address:</b> Make sure you entered the same email address you used when registering your account.</li>
+            <li><b>Check your spam/junk folder:</b> Password reset emails sometimes get filtered as spam. Look in your
+                spam or junk folder for an email from crackmes.one.</li>
+            <li><b>Mark as "Not Spam":</b> If you find our email in spam, please mark it as "Not Spam" or move it to
+                your inbox. This helps train your email provider to deliver our emails correctly in the future and
+                improves our email server's reputation.</li>
+            <li><b>Add us to your contacts:</b> Adding crackmesone@gmail.com to your contacts can help prevent future
+                emails from being marked as spam.</li>
+            <li><b>Wait a few minutes:</b> Email delivery can sometimes be delayed. Wait 5-10 minutes before requesting
+                another reset.</li>
+            <li><b>Check the correct email address:</b> Make sure you entered the same email address you used when
+                registering your account.</li>
         </ul>
-        <p>If you've tried all of the above and still haven't received the email, please contact us at crackmesone@gmail.com for assistance.</p>
+        <p>If you've tried all of the above and still haven't received the email, please contact us at
+            crackmesone@gmail.com for assistance.</p>
         <div class="divider"></div>
         <h3 id="delete-account">How do I delete my account? <a href="#delete-account" class="anchor-link">#</a></h3>
         <p>Please email us at crackmesone@gmail.com to request account deletion.</p>
         <div class="divider"></div>
-        <h3 id="discord-verify">I cannot speak or see most channels on Discord. <a href="#discord-verify" class="anchor-link">#</a></h3>
-        <p>If you cannot speak or see most of the channels on our Discord server, this is because you have not verified your account yet. Please check the <b>#verify</b> channel and follow the verification steps.</p>
+        <h3 id="discord-verify">I cannot speak or see most channels on Discord. <a href="#discord-verify"
+                class="anchor-link">#</a></h3>
+        <p>If you cannot speak or see most of the channels on our Discord server, this is because you have not verified
+            your account yet. Please check the <b>#verify</b> channel and follow the verification steps.</p>
         <div class="divider"></div>
         <h3 id="vcredist">A crackme won't run or shows a DLL error. <a href="#vcredist" class="anchor-link">#</a></h3>
-        <p>If a Windows crackme fails to start or shows errors like "VCRUNTIME140.dll not found", "MSVCP140.dll is missing", or similar DLL errors, you likely need to install the <b>Microsoft Visual C++ Redistributable</b> packages.</p>
+        <p>If a Windows crackme fails to start or shows errors like "VCRUNTIME140.dll not found", "MSVCP140.dll is
+            missing", or similar DLL errors, you likely need to install the <b>Microsoft Visual C++ Redistributable</b>
+            packages.</p>
         <p>Many crackmes are compiled with Visual Studio and require these runtime libraries to run. To fix this:</p>
         <ol>
-            <li>Download the latest Visual C++ Redistributable from Microsoft's official site: <a href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" target="_blank" rel="noopener noreferrer">https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist</a></li>
-            <li>Install <b>both</b> the x86 (32-bit) and x64 (64-bit) versions, as crackmes may be compiled for either architecture</li>
+            <li>Download the latest Visual C++ Redistributable from Microsoft's official site: <a
+                    href="https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist" target="_blank"
+                    rel="noopener noreferrer">https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist</a>
+            </li>
+            <li>Install <b>both</b> the x86 (32-bit) and x64 (64-bit) versions, as crackmes may be compiled for either
+                architecture</li>
             <li>Restart your system or VM after installation</li>
         </ol>
-        <p><b>Tip:</b> If you're setting up a fresh VM for reverse engineering, installing all available Visual C++ Redistributable versions (2015-2022, 2013, 2012, 2010, etc.) upfront will save you from encountering these errors later.</p>
-        <p><b>Note for crackme authors:</b> If your crackme requires a specific runtime to run, please mention it in the description. This is especially important for less common or non-standard runtimes that users may not have installed.</p>
-        <p>A common issue is crackmes compiled in Debug mode, which require the Debug version of the Visual C++ runtime (e.g., VCRUNTIME140<b>D</b>.dll). These debug runtimes are only included with Visual Studio and are not available through the standard redistributable packages, making your crackme much harder for others to run. If you want to include symbols to make your crackme easier to analyze, consider compiling in Release mode and including the PDB file alongside your executable instead.</p>
-        <p>Similarly, crackmes compiled with Cygwin will require <code>cygwin1.dll</code> (and possibly other Cygwin DLLs) to run. If you're distributing a Cygwin-compiled crackme, either mention this requirement or consider including the necessary DLLs.</p>
+        <p><b>Tip:</b> If you're setting up a fresh VM for reverse engineering, installing all available Visual C++
+            Redistributable versions (2015-2022, 2013, 2012, 2010, etc.) upfront will save you from encountering these
+            errors later.</p>
+        <p><b>Note for crackme authors:</b> If your crackme requires a specific runtime to run, please mention it in the
+            description. This is especially important for less common or non-standard runtimes that users may not have
+            installed.</p>
+        <p>A common issue is crackmes compiled in Debug mode, which require the Debug version of the Visual C++ runtime
+            (e.g., VCRUNTIME140<b>D</b>.dll). These debug runtimes are only included with Visual Studio and are not
+            available through the standard redistributable packages, making your crackme much harder for others to run.
+            If you want to include symbols to make your crackme easier to analyze, consider compiling in Release mode
+            and including the PDB file alongside your executable instead.</p>
+        <p>Similarly, crackmes compiled with Cygwin will require <code>cygwin1.dll</code> (and possibly other Cygwin
+            DLLs) to run. If you're distributing a Cygwin-compiled crackme, either mention this requirement or consider
+            including the necessary DLLs.</p>
         <div class="divider"></div>
-        <h3 id="are-crackmes-safe">Are the crackmes safe to run? <a href="#are-crackmes-safe" class="anchor-link">#</a></h3>
-        <p>We manually review every crackme and solution submission before it appears on the website to prevent malware and viruses. However, there is always a small chance that something could be missed. For your safety, we strongly recommend:</p>
+        <h3 id="are-crackmes-safe">Are the crackmes safe to run? <a href="#are-crackmes-safe" class="anchor-link">#</a>
+        </h3>
+        <p>We manually review every crackme and solution submission before it appears on the website to prevent malware
+            and viruses. However, there is always a small chance that something could be missed. For your safety, we
+            strongly recommend:</p>
         <ul>
-            <li><b>Use a virtual machine (VM):</b> Always run crackmes in an isolated environment like VirtualBox, VMware, or Hyper-V. This protects your main system from any potential harm.</li>
-            <li><b>Take snapshots:</b> Before running a crackme, take a VM snapshot so you can easily restore to a clean state.</li>
-            <li><b>Disable network access:</b> Consider disabling network access in your VM when running crackmes to prevent any unexpected network activity.</li>
-            <li><b>Check the crackme details:</b> Read the description and comments from other users before running a crackme.</li>
+            <li><b>Use a virtual machine (VM):</b> Always run crackmes in an isolated environment like VirtualBox,
+                VMware, or Hyper-V. This protects your main system from any potential harm.</li>
+            <li><b>Take snapshots:</b> Before running a crackme, take a VM snapshot so you can easily restore to a clean
+                state.</li>
+            <li><b>Disable network access:</b> Consider disabling network access in your VM when running crackmes to
+                prevent any unexpected network activity.</li>
+            <li><b>Check the crackme details:</b> Read the description and comments from other users before running a
+                crackme.</li>
         </ul>
-        <p><b>Note about antivirus detections:</b> Some crackmes may trigger antivirus warnings or have many detections on sites like <a href="https://www.virustotal.com/">VirusTotal</a>. This is <b>completely normal</b> and expected! Crackmes often use techniques that are similar to those found in malware, such as:</p>
+        <p><b>Note about antivirus detections:</b> Some crackmes may trigger antivirus warnings or have many detections
+            on sites like <a href="https://www.virustotal.com/">VirusTotal</a>. This is <b>completely normal</b> and
+            expected! Crackmes often use techniques that are similar to those found in malware, such as:</p>
         <ul>
             <li>Anti-debugging and anti-VM techniques</li>
             <li>Code obfuscation and packing</li>
             <li>Self-modifying code</li>
             <li>Unusual API calls or system interactions</li>
         </ul>
-        <p>These are legitimate reverse engineering challenges, not actual malware. However, if you genuinely believe a crackme contains real malware or is otherwise inappropriate, please <a href="#report-crackme">report it to us</a> immediately.</p>
+        <p>These are legitimate reverse engineering challenges, not actual malware. However, if you genuinely believe a
+            crackme contains real malware or is otherwise inappropriate, please <a href="#report-crackme">report it to
+                us</a> immediately.</p>
         <div class="divider"></div>
-        <h3 id="report-crackme">I found a broken or malicious crackme. How do I report it? <a href="#report-crackme" class="anchor-link">#</a></h3>
-        <p>If you encounter a crackme that is broken, contains actual malware (not simulated educational malware), or violates the site's rules, please report it immediately. You can:</p>
+        <h3 id="report-crackme">I found a broken or malicious crackme. How do I report it? <a href="#report-crackme"
+                class="anchor-link">#</a></h3>
+        <p>If you encounter a crackme that is broken, contains actual malware (not simulated educational malware), or
+            violates the site's rules, please report it immediately. You can:</p>
         <ul>
             <li>Email us at <b>crackmesone@gmail.com</b> with the crackme name, link, and description of the issue</li>
             <li>Report it on our Discord server in the appropriate channel</li>
         </ul>
-        <p>Please provide as much detail as possible, including what makes you believe the crackme is problematic. We take security seriously and will investigate all reports promptly.</p>
+        <p>Please provide as much detail as possible, including what makes you believe the crackme is problematic. We
+            take security seriously and will investigate all reports promptly.</p>
         <div class="divider"></div>
-        <h3 id="reset-password">How do I reset my password? <a href="#reset-password" class="anchor-link">#</a></h3>
-        <p>If you still remember your password: log in, click "Profile", scroll to the bottom of the page, click "Change Password", and provide your current and new password.</p>
-        <p>If you do not remember your current password: please email crackmesone@gmail.com from the email address you used when you registered your account for assistance.</p>
-        <div class="divider"></div>
-        <h3 id="delete-account">How do I delete my account? <a href="#delete-account" class="anchor-link">#</a></h3>
-        <p>Please email us at crackmesone@gmail.com to request account deletion.</p>
-        <div class="divider"></div>
-        <h3 id="discord-verify">I cannot speak or see most channels on Discord. <a href="#discord-verify" class="anchor-link">#</a></h3>
-        <p>If you cannot speak or see most of the channels on our Discord server, this is because you have not verified your account yet. Please check the <b>#verify</b> channel and follow the verification steps.</p>
-        <div class="divider"></div>
-        <h3 id="github-repo">Where is the source code? Can I contribute? <a href="#github-repo" class="anchor-link">#</a></h3>
-        <p>The source code for crackmes.one is available on GitHub at <a href="https://github.com/crackmesone/crackmesone_python" target="_blank" rel="noopener noreferrer">https://github.com/crackmesone/crackmesone_python</a>.</p>
+
+        <h3 id="github-repo">Where is the source code? Can I contribute? <a href="#github-repo"
+                class="anchor-link">#</a></h3>
+        <p>The source code for crackmes.one is available on GitHub at <a
+                href="https://github.com/crackmesone/crackmesone_python" target="_blank"
+                rel="noopener noreferrer">https://github.com/crackmesone/crackmesone_python</a>.</p>
         <p>Contributions are welcome! You can:</p>
         <ul>
-            <li>Report bugs or suggest features by opening an <a href="https://github.com/crackmesone/crackmesone_python/issues" target="_blank" rel="noopener noreferrer">issue</a></li>
+            <li>Report bugs or suggest features by opening an <a
+                    href="https://github.com/crackmesone/crackmesone_python/issues" target="_blank"
+                    rel="noopener noreferrer">issue</a></li>
             <li>Submit improvements via pull requests</li>
         </ul>
-        <p>Please read the <a href="https://github.com/crackmesone/crackmesone_python/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">contributing guidelines</a> before submitting pull requests.</p>
+        <p>Please read the <a href="https://github.com/crackmesone/crackmesone_python/blob/main/CONTRIBUTING.md"
+                target="_blank" rel="noopener noreferrer">contributing guidelines</a> before submitting pull requests.
+        </p>
         <div class="divider"></div>
         <h3 id="reach-out">How do I reach out? <a href="#reach-out" class="anchor-link">#</a></h3>
         <p>You can reach out to us via crackmesone@gmail.com.</p>
         <div class="divider"></div>
         <h3 id="who-runs">Who runs this site? <a href="#who-runs" class="anchor-link">#</a></h3>
-        <p>This site was created with love for reverse engineering by <a href="https://twitter.com/sar5430" target="_blank" rel="noopener noreferrer">sar</a> using the <a href="https://github.com/josephspurrier/gowebapp" target="_blank" rel="noopener noreferrer">gowebapp</a> framework. The design was created by <a href="https://twitter.com/mpgn_x64" target="_blank" rel="noopener noreferrer">Bonclay</a>, inspired by <a href="https://hackthebox.eu" target="_blank" rel="noopener noreferrer">hackthebox.eu</a>.</p>
-        <p>In March 2025, sar stepped down and <a href="https://xusheng.dev/" target="_blank" rel="noopener noreferrer">Xusheng</a> became the new site admin.</p>
-        <p>The website has a reviewer team including <a href="https://xusheng.dev/" target="_blank" rel="noopener noreferrer">Xusheng</a>, <a href="https://elvisblue.github.io/" target="_blank" rel="noopener noreferrer">Elvis</a>, and various other dedicated contributors who help validate crackmes and writeups.</p>
+        <p>This site was created with love for reverse engineering by <a href="https://twitter.com/sar5430"
+                target="_blank" rel="noopener noreferrer">sar</a> using the <a
+                href="https://github.com/josephspurrier/gowebapp" target="_blank" rel="noopener noreferrer">gowebapp</a>
+            framework. The design was created by <a href="https://twitter.com/mpgn_x64" target="_blank"
+                rel="noopener noreferrer">Bonclay</a>, inspired by <a href="https://hackthebox.eu" target="_blank"
+                rel="noopener noreferrer">hackthebox.eu</a>.</p>
+        <p>In March 2025, sar stepped down and <a href="https://xusheng.dev/" target="_blank"
+                rel="noopener noreferrer">Xusheng</a> became the new site admin.</p>
+        <p>The website has a reviewer team including <a href="https://xusheng.dev/" target="_blank"
+                rel="noopener noreferrer">Xusheng</a>, <a href="https://elvisblue.github.io/" target="_blank"
+                rel="noopener noreferrer">Elvis</a>, and various other dedicated contributors who help validate crackmes
+            and writeups.</p>
     </div>
 </div>
 {% include 'partial/footer.html' %}
