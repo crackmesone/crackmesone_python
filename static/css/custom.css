@@ -340,3 +340,27 @@ h3:hover .anchor-link {
     min-width: 120px;
     text-align: center;
 }
+
+/* Subscribe Button */
+.subscribe-btn{
+    color: #9acc14;
+    float: right;
+    font-size: 70%;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.subscribe-btn:hover{
+    color: red;
+}
+
+.unsub{
+    color: red !important;
+}
+
+.unsub:hover{
+       color: #9acc14 !important;
+}

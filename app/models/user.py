@@ -133,7 +133,9 @@ def user_create(name, email, password):
         'email': email,
         'password': password,
         'visible': True,
-        'deleted': False
+        'deleted': False,
+        # TODO: allow the user to enable/disable it
+        'subs_email': False # whether to send an email when someone user subscribed to uploaded a crackme
     }
 
     collection.insert_one(user)

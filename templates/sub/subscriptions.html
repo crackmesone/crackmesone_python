@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}My subscriptions{% endblock %}
+{% block page_title %}My subscriptions{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+    {% if subscribed_users %}
+        
+            {% for user in subscribed_users %}
+                    <span class="text-center"><a href="/user/{{ user }}">{{ user }}</a></span>
+            {% endfor %}
+        
+    {% else %}
+            <span class="text-center">No subscriptions</span>
+    {% endif %}
+{% include 'partial/footer.html' %}
+{% endblock %}
+{% block foot %}{% endblock %}
