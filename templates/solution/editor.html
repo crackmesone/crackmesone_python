@@ -2,8 +2,8 @@
 {% block title %}Submit a Writeup{% endblock %}
 {% block page_title %}Submit a Writeup{% endblock %}
 {% block head %}
-<script src="https://cdn.jsdelivr.net/npm/marked@15.0.0/marked.min.js" integrity="sha384-5S+6C4bM5PFDRwie5G8wVUoq/5EzdFEaE2bg7xLLhNiz4fjj7fsecAfOl8VzZ/co" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', filename='js/marked-15.0.0.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dompurify-3.0.6.min.js') }}"></script>
 {% endblock %}
 {% block content %}
 

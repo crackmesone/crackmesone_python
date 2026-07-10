@@ -460,8 +460,8 @@ def notify_solution_approved(crackme_name, crackme_uuid, solution_uuid, author):
                 "inline": True
             },
             {
-                "name": "Download solution",
-                "value": f"[Link]({SITE_BASE_URL}/static/solution/{solution_uuid}.zip)",
+                "name": "View solution",
+                "value": f"[Link]({SITE_BASE_URL}/solution/{solution_uuid})",
                 "inline": True
             }
         ]
