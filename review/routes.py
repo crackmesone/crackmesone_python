@@ -12,11 +12,9 @@ from flask import (
     Blueprint, render_template, request, redirect,
     url_for, abort, send_file, session, jsonify
 )
-from functools import wraps
 from html import escape as html_escape
 import datetime
 from datetime import timezone
-import hashlib
 import json
 import os
 import random
@@ -31,6 +29,19 @@ from rustyzipper import compress_file, EncryptionMethod
 from bson.objectid import ObjectId
 
 from review.logger import log_reviewer_operation
+from review.auth import (
+    REVIEWER_ADMIN_KEY,
+    REVIEWER_CSRF_KEY,
+    REVIEWER_SESSION_KEY,
+    admin_required,
+    clear_reviewer_session,
+    configure as configure_reviewer_auth,
+    generate_csrf_token,
+    get_current_reviewer,
+    hash_string,
+    token_required,
+    validate_csrf_token,
+)
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
 
@@ -55,11 +66,6 @@ WRITEUP_OBFUSCATION_SALT = None
 g_crackmesone_db = None
 users = {}
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
-
-# Session keys for reviewer authentication (prefixed to avoid conflicts)
-REVIEWER_SESSION_KEY = '_reviewer_user'
-REVIEWER_ADMIN_KEY = '_reviewer_is_admin'
-REVIEWER_CSRF_KEY = '_reviewer_csrf_token'
 
 # Archive password for approved submissions
 ARCHIVE_PASSWORD = 'crackmes.one'
@@ -104,6 +110,8 @@ def init_reviewer(app):
         with open(USERS_FILE, 'r') as f:
             users.update(json.load(f))
 
+    configure_reviewer_auth(users)
+
 
 def save_users():
     """
@@ -114,110 +122,6 @@ def save_users():
     """
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=2)
-
-
-# =============================================================================
-# Authentication Helpers
-# =============================================================================
-
-def hash_string(input_string):
-    """
-    Hash a string using SHA256.
-
-    Args:
-        input_string: Plain text string to hash
-
-    Returns:
-        Hexadecimal string representation of the SHA256 hash
-    """
-    return hashlib.sha256(input_string.encode('utf-8')).hexdigest()
-
-
-def get_current_reviewer():
-    """
-    Get the current authenticated reviewer from session.
-
-    Returns:
-        Dict with 'username' and 'is_admin' keys if authenticated,
-        None if not authenticated or user no longer exists.
-    """
-    username = session.get(REVIEWER_SESSION_KEY)
-    if not username or username not in users:
-        return None
-    return {
-        'username': username,
-        'is_admin': users[username].get('is_admin', False)
-    }
-
-
-def clear_reviewer_session():
-    """Remove reviewer authentication from session."""
-    session.pop(REVIEWER_SESSION_KEY, None)
-    session.pop(REVIEWER_ADMIN_KEY, None)
-
-
-def token_required(f):
-    """
-    Decorator requiring reviewer authentication.
-
-    Redirects to login page if not authenticated. Passes current_user
-    dict as first argument to the decorated function.
-    """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        current_user = get_current_reviewer()
-        if not current_user:
-            clear_reviewer_session()
-            return redirect(url_for('reviewer.login'))
-        return f(current_user, *args, **kwargs)
-    return decorated
-
-
-def admin_required(f):
-    """
-    Decorator requiring admin authentication.
-
-    Redirects to login if not authenticated, returns 403 if authenticated
-    but not an admin. Passes current_user dict as first argument.
-    """
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        current_user = get_current_reviewer()
-        if not current_user:
-            clear_reviewer_session()
-            return redirect(url_for('reviewer.login'))
-        if not current_user['is_admin']:
-            abort(403)
-        return f(current_user, *args, **kwargs)
-    return decorated
-
-
-# =============================================================================
-# CSRF Protection
-# =============================================================================
-
-def generate_csrf_token():
-    """
-    Generate or retrieve CSRF token for the current session.
-
-    Returns:
-        32-byte hex string CSRF token
-    """
-    if REVIEWER_CSRF_KEY not in session:
-        session[REVIEWER_CSRF_KEY] = hashlib.sha256(os.urandom(32)).hexdigest()
-    return session[REVIEWER_CSRF_KEY]
-
-
-def validate_csrf_token():
-    """
-    Validate CSRF token from form submission.
-
-    Aborts with 403 if token is missing or invalid.
-    """
-    token = request.form.get('csrf_token')
-    expected = session.get(REVIEWER_CSRF_KEY)
-    if not token or not expected or token != expected:
-        abort(403, description="CSRF token validation failed")
 
 
 @reviewer_bp.context_processor

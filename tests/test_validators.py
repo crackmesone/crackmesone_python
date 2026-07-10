@@ -1,115 +1,58 @@
-"""
-Unit tests for input validation functions.
-"""
+"""Unit tests for application input-validation helpers."""
+
 import pytest
+from werkzeug.datastructures import MultiDict
+
+from app.services.view import (
+    authorized_chars_only,
+    is_valid_hexid,
+    validate_required,
+)
 
 
-class TestUsernameValidation:
-    """Tests for username validation."""
-
-    def test_valid_username(self):
-        """Test valid usernames."""
-        valid_usernames = [
-            'user',
-            'user123',
-            'test_user',
-            'TestUser',
-            'a' * 20
-        ]
-        for username in valid_usernames:
-            # Username should be alphanumeric with underscores, 3-30 chars
-            assert len(username) >= 1
-            assert len(username) <= 30
-
-    def test_invalid_username_too_short(self):
-        """Test username that's too short."""
-        username = 'ab'
-        assert len(username) < 3
-
-    def test_invalid_username_too_long(self):
-        """Test username that's too long."""
-        username = 'a' * 31
-        assert len(username) > 30
+@pytest.mark.parametrize('value', [
+    'alice',
+    'Alice_123',
+    'user-name',
+    'user+tag@example.test',
+])
+def test_authorized_chars_accepts_supported_names_and_emails(value):
+    assert authorized_chars_only(value) is True
 
 
-class TestEmailValidation:
-    """Tests for email validation."""
-
-    def test_valid_email(self):
-        """Test valid email addresses."""
-        valid_emails = [
-            'test@example.com',
-            'user.name@domain.org',
-            'user+tag@example.co.uk'
-        ]
-        for email in valid_emails:
-            assert '@' in email
-            assert '.' in email.split('@')[1]
-
-    def test_invalid_email_no_at(self):
-        """Test email without @ symbol."""
-        email = 'testexample.com'
-        assert '@' not in email
-
-    def test_invalid_email_no_domain(self):
-        """Test email without domain."""
-        email = 'test@'
-        parts = email.split('@')
-        assert len(parts) < 2 or parts[1] == ''
+@pytest.mark.parametrize('value', [
+    'user name',
+    'user<script>',
+    'user/example',
+    'snowman☃',
+])
+def test_authorized_chars_rejects_unsupported_characters(value):
+    assert authorized_chars_only(value) is False
 
 
-class TestPasswordValidation:
-    """Tests for password validation."""
-
-    def test_valid_password(self):
-        """Test valid passwords."""
-        valid_passwords = [
-            'password123',
-            'SecureP@ss1',
-            'abcdefgh',
-            '12345678'
-        ]
-        for password in valid_passwords:
-            assert len(password) >= 8
-
-    def test_invalid_password_too_short(self):
-        """Test password that's too short."""
-        password = '1234567'
-        assert len(password) < 8
-
-    def test_password_whitespace(self):
-        """Test password with whitespace."""
-        password = 'pass word'
-        # Some systems allow spaces, others don't
-        assert len(password) >= 8
+@pytest.mark.parametrize('value', [
+    '507f1f77bcf86cd799439011',
+    'ABCDEF77BCF86CD799439011',
+])
+def test_valid_hexids(value):
+    assert is_valid_hexid(value) is True
 
 
-class TestCrackmeValidation:
-    """Tests for crackme input validation."""
+@pytest.mark.parametrize('value', [
+    '',
+    '507f1f77bcf86cd79943901',
+    '507f1f77bcf86cd7994390110',
+    '507f1f77bcf86cd79943901z',
+])
+def test_invalid_hexids(value):
+    assert is_valid_hexid(value) is False
 
-    def test_valid_crackme_name(self):
-        """Test valid crackme names."""
-        valid_names = [
-            'My Crackme',
-            'CrackMe_v1',
-            'Easy Challenge'
-        ]
-        for name in valid_names:
-            assert len(name) >= 1
-            assert len(name) <= 100
 
-    def test_valid_difficulty(self):
-        """Test valid difficulty ratings."""
-        valid_difficulties = [1, 2, 3, 4, 5, 6]
-        for diff in valid_difficulties:
-            assert 1 <= diff <= 6
+def test_required_fields_reports_the_first_missing_field():
+    form = MultiDict({'name': 'alice', 'email': ''})
+    assert validate_required(form, ['name', 'email', 'password']) == (False, 'email')
 
-    def test_invalid_difficulty_too_low(self):
-        """Test difficulty rating too low."""
-        difficulty = 0
-        assert difficulty < 1
 
-    def test_invalid_difficulty_too_high(self):
-        """Test difficulty rating too high."""
-        difficulty = 7
-        assert difficulty > 6
+def test_required_fields_accepts_complete_form():
+    form = MultiDict({'name': 'alice', 'email': 'alice@example.test'})
+    assert validate_required(form, ['name', 'email']) == (True, None)

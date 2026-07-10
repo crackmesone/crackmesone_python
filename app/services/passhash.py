@@ -23,7 +23,7 @@ def match_string(hashed: str, password: str) -> bool:
     """Check if the password matches the hash."""
     try:
         return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-    except (ValueError, TypeError):
+    except (AttributeError, ValueError, TypeError):
         return False
 
 
