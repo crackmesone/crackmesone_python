@@ -10,9 +10,9 @@ downloadable archive, so they must be backfilled to has_attachment=True,
 otherwise their "Download" button disappears.
 
 This only touches documents that are MISSING the field, so it is safe to re-run
-and it never overwrites values set by the application. As a safeguard, any
-markdown-only writeup that predates the field (content present, no uploaded
-file) is set to False rather than True.
+and it never overwrites values set by the application. Before this feature was
+deployed, every solution submission required an uploaded file, so every
+pre-feature solution missing this field has an attachment.
 
 Usage:
     cd /path/to/crackmesone_python/script
@@ -29,18 +29,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pymongo import MongoClient
 
 
-# Documents missing the field that are actually markdown-only writeups
-# (content present, no uploaded file) -> has_attachment should be False.
-MARKDOWN_ONLY_FILTER = {
-    'has_attachment': {'$exists': False},
-    'content': {'$exists': True, '$nin': [None, '']},
-    '$or': [
-        {'original_filename': {'$exists': False}},
-        {'original_filename': {'$in': [None, '']}},
-    ],
-}
-
-# Everything else missing the field is a pre-feature file solution -> True.
+# Every pre-feature solution was file-backed.
 MISSING_FILTER = {'has_attachment': {'$exists': False}}
 
 
@@ -63,12 +52,9 @@ def main():
     print(f"Connected to MongoDB: {db_name}")
 
     total_missing = collection.count_documents(MISSING_FILTER)
-    md_only = collection.count_documents(MARKDOWN_ONLY_FILTER)
-    to_true = total_missing - md_only
 
     print(f"\nSolutions missing 'has_attachment': {total_missing}")
-    print(f"  -> set has_attachment=True  (file solutions): {to_true}")
-    print(f"  -> set has_attachment=False (markdown-only)  : {md_only}")
+    print(f"  -> set has_attachment=True: {total_missing}")
 
     if total_missing == 0:
         print("\nNothing to backfill. Done.")
@@ -78,17 +64,11 @@ def main():
         print("\n[DRY RUN - no changes made. Use --apply to write.]")
         return
 
-    # Mark markdown-only writeups first so they are no longer "missing",
-    # then set every remaining missing document to True.
-    false_res = collection.update_many(
-        MARKDOWN_ONLY_FILTER, {'$set': {'has_attachment': False}}
-    )
-    true_res = collection.update_many(
+    result = collection.update_many(
         MISSING_FILTER, {'$set': {'has_attachment': True}}
     )
 
-    print(f"\nApplied: {true_res.modified_count} set True, "
-          f"{false_res.modified_count} set False")
+    print(f"\nApplied: {result.modified_count} set True")
     remaining = collection.count_documents(MISSING_FILTER)
     print(f"Remaining without the field: {remaining}")
 
