@@ -37,5 +37,8 @@
     },
     "Site": {
         "BaseURL": "https://crackmes.one"
+    },
+    "Writeup": {
+        "ObfuscationSalt": "change-this-to-a-secure-random-salt"
     }
 }

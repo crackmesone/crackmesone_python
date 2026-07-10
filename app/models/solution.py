@@ -2,7 +2,7 @@
 Solution model for database operations.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from bson import ObjectId
 from pymongo import DESCENDING
 from app.services.database import get_collection, check_connection
@@ -72,28 +72,24 @@ def solutions_by_user(username):
     return solutions
 
 
-def solutions_by_user_and_crackme(username, crackme_hexid):
-    """Get solution by user and crackme."""
+def solution_exists(username, crackme_id):
+    """Check if a user has already submitted a solution for a crackme.
+
+    Args:
+        username: The username to check
+        crackme_id: The crackme's ObjectId (not hexid)
+
+    Returns:
+        True if a solution exists, False otherwise
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
-    # First get the crackme
-    from app.models.crackme import crackme_by_hexid
-    try:
-        crackme = crackme_by_hexid(crackme_hexid)
-    except ErrNoResult:
-        raise ErrNoResult("Solution not found")
-
     collection = get_collection('solution')
-    result = collection.find_one({
-        'crackmeid': crackme['_id'],
-        'author': username
-    })
-
-    if result is None:
-        raise ErrNoResult("Solution not found")
-
-    return result
+    return collection.find_one(
+        {'crackmeid': crackme_id, 'author': username},
+        {'_id': 1}
+    ) is not None
 
 
 def solutions_by_crackme(crackme_object_id):
@@ -129,14 +125,22 @@ def get_solution_authors(crackme_hexid):
     return set(solution['author'] for solution in solutions)
 
 
-def solution_create(info, username, crackme_hexid, original_filename):
-    """Create a new solution."""
+def solution_create(info, username, crackme, content=None, original_filename=None):
+    """Create a new solution.
+
+    Args:
+        info: Short summary/teaser shown in listings.
+        username: The submitting user.
+        crackme: The crackme document (must contain _id, hexid, name).
+        content: Optional cleartext markdown writeup body. Inline rendering is
+            driven by the presence of this field (no separate flag).
+        original_filename: Optional attachment filename (when a file is uploaded
+            alongside or instead of markdown content).
+
+    A solution must carry markdown content, an attachment, or both.
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
-
-    # Get the crackme
-    from app.models.crackme import crackme_by_hexid
-    crackme = crackme_by_hexid(crackme_hexid)
 
     collection = get_collection('solution')
     obj_id = ObjectId()
@@ -148,11 +152,16 @@ def solution_create(info, username, crackme_hexid, original_filename):
         'crackmeid': crackme['_id'],
         'crackmehexid': crackme['hexid'],
         'crackmename': crackme['name'],
-        'created_at': datetime.utcnow(),
+        'created_at': datetime.now(timezone.utc),
         'author': username,
         'visible': False,
         'deleted': False,
-        'original_filename': original_filename
+        'original_filename': original_filename,
+        'content': content,
+        # True when the user uploaded a file (a downloadable archive will exist).
+        # Markdown-only writeups have no attachment. Existing pre-feature solutions
+        # are backfilled to True by script/backfill_has_attachment.py.
+        'has_attachment': original_filename is not None
     }
 
     collection.insert_one(solution)

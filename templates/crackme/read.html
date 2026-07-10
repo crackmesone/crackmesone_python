@@ -210,7 +210,7 @@
                     <p>Solution by <a href="/user/{{ solution.author }}">{{ solution.author }}</a> on {{ solution.created_at|PRETTYTIME }}:<br/><span style="white-space: pre-line">{{ solution.info }}</span></p>
                 </div>
                 <div class="column col-3">
-                    <a href="/static/solution/{{ solution.hexid }}.zip" title="Password: crackmes.one">Download</a>
+                    <a href="/solution/{{ solution.hexid }}">View</a>
                 </div>
                 {% endfor %}
             </div>

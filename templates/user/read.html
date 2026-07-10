@@ -94,9 +94,10 @@
                 <table class="table table-striped">
                     <thead>
                         <tr style="text-align: center;">
-                            <th style="width: 40%;">Crackme</th>
-                            <th style="width: 20%;">Date</th>
+                            <th style="width: 30%;">Crackme</th>
+                            <th style="width: 15%;">Date</th>
                             <th style="width: 40%;">Infos</th>
+                            <th style="width: 15%;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="content-list">
@@ -105,6 +106,9 @@
                             <td><a href="/crackme/{{ sol.crackmeshexid }}">{{ sol.crackmename }}</a></td>
                             <td>{{ sol.solution.created_at|PRETTYTIME }}</td>
                             <td> <span style="white-space: pre-line">{{ sol.solution.info }}</span></td>
+                            <td>
+                                <a href="/solution/{{ sol.solution.hexid }}">View</a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
