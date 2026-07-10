@@ -3,10 +3,13 @@
 
 <head>
     <title>View solution</title>
+    <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.0/marked.min.js" integrity="sha384-5S+6C4bM5PFDRwie5G8wVUoq/5EzdFEaE2bg7xLLhNiz4fjj7fsecAfOl8VzZ/co" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -36,12 +39,22 @@
                 </h3>
                 <p><span style="white-space: pre-line">{{ solution.info }}</span></p>
                 <div class="divider"></div>
-                <h3>
-                    <p>Download</p>
-                </h3>
 
-                <a href="{{ url_for('reviewer.downloadreview', uuid=solution.solution_uuid, type='solution') }}">Download</a>
+                {% if solution.content %}
+                <h3>
+                    <p>Writeup</p>
+                </h3>
+                <div id="writeup-content" style="background:#2a2a2a;border:1px solid #444;border-radius:4px;padding:1rem;line-height:1.7;"></div>
                 <div class="divider"></div>
+                {% endif %}
+
+                {% if solution.has_attachment %}
+                <h3>
+                    <p>Attachment</p>
+                </h3>
+                <a href="{{ url_for('reviewer.downloadreview', uuid=solution.solution_uuid, type='solution') }}">Download attachment</a>
+                <div class="divider"></div>
+                {% endif %}
 
                 <h3>
                     <p>Review</p>
@@ -97,4 +110,18 @@
             </div>
         </div>
     </div>
+    {% if solution.content %}
+    <script>
+    (function() {
+        var ALLOWED_TAGS = ['h1','h2','h3','h4','h5','h6','p','br','hr','ul','ol','li',
+            'blockquote','pre','code','strong','em','a','img','table','thead','tbody',
+            'tr','th','td','del','sup','sub'];
+        var ALLOWED_ATTR = ['href','src','alt','title','class'];
+        var markdown = {{ solution.content | tojson }};
+        var html = DOMPurify.sanitize(marked.parse(markdown),
+            {ALLOWED_TAGS: ALLOWED_TAGS, ALLOWED_ATTR: ALLOWED_ATTR});
+        document.getElementById('writeup-content').innerHTML = html;
+    })();
+    </script>
+    {% endif %}
 </body>

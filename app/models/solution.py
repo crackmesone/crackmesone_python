@@ -125,8 +125,20 @@ def get_solution_authors(crackme_hexid):
     return set(solution['author'] for solution in solutions)
 
 
-def solution_create(info, username, crackme, original_filename=None, has_markdown=False):
-    """Create a new solution."""
+def solution_create(info, username, crackme, content=None, original_filename=None):
+    """Create a new solution.
+
+    Args:
+        info: Short summary/teaser shown in listings.
+        username: The submitting user.
+        crackme: The crackme document (must contain _id, hexid, name).
+        content: Optional cleartext markdown writeup body. Inline rendering is
+            driven by the presence of this field (no separate flag).
+        original_filename: Optional attachment filename (when a file is uploaded
+            alongside or instead of markdown content).
+
+    A solution must carry markdown content, an attachment, or both.
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
@@ -145,7 +157,11 @@ def solution_create(info, username, crackme, original_filename=None, has_markdow
         'visible': False,
         'deleted': False,
         'original_filename': original_filename,
-        'has_markdown': has_markdown
+        'content': content,
+        # True when the user uploaded a file (a downloadable archive will exist).
+        # Markdown-only writeups have no attachment. Existing pre-feature solutions
+        # are backfilled to True by script/backfill_has_attachment.py.
+        'has_attachment': original_filename is not None
     }
 
     collection.insert_one(solution)

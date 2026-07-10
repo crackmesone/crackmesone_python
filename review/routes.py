@@ -27,11 +27,11 @@ import threading
 
 import bcrypt
 import requests
-from rustyzipper import compress_file, EncryptionMethod, open_zip_stream_from_file
+from rustyzipper import compress_file, EncryptionMethod
 from bson.objectid import ObjectId
 
 from review.logger import log_reviewer_operation
-from app.services.crypto import obfuscate_writeup, get_obfuscation_salt
+from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
 
 
@@ -63,12 +63,6 @@ REVIEWER_CSRF_KEY = '_reviewer_csrf_token'
 
 # Archive password for approved submissions
 ARCHIVE_PASSWORD = 'crackmes.one'
-
-# Markdown file extensions for inline viewing
-MARKDOWN_EXTENSIONS = frozenset({'.md', '.txt', '.markdown'})
-
-# Max size for inline writeup content (1MB)
-MAX_INLINE_CONTENT_SIZE = 1 * 1024 * 1024
 
 
 # =============================================================================
@@ -516,98 +510,71 @@ def create_password_protected_zip(source_path, dest_path_without_ext, filename_i
         return False, f"Error creating zip: {str(e)}"
 
 
-def extract_markdown_content(source_path, original_filename):
-    """
-    Extract markdown/text content from a file for inline viewing.
-
-    Returns None if the file is too large, not a supported format, or on error.
-    """
-    ext = os.path.splitext(original_filename)[1].lower() if original_filename else ''
-
-    if ext in MARKDOWN_EXTENSIONS:
-        try:
-            # Check file size before reading
-            if os.path.getsize(source_path) > MAX_INLINE_CONTENT_SIZE:
-                return None
-            with open(source_path, 'r', encoding='utf-8', errors='replace') as f:
-                return f.read()
-        except Exception as e:
-            print(f"Could not read solution file: {e}")
-            return None
-
-    if ext == '.zip':
-        try:
-            with open(source_path, 'rb') as f:
-                reader = open_zip_stream_from_file(f)
-                for name in reader.namelist():
-                    # Skip directories and hidden files
-                    basename = os.path.basename(name)
-                    if not basename or basename.startswith('.'):
-                        continue
-
-                    file_ext = os.path.splitext(basename)[1].lower()
-                    if file_ext in MARKDOWN_EXTENSIONS:
-                        file_bytes = reader.read(name)
-                        # Skip if content too large
-                        if len(file_bytes) > MAX_INLINE_CONTENT_SIZE:
-                            return None
-                        return file_bytes.decode('utf-8', errors='replace')
-        except Exception as e:
-            print(f"Could not extract text content from zip: {e}")
-
-    return None
-
-
 # =============================================================================
 # Pending Submission Operations
 # =============================================================================
+
+def find_pending_solution(hexid):
+    """
+    Find a pending (not-yet-visible) solution by its hexid.
+
+    Unlike find_pending_file, this is driven by the database rather than the
+    presence of a tmp file, because markdown-only writeups have no tmp file.
+
+    Returns:
+        The lowercase hexid if a pending solution exists, empty string otherwise.
+    """
+    if not is_valid_hexid(hexid):
+        return ""
+
+    hexid = hexid.lower()
+    doc = g_crackmesone_db.solution.find_one(
+        {'hexid': hexid, 'visible': False, 'deleted': {'$ne': True}},
+        {'_id': 1}
+    )
+    return hexid if doc else ""
+
+
+def count_pending_solutions():
+    """Count pending solution submissions (DB-driven)."""
+    return g_crackmesone_db.solution.count_documents(
+        {'visible': False, 'deleted': {'$ne': True}}
+    )
+
 
 def get_pending_solutions():
     """
     Get list of pending solution submissions for review.
 
-    Reads files from tmp/solution and looks up metadata from database.
+    Driven by the database (solutions with visible=False) so that markdown-only
+    writeups, which have no tmp file, still appear in the queue.
 
     Returns:
         Tuple of (solutions_list, error_string or None)
         Each solution dict contains: crackme_name, solution_author,
         solution_uuid, crackme_uuid, date
     """
-    tmp_dir = get_tmp_dir('solution')
-    if not os.path.exists(tmp_dir):
-        return [], "Solution directory not found"
-
     solutions = []
     errors = []
 
-    for filename in os.listdir(tmp_dir):
-        if not is_valid_hexid(filename):
-            continue
-
-        # is_valid_hexid guarantees valid ObjectId format (24 hex chars)
-        solution_uuid = filename
-        solution_obj = g_crackmesone_db.solution.find_one({
-            "_id": ObjectId(solution_uuid)
-        })
-
-        if not solution_obj:
-            errors.append(f"File {filename} UUID not found in DB")
-            continue
-
+    cursor = g_crackmesone_db.solution.find(
+        {'visible': False, 'deleted': {'$ne': True}}
+    )
+    for solution_obj in cursor:
         crackme_obj = g_crackmesone_db.crackme.find_one({
             "_id": solution_obj["crackmeid"]
         })
 
         if not crackme_obj:
             errors.append(
-                f"Crackme for solution {solution_uuid} not found in DB"
+                f"Crackme for solution {solution_obj['hexid']} not found in DB"
             )
             continue
 
         solutions.append({
             "crackme_name": crackme_obj["name"],
             "solution_author": solution_obj["author"],
-            "solution_uuid": solution_uuid,
+            "solution_uuid": solution_obj["hexid"],
             "crackme_uuid": crackme_obj["hexid"],
             "date": solution_obj["created_at"]
         })
@@ -687,7 +654,9 @@ def get_solution_details(uuid):
         "solution_uuid": uuid,
         "solution_author": solution_obj["author"],
         "crackme_name": crackme_obj["name"] if crackme_obj else "Unknown",
-        "crackme_uuid": str(solution_obj["crackmeid"])
+        "crackme_uuid": str(solution_obj["crackmeid"]),
+        "content": solution_obj.get("content"),
+        "has_attachment": bool(solution_obj.get("has_attachment"))
     }, None
 
 
@@ -898,7 +867,7 @@ def approve_pending_solution(hexid):
         if not solution:
             return False, "Solution not found in database"
 
-        # Get original filename from database
+        content = solution.get('content')
         original_filename = solution.get('original_filename') or hexid
 
         crackme = g_crackmesone_db.crackme.find_one({
@@ -909,9 +878,12 @@ def approve_pending_solution(hexid):
 
         crackme_name = crackme["name"]
 
-        source_path = os.path.join(get_tmp_dir('solution'), hexid)
-        if not os.path.exists(source_path):
-            return False, "Solution file not found in tmp directory"
+        # The writeup body is the DB markdown content and/or an uploaded attachment.
+        # Markdown is served inline; only an uploaded attachment produces a download.
+        attachment_path = os.path.join(get_tmp_dir('solution'), hexid)
+        has_attachment = os.path.exists(attachment_path)
+        if not content and not has_attachment:
+            return False, "Solution has no writeup content or attachment"
 
         # Set visible
         g_crackmesone_db.solution.update_one(
@@ -919,28 +891,20 @@ def approve_pending_solution(hexid):
             {'$set': {'visible': True}}
         )
 
-        raw_content = extract_markdown_content(source_path, original_filename)
-        if raw_content:
-            try:
-                obfuscated = obfuscate_writeup(raw_content, hexid, WRITEUP_OBFUSCATION_SALT)
-                raw_dest_path = os.path.join(get_static_dir('solution'), f"{hexid}.bin")
-                with open(raw_dest_path, 'wb') as f:
-                    f.write(obfuscated)
-            except Exception as e:
-                print(f"Could not save solution for inline viewing: {e}")
-
-        # Create password-protected archive
-        dest_path = os.path.join(get_static_dir('solution'), hexid)
-        success, error = create_password_protected_zip(
-            source_path, dest_path, original_filename
-        )
-
-        if not success:
-            g_crackmesone_db.solution.update_one(
-                {'hexid': hexid},
-                {'$set': {'visible': False}}
+        # Only create a downloadable archive when the user attached a file.
+        # A markdown-only writeup has nothing to download - it is shown inline.
+        if has_attachment:
+            dest_path = os.path.join(get_static_dir('solution'), hexid)
+            success, error = create_password_protected_zip(
+                attachment_path, dest_path, original_filename
             )
-            return False, error
+
+            if not success:
+                g_crackmesone_db.solution.update_one(
+                    {'hexid': hexid},
+                    {'$set': {'visible': False}}
+                )
+                return False, error
 
         # Notify solution author
         send_user_notification(
@@ -997,13 +961,6 @@ def delete_approved_solution(solution_uuid):
     # Delete zip file (if exists)
     try:
         os.remove(zip_path)
-    except Exception:
-        pass
-
-    # Delete encrypted .bin file (if exists)
-    bin_path = os.path.join(get_static_dir('solution'), f"{solution_uuid}.bin")
-    try:
-        os.remove(bin_path)
     except Exception:
         pass
 
@@ -1507,7 +1464,7 @@ def dashboard(current_user):
         'reviewer/dashboard.html',
         user=current_user['username'],
         is_admin=current_user['is_admin'],
-        solution_cnt=count_pending_items('solution'),
+        solution_cnt=count_pending_solutions(),
         crackme_cnt=count_pending_items('crackme')
     )
 
@@ -1636,17 +1593,17 @@ def rejectsolution(current_user):
     solution_uuid = request.form.get('uuid')
     reject_reason = request.form.get('reject_reason')
 
-    solution_file = find_pending_file('solution', solution_uuid)
+    solution_file = find_pending_solution(solution_uuid)
 
     if not solution_file:
         log_reviewer_operation(
             "reject_solution", current_user['username'],
-            {"solution_uuid": solution_uuid, "error": "File not found"},
+            {"solution_uuid": solution_uuid, "error": "Pending solution not found"},
             False
         )
         return redirect(url_for(
             'reviewer.reviewsolution',
-            message="Solution file not found"
+            message="Pending solution not found"
         ))
 
     success, message = reject_pending_solution(solution_file, reject_reason)
@@ -1671,17 +1628,17 @@ def approvesolution(current_user):
     validate_csrf_token()
     solution_uuid = request.form.get('uuid')
 
-    solution_file = find_pending_file('solution', solution_uuid)
+    solution_file = find_pending_solution(solution_uuid)
 
     if not solution_file:
         log_reviewer_operation(
             "approve_solution", current_user['username'],
-            {"solution_uuid": solution_uuid, "error": "File not found"},
+            {"solution_uuid": solution_uuid, "error": "Pending solution not found"},
             False
         )
         return redirect(url_for(
             'reviewer.reviewsolution',
-            message="Solution file not found"
+            message="Pending solution not found"
         ))
 
     success, message = approve_pending_solution(solution_file)

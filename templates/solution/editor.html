@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Write Writeup{% endblock %}
-{% block page_title %}Write Writeup{% endblock %}
+{% block title %}Submit a Writeup{% endblock %}
+{% block page_title %}Submit a Writeup{% endblock %}
 {% block head %}
 <script src="https://cdn.jsdelivr.net/npm/marked@15.0.0/marked.min.js" integrity="sha384-5S+6C4bM5PFDRwie5G8wVUoq/5EzdFEaE2bg7xLLhNiz4fjj7fsecAfOl8VzZ/co" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" integrity="sha384-cwS6YdhLI7XS60eoDiC+egV0qHp8zI+Cms46R0nbn8JrmoAzV9uFL60etMZhAnSu" crossorigin="anonymous"></script>
@@ -8,14 +8,15 @@
 {% block content %}
 
 <div class="container grid-lg wrapper">
-    <h2>Write a Writeup</h2>
-    <p>Write your writeup directly in the browser using Markdown.</p>
+    <h2>Submit a Writeup</h2>
+    <p>Write your writeup in Markdown below, and/or attach supporting files (a keygen,
+    script, screenshots, etc.). At least one is required.</p>
 
     <p>Read a full list of rules <a href="/upload/writeuprules">here</a></p>
 
     <div class="divider"></div>
 
-    <form class="form-horizontal" method="post" id="editor-form">
+    <form class="form-horizontal" method="post" id="editor-form" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <div class="col-3">Crackme</div>
@@ -31,7 +32,7 @@
         </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
-                <label class="form-label" for="content">Content</label>
+                <label class="form-label" for="content">Writeup (Markdown)</label>
             </div>
             <div class="col-9 col-sm-12">
                 <textarea class="form-input" id="content" name="content" rows="18" placeholder="# My Writeup
@@ -50,7 +51,7 @@ Explain the solution step by step...
 print('Hello, World!')
 ```"></textarea>
                 <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-                    <span class="text-gray" style="font-size: 0.85em;"><span id="char-count">0</span> / {{ "{:,}".format(max_content_length) }} characters (min {{ min_content_length }})</span>
+                    <span class="text-gray" style="font-size: 0.85em;"><span id="char-count">0</span> / {{ "{:,}".format(max_content_length) }} characters (min {{ min_content_length }} if used)</span>
                     <a href="#" id="preview-link">Show Preview</a>
                 </div>
             </div>
@@ -63,11 +64,19 @@ print('Hello, World!')
                 <div id="preview-content" style="padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; min-height: 200px;"></div>
             </div>
         </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="file">Attachment (optional)</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <input type="file" class="form-input" id="file" name="file">
+                <span class="text-gray" style="font-size: 0.85em;">Optional supporting files (scripts, keygen, screenshots). No patched PE binaries. Max 10MB.</span>
+            </div>
+        </div>
         {% if RECAPTCHA_SITEKEY %}
         <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}" style="margin-bottom: 1rem;"></div>
         {% endif %}
         <button type="submit" class="btn active float-right" style="{% if RECAPTCHA_SITEKEY %}margin-top: 4.5rem;{% endif %}">Submit Writeup</button>
-        <a href="/upload/solution/{{ hexidcrackme }}" class="btn float-right" style="margin-right: 10px;">Upload File Instead</a>
     </form>
 </div>
 
@@ -79,11 +88,13 @@ print('Hello, World!')
 <script>
 (function() {
     var contentEl = document.getElementById('content');
+    var fileEl = document.getElementById('file');
     var previewEl = document.getElementById('preview-content');
     var previewSection = document.getElementById('preview-section');
     var previewLink = document.getElementById('preview-link');
     var charCount = document.getElementById('char-count');
     var submitBtn = document.querySelector('button[type="submit"]');
+    var form = document.getElementById('editor-form');
     var previewVisible = false;
 
     var minLen = {{ min_content_length }};
@@ -102,11 +113,12 @@ print('Hello, World!')
         var len = contentEl.value.length;
         charCount.textContent = len.toLocaleString();
 
+        // Content is optional, but if provided it must be within bounds.
         if (len > maxLen) {
             charCount.style.color = '#e74c3c';
             submitBtn.disabled = true;
             submitBtn.title = 'Content exceeds maximum length';
-        } else if (len < minLen) {
+        } else if (len > 0 && len < minLen) {
             charCount.style.color = '#f39c12';
             submitBtn.disabled = true;
             submitBtn.title = 'Content is below minimum length (' + minLen + ' characters)';
@@ -133,6 +145,15 @@ print('Hello, World!')
     contentEl.addEventListener('input', function() {
         updateCharCount();
         if (previewVisible) updatePreview();
+    });
+
+    form.addEventListener('submit', function(e) {
+        var hasContent = contentEl.value.trim().length > 0;
+        var hasFile = fileEl.files && fileEl.files.length > 0;
+        if (!hasContent && !hasFile) {
+            e.preventDefault();
+            alert('Please write a markdown writeup or attach a file (or both).');
+        }
     });
 
     updateCharCount();

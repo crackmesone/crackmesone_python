@@ -38,7 +38,9 @@
 
     <div class="columns">
         <div class="column col-12">
+            {% if has_attachment %}
             <a href="/static/solution/{{ solution.hexid }}.zip" class="btn" title="Password: crackmes.one">Download Archive</a>
+            {% endif %}
             <a href="/crackme/{{ solution.crackmehexid }}" class="btn">Back to Crackme</a>
         </div>
     </div>
@@ -53,12 +55,12 @@
 (function() {
     var hexid = {{ solution.hexid|tojson }};
     var obfuscationKey = {{ obfuscation_key|tojson }};
-    var hasMarkdown = {{ solution.has_markdown|default(false)|tojson }};
+    var hasContent = {{ has_content|default(false)|tojson }};
     var loadingEl = document.getElementById('writeup-loading');
     var contentEl = document.getElementById('writeup-content');
     var fallbackEl = document.getElementById('writeup-fallback');
 
-    if (!hasMarkdown) {
+    if (!hasContent) {
         loadingEl.style.display = 'none';
         fallbackEl.style.display = 'block';
         return;
@@ -104,7 +106,7 @@
         });
     }
 
-    fetch('/static/solution/' + hexid + '.bin')
+    fetch('/solution/' + hexid + '/content')
         .then(function(r) { if (!r.ok) throw new Error(); return r.arrayBuffer(); })
         .then(function(buffer) {
             var markdown = deobfuscate(new Uint8Array(buffer), base64ToBytes(obfuscationKey));
@@ -115,6 +117,7 @@
         })
         .catch(function() {
             loadingEl.style.display = 'none';
+            fallbackEl.innerHTML = '<p>Could not load the writeup. Please try again later.</p>';
             fallbackEl.style.display = 'block';
         });
 })();
