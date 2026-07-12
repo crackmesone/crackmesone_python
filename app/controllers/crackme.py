@@ -17,10 +17,14 @@ from app.models.solution import solutions_by_crackme
 from app.models.comment import comments_by_crackme
 from app.models.rating import rating_difficulty_create, rating_quality_create, rating_difficulty_delete_by_crackme
 from app.models.notification import notification_add
+from app.models.tag_request import (
+    tag_request_create, pending_tag_requests_by_user_and_crackme
+)
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
+from app.services.tags import OBFUSCATION_TAGS, DATASET_URL, normalize_tags
 from app.services.archive import is_archive_password_protected, is_single_file_archive, is_unsupported_archive
 from app.services.discord import notify_new_crackme
 from app.controllers.decorators import login_required
@@ -80,6 +84,9 @@ def crackme_view(hexid):
                            difficulty=f"{crackme.get('difficulty', 0):.1f}",
                            quality=f"{crackme.get('quality', 0):.1f}",
                            size=crackme.get('size', 0),
+                           tags=crackme.get('tags', []),
+                           all_tags=OBFUSCATION_TAGS,
+                           tags_dataset_url=DATASET_URL,
                            usersess=usersess)
 
 
@@ -134,7 +141,7 @@ def download_crackme(hexid):
 @login_required
 def upload_crackme_get():
     """Display the crackme upload form."""
-    return render_template('crackme/create.html')
+    return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
 
 @crackme_bp.route('/upload/crackme', methods=['POST'])
@@ -149,7 +156,7 @@ def upload_crackme_post():
     is_valid, missing = validate_required(request.form, required)
     if not is_valid:
         flash(f'Field missing: {missing}', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     name = bleach.clean(request.form.get('name', ''))
     info = bleach.clean(request.form.get('info', ''))
@@ -157,6 +164,8 @@ def upload_crackme_post():
     arch = bleach.clean(request.form.get('arch', ''))
     platform = request.form.get('platform', '')
     difficulty = request.form.get('difficulty', '')
+    # Tags are optional; keep only values from the controlled vocabulary.
+    tags = normalize_tags(request.form.getlist('tags'))
 
     # Validate difficulty
     try:
@@ -165,22 +174,22 @@ def upload_crackme_post():
             raise ValueError()
     except (ValueError, TypeError):
         flash('Wrong difficulty', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Validate reCAPTCHA
     if not verify_recaptcha(request):
         flash('reCAPTCHA invalid!', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Check for file
     if 'file' not in request.files:
         flash('Field missing: file', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     file = request.files['file']
     if file.filename == '':
         flash('Field missing: file', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Read file data
     file_data = file.read()
@@ -188,22 +197,22 @@ def upload_crackme_post():
     # Check file size
     if len(file_data) > MAX_FILE_SIZE:
         flash('This file is too large!', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Check for unsupported archive formats (RAR, tar, etc.)
     if is_unsupported_archive(file_data):
         flash('RAR and tar archives are not supported. Please upload a ZIP file for multiple files, or upload single files directly.', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Check for password protection
     if is_archive_password_protected(file_data):
         flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Check for single-file archives
     if is_single_file_archive(file_data):
         flash('Archives containing only one file are not allowed. Please upload the file directly without wrapping it in an archive.', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Store the uploaded file size
     size = len(file_data)
@@ -212,7 +221,7 @@ def upload_crackme_post():
     try:
         crackme_by_user_and_name(username, name, visible=False)
         flash('You already have a pending crackme with this name. Please wait for review or choose a different name.', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
     except ErrNoResult:
         pass  # No duplicate, continue
 
@@ -221,7 +230,7 @@ def upload_crackme_post():
 
     # Prepare crackme
     try:
-        crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename)
+        crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename, tags=tags)
     except Exception as e:
         print(f"Error preparing crackme: {e}")
         abort(500)
@@ -239,7 +248,7 @@ def upload_crackme_post():
     except Exception as e:
         print(f"File write error: {e}")
         flash('Failed to save file. Please try again.', FLASH_ERROR)
-        return render_template('crackme/create.html')
+        return render_template('crackme/create.html', all_tags=OBFUSCATION_TAGS)
 
     # Insert crackme into database
     try:
@@ -360,4 +369,52 @@ def edit_crackme_post(hexid):
     else:
         flash('No changes were made.', FLASH_SUCCESS)
 
+    return redirect(f'/crackme/{hexid}')
+
+
+@crackme_bp.route('/crackme/<hexid>/tags/request', methods=['POST'])
+@login_required
+@limit("20 per day", key_func=lambda: session.get('name'))
+def request_tag_change(hexid):
+    """Submit a request to add and/or remove tags on a crackme.
+
+    Requests are queued for reviewers; nothing changes on the crackme until a
+    reviewer approves.
+    """
+    username = session.get('name')
+
+    try:
+        crackme = crackme_by_hexid(hexid)
+    except ErrNoResult:
+        abort(404)
+    except Exception as e:
+        print(f"Error getting crackme: {e}")
+        abort(500)
+
+    current = crackme.get('tags', [])
+    # Only propose adds for tags not already present, and removes for tags that are.
+    add = [t for t in normalize_tags(request.form.getlist('add')) if t not in current]
+    remove = [t for t in normalize_tags(request.form.getlist('remove')) if t in current]
+    note = bleach.clean(request.form.get('note', ''))[:500]
+
+    if not add and not remove:
+        flash('Select at least one tag to add or remove.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}')
+
+    # Prevent a user from piling up duplicate pending requests on one crackme.
+    try:
+        if pending_tag_requests_by_user_and_crackme(username, hexid) > 0:
+            flash('You already have a pending tag change request for this crackme.', FLASH_ERROR)
+            return redirect(f'/crackme/{hexid}')
+    except Exception as e:
+        print(f"Error checking pending tag requests: {e}")
+
+    try:
+        tag_request_create(hexid, crackme.get('name', ''), username,
+                           add=add, remove=remove, note=note)
+    except Exception as e:
+        print(f"Error creating tag request: {e}")
+        abort(500)
+
+    flash('Tag change request submitted for review. Thank you!', FLASH_SUCCESS)
     return redirect(f'/crackme/{hexid}')

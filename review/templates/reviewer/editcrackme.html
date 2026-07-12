@@ -93,6 +93,16 @@
                         <textarea class="form-input" id="info" name="info" rows="5">{{ crackme.info }}</textarea>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label">Tags</label>
+                        {% for tag in all_tags %}
+                        <label class="form-checkbox" style="display:inline-block; margin-right:12px;">
+                            <input type="checkbox" name="tags" value="{{ tag }}" {{ 'checked' if tag in crackme.tags else '' }}>
+                            <i class="form-icon"></i> {{ tag }}
+                        </label>
+                        {% endfor %}
+                    </div>
+
                     <div class="divider"></div>
 
                     <div class="form-group">

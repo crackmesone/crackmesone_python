@@ -5,6 +5,7 @@ Search controller - Searching crackmes.
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.crackme import search_crackme, random_crackmes
 from app.models.errors import ErrUnavailable
+from app.services.tags import OBFUSCATION_TAGS, normalize_tags
 
 search_bp = Blueprint('search', __name__)
 
@@ -12,7 +13,8 @@ search_bp = Blueprint('search', __name__)
 @search_bp.route('/search', methods=['GET'])
 def search_get():
     """Display the search page."""
-    return render_template('search/search.html', crackmes=[], page=1, has_more=False, show_all=False, search_params={})
+    return render_template('search/search.html', crackmes=[], page=1, has_more=False,
+                           show_all=False, search_params={}, all_tags=OBFUSCATION_TAGS)
 
 
 @search_bp.route('/search', methods=['POST'])
@@ -24,6 +26,7 @@ def search_post():
     lang = request.form.getlist('lang')
     arch = request.form.getlist('arch')
     platform = request.form.getlist('platform')
+    tags = normalize_tags(request.form.getlist('tags'))
 
     # Get difficulty range
     try:
@@ -161,6 +164,7 @@ def search_post():
         'lang': lang,  # list
         'arch': arch,  # list
         'platform': platform,  # list
+        'tags': tags,  # list
         'difficulty-min': difficulty_min,
         'difficulty-max': difficulty_max,
         'quality-min': quality_min,
@@ -187,6 +191,7 @@ def search_post():
                 lang=lang,
                 arch=arch,
                 platform=platform,
+                tags=tags,
                 difficulty_min=difficulty_min,
                 difficulty_max=difficulty_max,
                 quality_min=quality_min,
@@ -212,6 +217,7 @@ def search_post():
                 lang=lang,
                 arch=arch,
                 platform=platform,
+                tags=tags,
                 difficulty_min=difficulty_min,
                 difficulty_max=difficulty_max,
                 quality_min=quality_min,
@@ -238,7 +244,8 @@ def search_post():
                            page=page,
                            has_more=has_more,
                            show_all=show_all,
-                           search_params=search_params)
+                           search_params=search_params,
+                           all_tags=OBFUSCATION_TAGS)
 
 
 @search_bp.route('/random', methods=['GET'])
@@ -276,4 +283,5 @@ def random_get():
                            page=1,
                            has_more=False,
                            show_all=True,
-                           search_params=search_params)
+                           search_params=search_params,
+                           all_tags=OBFUSCATION_TAGS)
