@@ -2,7 +2,7 @@
 Search controller - Searching crackmes.
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request
 from app.models.crackme import search_crackme, random_crackmes
 from app.models.errors import ErrUnavailable
 from app.services.tags import TAG_GROUPS, normalize_tags
@@ -12,53 +12,69 @@ search_bp = Blueprint('search', __name__)
 
 @search_bp.route('/search', methods=['GET'])
 def search_get():
-    """Display the search page."""
-    return render_template('search/search.html', crackmes=[], page=1, has_more=False,
-                           show_all=False, search_params={}, tag_groups=TAG_GROUPS)
+    """Display the search page.
+
+    Searches are driven by URL query parameters so results are bookmarkable and
+    shareable (issue #162). A bare ``/search`` with no parameters shows the empty
+    form; any parameter (e.g. ``/search?tags=Packer``) runs a search.
+    """
+    if not request.args:
+        return render_template('search/search.html', crackmes=[], page=1, has_more=False,
+                               show_all=False, search_params={}, tag_groups=TAG_GROUPS)
+    return _render_search(request.args)
 
 
 @search_bp.route('/search', methods=['POST'])
 def search_post():
-    """Handle search form submission."""
-    name = request.form.get('name', '')
-    author = request.form.get('author', '')
+    """Handle a POST search submission (kept for backward compatibility)."""
+    return _render_search(request.form)
+
+
+def _render_search(source):
+    """Run a crackme search from a request MultiDict (``request.args`` or form).
+
+    ``source`` provides ``.get`` and ``.getlist``, so the same logic serves both
+    bookmarkable GET URLs and legacy POST submissions.
+    """
+    name = source.get('name', '')
+    author = source.get('author', '')
     # Use getlist() for multi-select fields
-    lang = request.form.getlist('lang')
-    arch = request.form.getlist('arch')
-    platform = request.form.getlist('platform')
-    tags = normalize_tags(request.form.getlist('tags'))
+    lang = source.getlist('lang')
+    arch = source.getlist('arch')
+    platform = source.getlist('platform')
+    tags = normalize_tags(source.getlist('tags'))
 
     # Get difficulty range
     try:
-        difficulty_min = int(request.form.get('difficulty-min', 1))
+        difficulty_min = int(source.get('difficulty-min', 1))
     except (ValueError, TypeError):
         difficulty_min = 1
 
     try:
-        difficulty_max = int(request.form.get('difficulty-max', 6))
+        difficulty_max = int(source.get('difficulty-max', 6))
     except (ValueError, TypeError):
         difficulty_max = 6
 
     # Get quality range
     try:
-        quality_min = int(request.form.get('quality-min', 1))
+        quality_min = int(source.get('quality-min', 1))
     except (ValueError, TypeError):
         quality_min = 1
 
     try:
-        quality_max = int(request.form.get('quality-max', 6))
+        quality_max = int(source.get('quality-max', 6))
     except (ValueError, TypeError):
         quality_max = 6
 
     # Get downloads range
     try:
-        downloads_min = int(request.form.get('downloads-min', 0))
+        downloads_min = int(source.get('downloads-min', 0))
         if downloads_min < 0:
             downloads_min = 0
     except (ValueError, TypeError):
         downloads_min = 0
 
-    downloads_max_str = request.form.get('downloads-max', '')
+    downloads_max_str = source.get('downloads-max', '')
     if downloads_max_str == '' or downloads_max_str.lower() == 'any':
         downloads_max = None
     else:
@@ -71,13 +87,13 @@ def search_post():
 
     # Get solutions range
     try:
-        solutions_min = int(request.form.get('solutions-min', 0))
+        solutions_min = int(source.get('solutions-min', 0))
         if solutions_min < 0:
             solutions_min = 0
     except (ValueError, TypeError):
         solutions_min = 0
 
-    solutions_max_str = request.form.get('solutions-max', '')
+    solutions_max_str = source.get('solutions-max', '')
     if solutions_max_str == '' or solutions_max_str.lower() == 'any':
         solutions_max = None
     else:
@@ -90,13 +106,13 @@ def search_post():
 
     # Get comments range
     try:
-        comments_min = int(request.form.get('comments-min', 0))
+        comments_min = int(source.get('comments-min', 0))
         if comments_min < 0:
             comments_min = 0
     except (ValueError, TypeError):
         comments_min = 0
 
-    comments_max_str = request.form.get('comments-max', '')
+    comments_max_str = source.get('comments-max', '')
     if comments_max_str == '' or comments_max_str.lower() == 'any':
         comments_max = None
     else:
@@ -128,31 +144,31 @@ def search_post():
         except (ValueError, TypeError):
             return None
 
-    size_min_str = request.form.get('size-min', '')
-    size_min_unit = request.form.get('size-min-unit', 'KB')
+    size_min_str = source.get('size-min', '')
+    size_min_unit = source.get('size-min-unit', 'KB')
     size_min = parse_size_with_unit(size_min_str, size_min_unit)
     if size_min is None:
         size_min = 0
 
-    size_max_str = request.form.get('size-max', '')
-    size_max_unit = request.form.get('size-max-unit', 'MB')
+    size_max_str = source.get('size-max', '')
+    size_max_unit = source.get('size-max-unit', 'MB')
     size_max = parse_size_with_unit(size_max_str, size_max_unit)
 
     # Get page number and show_all flag
     try:
-        page = int(request.form.get('page', 1))
+        page = int(source.get('page', 1))
         if page < 1:
             page = 1
     except (ValueError, TypeError):
         page = 1
 
-    show_all = request.form.get('show_all') == '1'
+    show_all = source.get('show_all') == '1'
 
     # Get sort options
-    sort_by = request.form.get('sort_by', 'date')
+    sort_by = source.get('sort_by', 'date')
     if sort_by not in ('date', 'size', 'downloads', 'solutions', 'comments', 'quality', 'difficulty'):
         sort_by = 'date'
-    sort_order = request.form.get('sort_order', 'desc')
+    sort_order = source.get('sort_order', 'desc')
     if sort_order not in ('asc', 'desc'):
         sort_order = 'desc'
 

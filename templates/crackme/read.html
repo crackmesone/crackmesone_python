@@ -217,17 +217,12 @@
             </div>
             <div>
                 {% for tag in tags %}
-                <a href="#" class="chip tag-chip"
-                   onclick="document.getElementById('tag-search-input').value='{{ tag|e }}'; document.getElementById('tag-search-form').submit(); return false;"
+                <a href="/search?tags={{ tag|urlencode }}" class="chip tag-chip"
                    title="Search crackmes with this tag">{{ tag }}</a>
                 {% else %}
                 <span class="text-gray">No tags yet.</span>
                 {% endfor %}
             </div>
-            <form id="tag-search-form" action="/search" method="post" style="display:none;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="tags" id="tag-search-input" value="">
-            </form>
             <div class="divider"></div>
         </div>
 

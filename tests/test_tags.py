@@ -187,6 +187,47 @@ def test_search_page_offers_tag_filter(client):
     response = client.get("/search")
     assert response.status_code == 200
     assert b'name="tags"' in response.data
+    # Bare search page uses a bookmarkable GET form.
+    assert b'method="get" action="/search"' in response.data
+
+
+def test_bare_search_get_shows_no_results(client, db, sample_crackme):
+    # No query params -> empty form, no result rows.
+    response = client.get("/search")
+    assert response.status_code == 200
+    assert b"Test Crackme" not in response.data
+
+
+def test_search_by_tag_via_get_is_bookmarkable(client, db, sample_crackme):
+    db.crackme.update_one(
+        {"hexid": sample_crackme["hexid"]},
+        {"$set": {"tags": ["Packer", "UPX"]}}
+    )
+    other = dict(sample_crackme)
+    other.pop("_id")
+    other["hexid"] = "507f1f77bcf86cd799439097"
+    other["name"] = "No Tags CM"
+    other["tags"] = []
+    db.crackme.insert_one(other)
+
+    # A plain GET URL (what a tag chip links to / a bookmark) runs the search.
+    response = client.get("/search?tags=UPX")
+    assert response.status_code == 200
+    assert b"Test Crackme" in response.data
+    assert b"No Tags CM" not in response.data
+    # The tag stays selected so the URL round-trips in the form.
+    assert b'value="UPX" selected' in response.data
+
+
+def test_crackme_tag_chip_links_to_get_search(client, db, sample_crackme):
+    db.crackme.update_one(
+        {"hexid": sample_crackme["hexid"]},
+        {"$set": {"tags": ["String / data encryption"]}}
+    )
+    response = client.get(f"/crackme/{sample_crackme['hexid']}")
+    assert response.status_code == 200
+    # Chip is a GET link with the tag properly URL-encoded.
+    assert b'href="/search?tags=String%20/%20data%20encryption"' in response.data
 
 
 # ---------------------------------------------------------------------------

@@ -8,8 +8,7 @@
 <div style="max-width: 80%" class="container d-flex-row wrapper">
 
     <h2>Crackme search</h2>
-    <form class="form-horizontal" method="post" action="/search">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <form class="form-horizontal" method="get" action="/search">
         <div class="form-group">
             <div class="col-3">Crackme name</div>
             <div class="col-9 col-sm-12">
@@ -254,8 +253,7 @@
     {% if crackmes|length > 0 %}
     <div class="pagination-controls">
         {% if show_all %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
@@ -285,8 +283,7 @@
         {% elif not has_more and page == 1 %}
         <span class="pagination-info">Showing all {{ crackmes|length }} results</span>
         {% else %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
@@ -313,8 +310,7 @@
             <button type="submit" class="btn active">Show All</button>
         </form>
         {% if page > 1 %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
@@ -345,8 +341,7 @@
         {% endif %}
         <span class="pagination-info">Page {{ page }}</span>
         {% if has_more %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
