@@ -5,7 +5,7 @@ Search controller - Searching crackmes.
 from flask import Blueprint, render_template, request, redirect, url_for
 from app.models.crackme import search_crackme, random_crackmes
 from app.models.errors import ErrUnavailable
-from app.services.tags import OBFUSCATION_TAGS, normalize_tags
+from app.services.tags import TAG_GROUPS, normalize_tags
 
 search_bp = Blueprint('search', __name__)
 
@@ -14,7 +14,7 @@ search_bp = Blueprint('search', __name__)
 def search_get():
     """Display the search page."""
     return render_template('search/search.html', crackmes=[], page=1, has_more=False,
-                           show_all=False, search_params={}, all_tags=OBFUSCATION_TAGS)
+                           show_all=False, search_params={}, tag_groups=TAG_GROUPS)
 
 
 @search_bp.route('/search', methods=['POST'])
@@ -245,7 +245,7 @@ def search_post():
                            has_more=has_more,
                            show_all=show_all,
                            search_params=search_params,
-                           all_tags=OBFUSCATION_TAGS)
+                           tag_groups=TAG_GROUPS)
 
 
 @search_bp.route('/random', methods=['GET'])
@@ -284,4 +284,4 @@ def random_get():
                            has_more=False,
                            show_all=True,
                            search_params=search_params,
-                           all_tags=OBFUSCATION_TAGS)
+                           tag_groups=TAG_GROUPS)

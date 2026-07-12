@@ -56,11 +56,23 @@
                     <input type="hidden" name="uuid" value="{{ crackme.crackme_uuid }}">
                     <input type="hidden" name="redirect_to" value="view">
                     <div class="form-group">
-                        {% for tag in all_tags %}
-                        <label class="form-checkbox" style="display:inline-block; margin-right:12px;">
-                            <input type="checkbox" name="tags" value="{{ tag }}" {{ 'checked' if tag in crackme.tags else '' }}>
-                            <i class="form-icon"></i> {{ tag }}
-                        </label>
+                        {% for group in tag_groups %}
+                        <div style="margin-bottom: 4px;">
+                            <label class="form-checkbox" style="font-weight: bold;">
+                                <input type="checkbox" name="tags" value="{{ group.tag }}" {{ 'checked' if group.tag in crackme.tags else '' }}>
+                                <i class="form-icon"></i> {{ group.tag }}
+                            </label>
+                            {% if group.sublabels %}
+                            <span style="margin-left: 16px;">
+                                {% for sub in group.sublabels %}
+                                <label class="form-checkbox" style="display:inline-block; margin-right:12px;">
+                                    <input type="checkbox" name="tags" value="{{ sub }}" {{ 'checked' if sub in crackme.tags else '' }}>
+                                    <i class="form-icon"></i> {{ sub }}
+                                </label>
+                                {% endfor %}
+                            </span>
+                            {% endif %}
+                        </div>
                         {% endfor %}
                     </div>
                     <button type="submit" class="btn">Save tags</button>

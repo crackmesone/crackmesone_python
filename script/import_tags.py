@@ -3,10 +3,12 @@
 Import obfuscation tags from the crackmes-RE dataset into the database.
 
 The dataset (https://github.com/crackmesone/crackmes-re-dataset) ships one JSONL
-record per crackme, keyed by `hexid`, with an `obfuscation_classes` list of
-high-level tags produced by an AI reading public solutions and comments. This
-script joins those records to crackme documents by hexid and writes the
-normalized tags into the `tags` field.
+record per crackme, keyed by `hexid`. Each record has an `obfuscation_classes`
+list of high-level tags plus finer sub-label lists (antidebug_methods, packers,
+controlflow_methods), all produced by an AI reading public solutions and
+comments. This script joins those records to crackme documents by hexid and
+writes the combined, normalized tags (classes + sub-labels) into the `tags`
+field.
 
 Only tags in the controlled vocabulary (app/services/tags.py) are kept, so the
 site and the dataset never drift apart.
@@ -30,11 +32,15 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pymongo import MongoClient
 
-from app.services.tags import normalize_tags
+from app.services.tags import normalize_tags, SUBLABEL_FIELDS
 
 
 def load_dataset_tags(dataset_path):
-    """Return {hexid: [normalized tags]} from a dataset JSONL file."""
+    """Return {hexid: [normalized tags]} from a dataset JSONL file.
+
+    Combines the high-level ``obfuscation_classes`` with the sub-label fields
+    (antidebug_methods, packers, controlflow_methods) into a single tag list.
+    """
     mapping = {}
     with open(dataset_path, "r") as f:
         for line in f:
@@ -49,8 +55,10 @@ def load_dataset_tags(dataset_path):
             hexid = record.get("hexid")
             if not hexid:
                 continue
-            tags = normalize_tags(record.get("obfuscation_classes", []))
-            mapping[hexid] = tags
+            raw = list(record.get("obfuscation_classes", []) or [])
+            for field in SUBLABEL_FIELDS:
+                raw.extend(record.get(field, []) or [])
+            mapping[hexid] = normalize_tags(raw)
     return mapping
 
 

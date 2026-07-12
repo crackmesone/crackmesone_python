@@ -44,7 +44,7 @@ from review.auth import (
 )
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
-from app.services.tags import OBFUSCATION_TAGS, normalize_tags
+from app.services.tags import TAG_GROUPS, normalize_tags
 from app.models.tag_request import (
     tag_requests_pending, count_pending_tag_requests, tag_request_by_hexid,
     tag_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
@@ -1458,7 +1458,7 @@ def viewcrackme(current_user):
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         crackme=crackme,
-        all_tags=OBFUSCATION_TAGS
+        tag_groups=TAG_GROUPS
     )
 
 
@@ -2034,7 +2034,7 @@ def editcrackme(current_user):
         crackme=crackme,
         message=message,
         error=error,
-        all_tags=OBFUSCATION_TAGS
+        tag_groups=TAG_GROUPS
     )
 
 

@@ -27,6 +27,31 @@ def test_is_valid_tag():
     assert not is_valid_tag("nonsense")
 
 
+def test_sublabels_are_valid_tags():
+    # Specific techniques are part of the vocabulary too.
+    assert is_valid_tag("UPX")
+    assert is_valid_tag("IsDebuggerPresent")
+    assert is_valid_tag("Control-flow flattening (CFF)")
+
+
+def test_normalize_orders_sublabels_after_parent_class():
+    raw = ["UPX", "Packer", "IsDebuggerPresent", "Anti-debugging"]
+    # Each class comes before its own sub-labels; classes keep global order.
+    assert normalize_tags(raw) == [
+        "Anti-debugging", "IsDebuggerPresent", "Packer", "UPX"
+    ]
+
+
+def test_tag_groups_structure():
+    from app.services.tags import TAG_GROUPS
+
+    groups = {g["tag"]: g["sublabels"] for g in TAG_GROUPS}
+    assert "UPX" in groups["Packer"]
+    assert "IsDebuggerPresent" in groups["Anti-debugging"]
+    # A class without sub-labels has an empty list.
+    assert groups["Nag / trial"] == []
+
+
 # ---------------------------------------------------------------------------
 # Model layer
 # ---------------------------------------------------------------------------
@@ -89,15 +114,61 @@ def test_search_by_tags_requires_all(db, sample_crackme):
     assert names == {"Test Crackme", "Only Packer"}
 
 
+def test_search_by_sublabel(db, sample_crackme):
+    from app.models.crackme import search_crackme
+
+    db.crackme.update_one(
+        {"hexid": sample_crackme["hexid"]},
+        {"$set": {"tags": ["Packer", "UPX"]}}
+    )
+    other = dict(sample_crackme)
+    other.pop("_id")
+    other["hexid"] = "507f1f77bcf86cd799439098"
+    other["name"] = "FSG one"
+    other["tags"] = ["Packer", "FSG"]
+    db.crackme.insert_one(other)
+
+    results, _ = search_crackme(tags=["UPX"])
+    assert {c["name"] for c in results} == {"Test Crackme"}
+
+
 # ---------------------------------------------------------------------------
 # Submission + display
 # ---------------------------------------------------------------------------
 
-def test_upload_form_lists_all_tags(alice_client):
+def test_upload_form_lists_classes_and_sublabels(alice_client):
     response = alice_client.get("/upload/crackme")
     assert response.status_code == 200
     assert b"Anti-debugging" in response.data
     assert b"String / data encryption" in response.data
+    # Sub-labels are offered too.
+    assert b"IsDebuggerPresent" in response.data
+    assert b'value="UPX"' in response.data
+
+
+def test_upload_stores_sublabel_tags(alice_client, db, monkeypatch):
+    import app.controllers.crackme as cc
+    monkeypatch.setattr(cc, "verify_recaptcha", lambda req: True)
+
+    from io import BytesIO
+    # A two-file zip passes the archive checks; content is irrelevant here.
+    import zipfile
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("a.txt", "a")
+        zf.writestr("b.txt", "b")
+    buf.seek(0)
+
+    resp = alice_client.post("/upload/crackme", data={
+        "name": "Tagged CM", "info": "info", "lang": "C/C++",
+        "arch": "x86", "platform": "Windows", "difficulty": "3",
+        "tags": ["Packer", "UPX", "not-real"],
+        "file": (buf, "sample.zip"),
+    }, content_type="multipart/form-data")
+    assert resp.status_code == 200
+    stored = db.crackme.find_one({"name": "Tagged CM"})
+    assert stored is not None
+    assert stored["tags"] == ["Packer", "UPX"]  # invalid dropped, ordered
 
 
 def test_crackme_view_shows_tags_and_help(client, db, sample_crackme):

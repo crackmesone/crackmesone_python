@@ -365,11 +365,27 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <p><b>Add tags</b> (not currently applied):</p>
                     <div class="tags-checkboxes">
-                        {% for tag in all_tags %}
-                        {% if tag not in tags %}
-                        <label class="form-checkbox">
-                            <input type="checkbox" name="add" value="{{ tag }}"><i class="form-icon"></i> {{ tag }}
-                        </label>
+                        {% for group in tag_groups %}
+                        {% set visible_subs = group.sublabels | reject('in', tags) | list %}
+                        {% if group.tag not in tags or visible_subs %}
+                        <div style="margin-bottom: 4px;">
+                            {% if group.tag not in tags %}
+                            <label class="form-checkbox" style="font-weight: bold;">
+                                <input type="checkbox" name="add" value="{{ group.tag }}"><i class="form-icon"></i> {{ group.tag }}
+                            </label>
+                            {% else %}
+                            <span style="font-weight: bold;">{{ group.tag }}</span>
+                            {% endif %}
+                            {% if visible_subs %}
+                            <span style="margin-left: 16px;">
+                                {% for sub in visible_subs %}
+                                <label class="form-checkbox" style="display: inline-block; margin-right: 10px;">
+                                    <input type="checkbox" name="add" value="{{ sub }}"><i class="form-icon"></i> {{ sub }}
+                                </label>
+                                {% endfor %}
+                            </span>
+                            {% endif %}
+                        </div>
                         {% endif %}
                         {% endfor %}
                     </div>
