@@ -121,6 +121,21 @@
         margin-right: 12px;
         margin-bottom: 4px;
     }
+    .chip.tag-chip {
+        background: #9acc14;
+        color: #fff;
+        cursor: pointer;
+        font-size: 95%;
+        height: auto;
+        padding: .25rem .5rem;
+        margin: .15rem .15rem;
+    }
+    .chip.tag-chip:hover,
+    .chip.tag-chip:focus {
+        background: #86b310;
+        color: #fff;
+        text-decoration: none;
+    }
 </style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
@@ -202,7 +217,7 @@
             </div>
             <div>
                 {% for tag in tags %}
-                <a href="#" class="chip"
+                <a href="#" class="chip tag-chip"
                    onclick="document.getElementById('tag-search-input').value='{{ tag|e }}'; document.getElementById('tag-search-form').submit(); return false;"
                    title="Search crackmes with this tag">{{ tag }}</a>
                 {% else %}
