@@ -199,9 +199,6 @@
                 <b>Tags</b>
                 <a href="#" class="tag-help" title="What are these tags?"
                    onclick="var b=document.getElementById('tags-help-info'); b.style.display = (b.style.display==='block')?'none':'block'; return false;">?</a>
-                {% if AuthLevel == "auth" %}
-                <a href="#" style="font-size: 0.75rem; margin-left: 8px;" onclick="openModal('modal-tags'); return false;">Request a tag change</a>
-                {% endif %}
             </p>
             <div id="tags-help-info" style="display:none; font-size: 0.8rem; margin-bottom: 8px; max-width: 640px;" class="text-gray">
                 Tags describe the anti-analysis / obfuscation techniques a crackme uses. Newer crackmes are tagged by
@@ -209,6 +206,11 @@
                 write-ups &amp; comments (the
                 <a href="{{ tags_dataset_url }}" target="_blank" rel="noopener">crackmes-RE dataset</a>), so those tags
                 may be inaccurate or incomplete &mdash; you can request a change.
+                {% if AuthLevel == "auth" %}
+                <div style="margin-top: 6px;">
+                    <a href="#" onclick="openModal('modal-tags'); return false;">Request a tag change</a>
+                </div>
+                {% endif %}
             </div>
             <div>
                 {% for tag in tags %}
@@ -360,7 +362,7 @@
 </div>
 
 {% if AuthLevel == "auth" %}
-<div class="modal" id="modal-tags">
+<div class="modal modal-lg" id="modal-tags">
     <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
     <div class="modal-container">
         <div class="modal-header">
@@ -372,23 +374,25 @@
                 <p>Select tags and use the buttons to move them. Left = not applied, right = applied. A reviewer approves or rejects your request.</p>
                 <form id="tag-request-form" action="/crackme/{{ hexid }}/tags/request" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="tag-transfer" id="tag-request-transfer">
-                        <div class="tag-transfer-col">
-                            <div class="tag-transfer-title">Not applied</div>
-                            <div class="tag-transfer-list" data-role="available"></div>
+                    <div id="tag-request-transfer">
+                        <div class="tag-transfer">
+                            <div class="tag-transfer-col">
+                                <div class="tag-transfer-title">Not applied</div>
+                                <div class="tag-transfer-list" data-role="available"></div>
+                            </div>
+                            <div class="tag-transfer-mid">
+                                <button type="button" class="btn" data-role="to-right" title="Add selected">=&gt;</button>
+                                <button type="button" class="btn" data-role="to-left" title="Remove selected">&lt;=</button>
+                            </div>
+                            <div class="tag-transfer-col">
+                                <div class="tag-transfer-title">Applied</div>
+                                <div class="tag-transfer-list" data-role="applied"></div>
+                            </div>
                         </div>
-                        <div class="tag-transfer-mid">
-                            <button type="button" class="btn" data-role="to-right" title="Add selected">=&gt;</button>
-                            <button type="button" class="btn" data-role="to-left" title="Remove selected">&lt;=</button>
+                        <div class="tag-transfer-actions">
+                            <button type="button" class="btn btn-sm" data-role="undo">Undo</button>
+                            <button type="button" class="btn btn-sm" data-role="reset">Reset</button>
                         </div>
-                        <div class="tag-transfer-col">
-                            <div class="tag-transfer-title">Applied</div>
-                            <div class="tag-transfer-list" data-role="applied"></div>
-                        </div>
-                    </div>
-                    <div class="tag-transfer-actions">
-                        <button type="button" class="btn btn-sm" data-role="undo">Undo</button>
-                        <button type="button" class="btn btn-sm" data-role="reset">Reset</button>
                     </div>
                     <textarea class="form-input" name="note" placeholder="Optional: why? (e.g. the solution uses UPX)" rows="2" style="margin-top: 10px;"></textarea>
                     <input type="submit" class="btn active float-right" style="margin-top: 10px;" value="Submit request">
