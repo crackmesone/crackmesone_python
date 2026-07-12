@@ -21,17 +21,12 @@ OBFUSCATION_TAGS = [
     "Self-modifying / runtime decrypt",
     "Code virtualization / VM",
     "Crypto / hash algorithm",
-    "Anti-tamper / integrity",
     "Control-flow obfuscation",
+    "Anti-tamper / integrity",
     "Anti-disassembly",
-    "Timing checks",
-    "Exception-based",
     "Import / API obfuscation",
     "Custom / generic obfuscation",
     "Encoding (base64/hex)",
-    "Commercial protector",
-    "Stripped / no symbols",
-    "Anti-attach / thread tricks",
     "Binary hardening (ASLR/PIE/canary)",
     "Anti-VM / sandbox",
     "Nag / trial",
@@ -96,6 +91,38 @@ SUBLABELS = {
         "Control-flow flattening (CFF)",
         "Return-address / stack-based",
     ],
+    "Anti-disassembly": [
+        "Junk / garbage bytes",
+        "Malformed PE / bad bytes (UD2)",
+        "Opaque predicates",
+        "Overlapping / misaligned instructions",
+        "Jump-based desync",
+    ],
+    # AES / Base64 / RC4 / TEA-XTEA also appear as string-encryption ciphers, so
+    # they are qualified with "(crypto)" here to keep each tag under one parent.
+    "Crypto / hash algorithm": [
+        "MD5",
+        "CRC32",
+        "Base64 (crypto)",
+        "RSA",
+        "AES (crypto)",
+        "SHA-256",
+        "Other / custom hash",
+        "RC4 (crypto)",
+        "TEA / XTEA (crypto)",
+        "SHA-1",
+        "Blowfish",
+        "DES / 3DES",
+    ],
+    # ...and the same four ciphers are qualified with "(encryption)" here.
+    "String / data encryption": [
+        "XOR",
+        "Base64 (encryption)",
+        "AES (encryption)",
+        "RC4 (encryption)",
+        "TEA / XTEA (encryption)",
+        "Substitution / table",
+    ],
 }
 
 # Dataset field name -> parent class, so the import script knows where each
@@ -104,7 +131,28 @@ SUBLABEL_FIELDS = {
     "antidebug_methods": "Anti-debugging",
     "packers": "Packer",
     "controlflow_methods": "Control-flow obfuscation",
+    "antidisasm_methods": "Anti-disassembly",
+    "crypto_methods": "Crypto / hash algorithm",
+    "encryption_methods": "String / data encryption",
 }
+
+# A few algorithm names appear under both crypto_methods and encryption_methods.
+# They are qualified with the source context so each maps to exactly one parent
+# (e.g. dataset "AES" -> "AES (crypto)" or "AES (encryption)").
+_QUALIFY_SUFFIX = {"crypto_methods": "crypto", "encryption_methods": "encryption"}
+_QUALIFY_VALUES = {"AES", "Base64", "RC4", "TEA / XTEA"}
+
+
+def dataset_sublabel_tag(field, value):
+    """Map a raw dataset sub-label ``(field, value)`` to its canonical tag.
+
+    Only the algorithm names shared between the crypto and encryption fields are
+    rewritten; everything else passes through unchanged.
+    """
+    suffix = _QUALIFY_SUFFIX.get(field)
+    if suffix and value in _QUALIFY_VALUES:
+        return "{} ({})".format(value, suffix)
+    return value
 
 # Grouped view for templates: an ordered list of {"tag", "sublabels"} where a
 # class's sub-labels (if any) render nested underneath it.

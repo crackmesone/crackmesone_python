@@ -32,14 +32,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pymongo import MongoClient
 
-from app.services.tags import normalize_tags, SUBLABEL_FIELDS
+from app.services.tags import normalize_tags, SUBLABEL_FIELDS, dataset_sublabel_tag
 
 
 def load_dataset_tags(dataset_path):
     """Return {hexid: [normalized tags]} from a dataset JSONL file.
 
-    Combines the high-level ``obfuscation_classes`` with the sub-label fields
-    (antidebug_methods, packers, controlflow_methods) into a single tag list.
+    Combines the high-level ``obfuscation_classes`` with every sub-label field
+    (antidebug_methods, packers, controlflow_methods, antidisasm_methods,
+    crypto_methods, encryption_methods). Sub-label values are canonicalized via
+    ``dataset_sublabel_tag`` so the crypto/encryption ciphers stay unambiguous.
     """
     mapping = {}
     with open(dataset_path, "r") as f:
@@ -57,7 +59,8 @@ def load_dataset_tags(dataset_path):
                 continue
             raw = list(record.get("obfuscation_classes", []) or [])
             for field in SUBLABEL_FIELDS:
-                raw.extend(record.get(field, []) or [])
+                for value in (record.get(field) or []):
+                    raw.append(dataset_sublabel_tag(field, value))
             mapping[hexid] = normalize_tags(raw)
     return mapping
 
