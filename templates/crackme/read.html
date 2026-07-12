@@ -187,28 +187,32 @@
         <div class="column col-12">
             <p>
                 <b>Tags</b>
-                <a href="{{ tags_dataset_url }}" target="_blank" rel="noopener"
-                   class="tag-help" title="Tags come from an AI-labeled dataset built by reading solutions and comments, so they may not be accurate. Click to learn more.">?</a>
+                <a href="#" class="tag-help" title="What are these tags?"
+                   onclick="var b=document.getElementById('tags-help-info'); b.style.display = (b.style.display==='block')?'none':'block'; return false;">?</a>
+                {% if AuthLevel == "auth" %}
+                <a href="#" style="font-size: 0.75rem; margin-left: 8px;" onclick="openModal('modal-tags'); return false;">Request a tag change</a>
+                {% endif %}
             </p>
-            <p>
+            <div id="tags-help-info" style="display:none; font-size: 0.8rem; margin-bottom: 8px; max-width: 640px;" class="text-gray">
+                Tags describe the anti-analysis / obfuscation techniques a crackme uses. Newer crackmes are tagged by
+                their authors on submission. Many older crackmes were tagged automatically by an AI reading their
+                write-ups &amp; comments (the
+                <a href="{{ tags_dataset_url }}" target="_blank" rel="noopener">crackmes-RE dataset</a>), so those tags
+                may be inaccurate or incomplete &mdash; you can request a change.
+            </div>
+            <div>
                 {% for tag in tags %}
                 <a href="#" class="chip"
-                   onclick="document.getElementById('search_tag_form_{{ loop.index }}').submit(); return false;"
+                   onclick="document.getElementById('tag-search-input').value='{{ tag|e }}'; document.getElementById('tag-search-form').submit(); return false;"
                    title="Search crackmes with this tag">{{ tag }}</a>
-                <form id="search_tag_form_{{ loop.index }}" action="/search" method="post" style="display:none;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="tags" value="{{ tag }}">
-                </form>
                 {% else %}
                 <span class="text-gray">No tags yet.</span>
                 {% endfor %}
-            </p>
-            <p style="font-size: 0.75rem;" class="text-gray">
-                Tags are AI-generated from write-ups &amp; comments and may be inaccurate.
-                {% if AuthLevel == "auth" %}
-                <a href="#" onclick="openModal('modal-tags'); return false;">Request a tag change</a>
-                {% endif %}
-            </p>
+            </div>
+            <form id="tag-search-form" action="/search" method="post" style="display:none;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="tags" id="tag-search-input" value="">
+            </form>
             <div class="divider"></div>
         </div>
 
