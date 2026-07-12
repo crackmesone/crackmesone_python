@@ -164,7 +164,8 @@ def upload_crackme_post():
     arch = bleach.clean(request.form.get('arch', ''))
     platform = request.form.get('platform', '')
     difficulty = request.form.get('difficulty', '')
-    # Tags are optional; keep only values from the controlled vocabulary.
+    # Keep only values from the controlled vocabulary. Tags are not mandatory
+    # (a crackme with no matching technique may legitimately have none).
     tags = normalize_tags(request.form.getlist('tags'))
 
     # Validate difficulty
@@ -392,13 +393,15 @@ def request_tag_change(hexid):
         abort(500)
 
     current = crackme.get('tags', [])
-    # Only propose adds for tags not already present, and removes for tags that are.
-    add = [t for t in normalize_tags(request.form.getlist('add')) if t not in current]
-    remove = [t for t in normalize_tags(request.form.getlist('remove')) if t in current]
+    # The form submits the full desired set of applied tags; derive the add/remove
+    # sets by diffing against what the crackme currently carries.
+    desired = normalize_tags(request.form.getlist('applied'))
+    add = [t for t in desired if t not in current]
+    remove = [t for t in current if t not in desired]
     note = bleach.clean(request.form.get('note', ''))[:500]
 
     if not add and not remove:
-        flash('Select at least one tag to add or remove.', FLASH_ERROR)
+        flash('No tag changes were selected.', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
     # Prevent a user from piling up duplicate pending requests on one crackme.

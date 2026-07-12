@@ -23,7 +23,7 @@
     <p>Read the full <a href="/upload/crackmerules">crackme submission rules</a> for detailed guidelines.</p>
 
     <div class="divider"></div>
-    <form class="form-horizontal" action="/upload/crackme" method="post" enctype="multipart/form-data">
+    <form id="upload-form" class="form-horizontal" action="/upload/crackme" method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <div class="col-3 col-sm-12">
@@ -106,19 +106,21 @@
             </div>
             <div class="col-9 col-sm-12">
                 <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
-                    Select the anti-analysis / obfuscation techniques your crackme uses (optional). Pick a broad
-                    category and, where it applies, the specific technique underneath. Reviewers may adjust these.
+                    Select the anti-analysis / obfuscation techniques your crackme uses. Please tag every technique
+                    that applies; if none apply, it's fine to leave these empty. Pick a broad category and, where it
+                    applies, the specific technique underneath &mdash; ticking a technique ticks its category
+                    automatically. Reviewers may adjust these later.
                 </p>
                 {% for group in tag_groups %}
                 <div style="margin-bottom: 6px;">
                     <label class="form-checkbox" style="font-weight: bold;">
-                        <input type="checkbox" name="tags" value="{{ group.tag }}"><i class="form-icon"></i> {{ group.tag }}
+                        <input type="checkbox" name="tags" value="{{ group.tag }}" data-tag-class="1"><i class="form-icon"></i> {{ group.tag }}
                     </label>
                     {% if group.sublabels %}
                     <div style="margin-left: 24px;">
                         {% for sub in group.sublabels %}
                         <label class="form-checkbox" style="display: inline-block; margin-right: 12px;">
-                            <input type="checkbox" name="tags" value="{{ sub }}"><i class="form-icon"></i> {{ sub }}
+                            <input type="checkbox" name="tags" value="{{ sub }}" data-tag-parent="{{ group.tag }}"><i class="form-icon"></i> {{ sub }}
                         </label>
                         {% endfor %}
                     </div>
@@ -150,6 +152,37 @@
         <input type="submit" class="btn active float-right" value="Upload a crackme">
     </form>
 </div>
+
+<script>
+(function() {
+    var form = document.getElementById('upload-form');
+    if (!form) return;
+
+    function tagInput(value) {
+        return form.querySelector('input[name="tags"][value="' + value.replace(/"/g, '\\"') + '"]');
+    }
+
+    // Ticking a specific technique ticks its parent category.
+    form.querySelectorAll('input[name="tags"][data-tag-parent]').forEach(function(sub) {
+        sub.addEventListener('change', function() {
+            if (sub.checked) {
+                var parent = tagInput(sub.dataset.tagParent);
+                if (parent) parent.checked = true;
+            }
+        });
+    });
+
+    // Un-ticking a category clears its techniques (no orphaned sub-labels).
+    form.querySelectorAll('input[name="tags"][data-tag-class]').forEach(function(cls) {
+        cls.addEventListener('change', function() {
+            if (!cls.checked) {
+                form.querySelectorAll('input[name="tags"][data-tag-parent="' + cls.value.replace(/"/g, '\\"') + '"]')
+                    .forEach(function(s) { s.checked = false; });
+            }
+        });
+    });
+})();
+</script>
 
 {% include 'partial/footer.html' %}
 {% endblock %}

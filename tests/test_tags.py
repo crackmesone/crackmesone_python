@@ -171,6 +171,31 @@ def test_upload_stores_sublabel_tags(alice_client, db, monkeypatch):
     assert stored["tags"] == ["Packer", "UPX"]  # invalid dropped, ordered
 
 
+def test_upload_allows_no_tags(alice_client, db, monkeypatch):
+    # Tags are not mandatory: a crackme with no matching technique may have none.
+    import app.controllers.crackme as cc
+    monkeypatch.setattr(cc, "verify_recaptcha", lambda req: True)
+
+    from io import BytesIO
+    import zipfile
+    buf = BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("a.txt", "a")
+        zf.writestr("b.txt", "b")
+    buf.seek(0)
+
+    resp = alice_client.post("/upload/crackme", data={
+        "name": "No Tag CM", "info": "info", "lang": "C/C++",
+        "arch": "x86", "platform": "Windows", "difficulty": "3",
+        # no tags
+        "file": (buf, "sample.zip"),
+    }, content_type="multipart/form-data")
+    assert resp.status_code == 200
+    stored = db.crackme.find_one({"name": "No Tag CM"})
+    assert stored is not None
+    assert stored["tags"] == []
+
+
 def test_crackme_view_shows_tags_and_help(client, db, sample_crackme):
     db.crackme.update_one(
         {"hexid": sample_crackme["hexid"]},
@@ -234,37 +259,35 @@ def test_crackme_tag_chip_links_to_get_search(client, db, sample_crackme):
 # Tag change requests (user side)
 # ---------------------------------------------------------------------------
 
-def test_request_tag_change_creates_pending(alice_client, db, sample_crackme):
+def test_request_tag_change_diffs_applied_set(alice_client, db, sample_crackme):
+    # Crackme currently has Anti-debugging; user wants Packer applied instead.
+    db.crackme.update_one(
+        {"hexid": sample_crackme["hexid"]},
+        {"$set": {"tags": ["Anti-debugging"]}}
+    )
     response = alice_client.post(
         f"/crackme/{sample_crackme['hexid']}/tags/request",
-        data={"add": ["Packer"], "note": "uses UPX"},
+        data={"applied": ["Packer"], "note": "uses UPX"},
         follow_redirects=False,
     )
     assert response.status_code == 302
     req = db.tag_request.find_one({"crackme_hexid": sample_crackme["hexid"]})
     assert req is not None
-    assert req["add"] == ["Packer"]
+    assert req["add"] == ["Packer"]        # in desired, not in current
+    assert req["remove"] == ["Anti-debugging"]  # in current, not in desired
     assert req["status"] == "pending"
     assert req["requester"] == "alice"
 
 
-def test_request_tag_change_rejects_empty(alice_client, db, sample_crackme):
-    alice_client.post(
-        f"/crackme/{sample_crackme['hexid']}/tags/request",
-        data={"note": "nothing"},
-    )
-    assert db.tag_request.count_documents({}) == 0
-
-
-def test_request_tag_change_ignores_noop_add(alice_client, db, sample_crackme):
-    # Tag already applied -> add is a no-op and should not create a request.
+def test_request_tag_change_no_change_creates_nothing(alice_client, db, sample_crackme):
+    # Desired set equals current set -> no request.
     db.crackme.update_one(
         {"hexid": sample_crackme["hexid"]},
         {"$set": {"tags": ["Packer"]}}
     )
     alice_client.post(
         f"/crackme/{sample_crackme['hexid']}/tags/request",
-        data={"add": ["Packer"]},
+        data={"applied": ["Packer"], "note": "no change"},
     )
     assert db.tag_request.count_documents({}) == 0
 
@@ -272,7 +295,7 @@ def test_request_tag_change_ignores_noop_add(alice_client, db, sample_crackme):
 def test_request_tag_change_requires_login(client, sample_crackme):
     response = client.post(
         f"/crackme/{sample_crackme['hexid']}/tags/request",
-        data={"add": ["Packer"]},
+        data={"applied": ["Packer"]},
     )
     # login_required redirects anonymous users.
     assert response.status_code in (301, 302)
@@ -280,8 +303,8 @@ def test_request_tag_change_requires_login(client, sample_crackme):
 
 def test_duplicate_pending_request_blocked(alice_client, db, sample_crackme):
     hexid = sample_crackme["hexid"]
-    alice_client.post(f"/crackme/{hexid}/tags/request", data={"add": ["Packer"]})
-    alice_client.post(f"/crackme/{hexid}/tags/request", data={"add": ["Anti-debugging"]})
+    alice_client.post(f"/crackme/{hexid}/tags/request", data={"applied": ["Packer"]})
+    alice_client.post(f"/crackme/{hexid}/tags/request", data={"applied": ["Anti-debugging"]})
     assert db.tag_request.count_documents({"crackme_hexid": hexid}) == 1
 
 
@@ -394,7 +417,7 @@ def test_admin_editcrackme_shows_and_saves_tags(app, db, sample_crackme):
 
     page = client.get(f"/review/editcrackme?crackme_uuid={hexid}")
     assert page.status_code == 200
-    assert b'value="Anti-debugging" checked' in page.data
+    assert b'value="Anti-debugging" data-tag-class="1" checked' in page.data
 
     saved = client.post("/review/editcrackme", data={
         "crackme_uuid": hexid,
