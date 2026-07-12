@@ -18,7 +18,9 @@ def init_db(app, config):
         mongo_url = config.get('URL', 'mongodb://127.0.0.1:27017')
         database_name = config.get('Name', 'crackmesone')
 
-        mongo_client = MongoClient(mongo_url)
+        # Tests can inject a disposable compatible client (for example,
+        # mongomock) while production always constructs a real MongoClient.
+        mongo_client = config.get('Client') or MongoClient(mongo_url)
         # Verify connection
         mongo_client.admin.command('ping')
 

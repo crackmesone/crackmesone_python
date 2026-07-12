@@ -12,6 +12,7 @@ resend==2.0.0
 rustyzipper==1.0.6
 
 # Testing
+setuptools<81  # mongomock 4.1.2 imports pkg_resources
 pytest==7.4.3
 pytest-cov==4.1.0
 mongomock==4.1.2

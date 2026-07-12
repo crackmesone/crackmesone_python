@@ -17,20 +17,25 @@ from app.services.email import configure as configure_email
 from app.services.view import register_filters
 
 
-def create_app(config_path=None):
-    """Create and configure the Flask application."""
+def create_app(config_path=None, config=None):
+    """Create and configure the Flask application.
+
+    ``config`` allows tests and other callers to supply configuration without
+    creating or modifying the production JSON file.  Production continues to
+    load ``config_path`` when no configuration mapping is supplied.
+    """
     app = Flask(__name__,
                 template_folder='../templates',
                 static_folder='../static')
     app.url_map.strict_slashes = False
 
-    # Load configuration
-    if config_path is None:
-        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                                   'config', 'config.json')
+    if config is None:
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
+                                       'config', 'config.json')
 
-    with open(config_path, 'r') as f:
-        config = json.load(f)
+        with open(config_path, 'r') as f:
+            config = json.load(f)
 
     # Configure Flask app
     app.config['SECRET_KEY'] = config['Session']['SecretKey']
