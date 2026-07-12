@@ -36,7 +36,7 @@
 
         <div class="columns panel-background">
             <div class="column col-12">
-                <form action="{{ url_for('reviewer.editcrackme') }}" method="POST" enctype="multipart/form-data">
+                <form id="edit-crackme-form" action="{{ url_for('reviewer.editcrackme') }}" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="crackme_uuid" value="{{ crackme.hexid }}">
 
@@ -95,43 +95,25 @@
 
                     <div class="form-group">
                         <label class="form-label">Tags</label>
-                        {% for group in tag_groups %}
-                        <div style="margin-bottom: 4px;">
-                            <label class="form-checkbox" style="font-weight: bold;">
-                                <input type="checkbox" name="tags" value="{{ group.tag }}" data-tag-class="1" {{ 'checked' if group.tag in crackme.tags else '' }}>
-                                <i class="form-icon"></i> {{ group.tag }}
-                            </label>
-                            {% if group.sublabels %}
-                            <span style="margin-left: 16px;">
-                                {% for sub in group.sublabels %}
-                                <label class="form-checkbox" style="display:inline-block; margin-right:12px;">
-                                    <input type="checkbox" name="tags" value="{{ sub }}" data-tag-parent="{{ group.tag }}" {{ 'checked' if sub in crackme.tags else '' }}>
-                                    <i class="form-icon"></i> {{ sub }}
-                                </label>
-                                {% endfor %}
-                            </span>
-                            {% endif %}
+                        <div class="tag-transfer" id="edit-tag-transfer">
+                            <div class="tag-transfer-col">
+                                <div class="tag-transfer-title">Not applied</div>
+                                <div class="tag-transfer-list" data-role="available"></div>
+                            </div>
+                            <div class="tag-transfer-mid">
+                                <button type="button" class="btn" data-role="to-right" title="Add selected">=&gt;</button>
+                                <button type="button" class="btn" data-role="to-left" title="Remove selected">&lt;=</button>
+                            </div>
+                            <div class="tag-transfer-col">
+                                <div class="tag-transfer-title">Applied</div>
+                                <div class="tag-transfer-list" data-role="applied"></div>
+                            </div>
                         </div>
-                        {% endfor %}
+                        <div class="tag-transfer-actions">
+                            <button type="button" class="btn btn-sm" data-role="undo">Undo</button>
+                            <button type="button" class="btn btn-sm" data-role="reset">Reset</button>
+                        </div>
                     </div>
-                    <script>
-                    (function() {
-                        function q(v) { return document.querySelector('input[name="tags"][value="' + v.replace(/"/g, '\\"') + '"]'); }
-                        document.querySelectorAll('input[name="tags"][data-tag-parent]').forEach(function(sub) {
-                            sub.addEventListener('change', function() {
-                                if (sub.checked) { var p = q(sub.dataset.tagParent); if (p) p.checked = true; }
-                            });
-                        });
-                        document.querySelectorAll('input[name="tags"][data-tag-class]').forEach(function(cls) {
-                            cls.addEventListener('change', function() {
-                                if (!cls.checked) {
-                                    document.querySelectorAll('input[name="tags"][data-tag-parent="' + cls.value.replace(/"/g, '\\"') + '"]')
-                                        .forEach(function(s) { s.checked = false; });
-                                }
-                            });
-                        });
-                    })();
-                    </script>
 
                     <div class="divider"></div>
 
@@ -170,4 +152,21 @@
         </div>
         {% endif %}
     </div>
+    {% if crackme %}
+    <script src="{{ url_for('static', filename='js/tag_transfer.js') }}"></script>
+    <script>
+    (function() {
+        var root = document.getElementById('edit-tag-transfer');
+        if (root && window.TagTransfer) {
+            TagTransfer.init({
+                root: root,
+                form: document.getElementById('edit-crackme-form'),
+                inputName: 'tags',
+                groups: {{ tag_groups|tojson }},
+                initial: {{ crackme.tags|tojson }}
+            });
+        }
+    })();
+    </script>
+    {% endif %}
 </body>

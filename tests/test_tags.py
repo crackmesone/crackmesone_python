@@ -417,7 +417,9 @@ def test_admin_editcrackme_shows_and_saves_tags(app, db, sample_crackme):
 
     page = client.get(f"/review/editcrackme?crackme_uuid={hexid}")
     assert page.status_code == 200
-    assert b'value="Anti-debugging" data-tag-class="1" checked' in page.data
+    # The edit page uses the transfer widget seeded with the current tags.
+    assert b'id="edit-tag-transfer"' in page.data
+    assert b'"Anti-debugging"' in page.data
 
     saved = client.post("/review/editcrackme", data={
         "crackme_uuid": hexid,

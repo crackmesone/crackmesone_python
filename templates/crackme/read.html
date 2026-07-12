@@ -116,54 +116,6 @@
         margin-left: 4px;
         text-decoration: none;
     }
-    .tags-checkboxes label {
-        display: inline-block;
-        margin-right: 12px;
-        margin-bottom: 4px;
-    }
-    .tag-transfer {
-        display: flex;
-        gap: 12px;
-    }
-    .tag-transfer-col {
-        flex: 1;
-        min-width: 0;
-    }
-    .tag-transfer-title {
-        font-size: 0.72rem;
-        color: #999;
-        margin-bottom: 4px;
-    }
-    .tag-transfer-list {
-        border: 1px solid #444;
-        border-radius: 4px;
-        min-height: 200px;
-        max-height: 300px;
-        overflow-y: auto;
-        padding: 4px;
-    }
-    .tag-move-item {
-        display: block;
-        padding: 3px 7px;
-        margin: 1px 0;
-        cursor: pointer;
-        border-radius: 3px;
-        font-size: 0.85rem;
-        color: #ddd;
-    }
-    .tag-move-item:hover {
-        background: #3a3a3a;
-    }
-    .tag-move-item.is-sub {
-        padding-left: 22px;
-        font-size: 0.8rem;
-        color: #b3b3b3;
-    }
-    .tag-transfer-empty {
-        color: #777;
-        font-size: 0.8rem;
-        padding: 6px;
-    }
     .chip.tag-chip {
         background: #9acc14;
         color: #fff;
@@ -417,18 +369,26 @@
         </div>
         <div class="modal-body">
             <div class="content">
-                <p>Click a tag to move it. Left = not applied, right = applied. A reviewer approves or rejects your request.</p>
+                <p>Select tags and use the buttons to move them. Left = not applied, right = applied. A reviewer approves or rejects your request.</p>
                 <form id="tag-request-form" action="/crackme/{{ hexid }}/tags/request" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="tag-transfer">
+                    <div class="tag-transfer" id="tag-request-transfer">
                         <div class="tag-transfer-col">
-                            <div class="tag-transfer-title">Not applied &nbsp;&mdash;&nbsp; click to add &rarr;</div>
-                            <div id="tags-available" class="tag-transfer-list"></div>
+                            <div class="tag-transfer-title">Not applied</div>
+                            <div class="tag-transfer-list" data-role="available"></div>
+                        </div>
+                        <div class="tag-transfer-mid">
+                            <button type="button" class="btn" data-role="to-right" title="Add selected">=&gt;</button>
+                            <button type="button" class="btn" data-role="to-left" title="Remove selected">&lt;=</button>
                         </div>
                         <div class="tag-transfer-col">
-                            <div class="tag-transfer-title">&larr; click to remove &nbsp;&mdash;&nbsp; Applied</div>
-                            <div id="tags-applied" class="tag-transfer-list"></div>
+                            <div class="tag-transfer-title">Applied</div>
+                            <div class="tag-transfer-list" data-role="applied"></div>
                         </div>
+                    </div>
+                    <div class="tag-transfer-actions">
+                        <button type="button" class="btn btn-sm" data-role="undo">Undo</button>
+                        <button type="button" class="btn btn-sm" data-role="reset">Reset</button>
                     </div>
                     <textarea class="form-input" name="note" placeholder="Optional: why? (e.g. the solution uses UPX)" rows="2" style="margin-top: 10px;"></textarea>
                     <input type="submit" class="btn active float-right" style="margin-top: 10px;" value="Submit request">
@@ -438,76 +398,19 @@
     </div>
 </div>
 
+<script src="{{ url_for('static', filename='js/tag_transfer.js') }}"></script>
 <script>
 (function() {
-    var form = document.getElementById('tag-request-form');
-    if (!form) return;
-    var availEl = document.getElementById('tags-available');
-    var applEl = document.getElementById('tags-applied');
-
-    var GROUPS = {{ tag_groups|tojson }};
-    var applied = new Set({{ tags|tojson }});
-
-    // Hierarchy maps + canonical order (class then its sub-labels).
-    var PARENT = {}, CHILDREN = {}, ORDER = [];
-    GROUPS.forEach(function(g) {
-        CHILDREN[g.tag] = g.sublabels || [];
-        ORDER.push(g.tag);
-        (g.sublabels || []).forEach(function(s) { PARENT[s] = g.tag; ORDER.push(s); });
-    });
-
-    function esc(s) {
-        return String(s).replace(/[&<>"']/g, function(c) {
-            return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    var root = document.getElementById('tag-request-transfer');
+    if (root && window.TagTransfer) {
+        TagTransfer.init({
+            root: root,
+            form: document.getElementById('tag-request-form'),
+            inputName: 'applied',
+            groups: {{ tag_groups|tojson }},
+            initial: {{ tags|tojson }}
         });
     }
-
-    function itemHtml(tag) {
-        var sub = PARENT[tag] ? ' is-sub' : '';
-        var lead = PARENT[tag] ? '&#8627; ' : '';
-        return '<span class="tag-move-item' + sub + '" data-tag="' + esc(tag) + '">' + lead + esc(tag) + '</span>';
-    }
-
-    function render() {
-        var avail = [], appl = [];
-        ORDER.forEach(function(t) { (applied.has(t) ? appl : avail).push(t); });
-        availEl.innerHTML = avail.length ? avail.map(itemHtml).join('')
-            : '<div class="tag-transfer-empty">All tags applied</div>';
-        applEl.innerHTML = appl.length ? appl.map(itemHtml).join('')
-            : '<div class="tag-transfer-empty">No tags applied</div>';
-    }
-
-    availEl.addEventListener('click', function(e) {
-        var el = e.target.closest('[data-tag]');
-        if (!el) return;
-        var t = el.getAttribute('data-tag');
-        applied.add(t);
-        if (PARENT[t]) applied.add(PARENT[t]);   // adding a technique adds its category
-        render();
-    });
-
-    applEl.addEventListener('click', function(e) {
-        var el = e.target.closest('[data-tag]');
-        if (!el) return;
-        var t = el.getAttribute('data-tag');
-        applied.delete(t);
-        (CHILDREN[t] || []).forEach(function(c) { applied.delete(c); });  // removing a category removes its techniques
-        render();
-    });
-
-    // Serialize the final applied set into hidden inputs on submit.
-    form.addEventListener('submit', function() {
-        form.querySelectorAll('input[name="applied"]').forEach(function(n) { n.remove(); });
-        applied.forEach(function(t) {
-            var i = document.createElement('input');
-            i.type = 'hidden';
-            i.name = 'applied';
-            i.value = t;
-            form.appendChild(i);
-        });
-    });
-
-    render();
 })();
 </script>
 {% endif %}
