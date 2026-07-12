@@ -43,13 +43,51 @@ def test_normalize_orders_sublabels_after_parent_class():
 
 
 def test_tag_groups_structure():
-    from app.services.tags import TAG_GROUPS
+    from app.services.tags import get_tag_groups
 
-    groups = {g["tag"]: g["sublabels"] for g in TAG_GROUPS}
+    groups = {g["tag"]: g["sublabels"] for g in get_tag_groups()}
     assert "UPX" in groups["Packer"]
     assert "IsDebuggerPresent" in groups["Anti-debugging"]
     # A class without sub-labels has an empty list.
     assert groups["Nag / trial"] == []
+
+
+def test_vocabulary_falls_back_to_default_when_db_empty(db):
+    from app.services.tags import reload_vocabulary, get_classes, is_valid_tag
+
+    reload_vocabulary()
+    # No tag_vocabulary document -> built-in default applies.
+    assert "Anti-debugging" in get_classes()
+    assert is_valid_tag("UPX")
+
+
+def test_vocabulary_is_read_from_db_and_overrides_default(db):
+    from app.services import tags as T
+
+    db.tag_vocabulary.replace_one(
+        {"_id": T.VOCAB_ID},
+        {
+            "_id": T.VOCAB_ID,
+            "classes": ["My Class", "Other Class"],
+            "sublabels": {"My Class": ["Sub A", "Sub B"]},
+            "field_parents": {"some_field": "My Class"},
+            "qualify_suffix": {},
+            "qualify_values": [],
+            "dataset_url": "https://example.test/ds",
+        },
+        upsert=True,
+    )
+    T.reload_vocabulary()
+    try:
+        assert T.get_classes() == ["My Class", "Other Class"]
+        assert T.is_valid_tag("Sub A")
+        assert not T.is_valid_tag("UPX")  # default value no longer present
+        # Canonical order: class then its sub-labels.
+        assert T.normalize_tags(["Sub B", "My Class", "Sub A"]) == ["My Class", "Sub A", "Sub B"]
+        assert T.get_dataset_url() == "https://example.test/ds"
+        assert T.get_sublabel_fields() == {"some_field": "My Class"}
+    finally:
+        T.reload_vocabulary()
 
 
 # ---------------------------------------------------------------------------

@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pymongo import MongoClient
 
-from app.services.tags import normalize_tags, SUBLABEL_FIELDS, dataset_sublabel_tag
+from app.services.tags import normalize_tags, get_sublabel_fields, dataset_sublabel_tag
 
 
 def load_dataset_tags(dataset_path):
@@ -58,7 +58,7 @@ def load_dataset_tags(dataset_path):
             if not hexid:
                 continue
             raw = list(record.get("obfuscation_classes", []) or [])
-            for field in SUBLABEL_FIELDS:
+            for field in get_sublabel_fields():
                 for value in (record.get(field) or []):
                     raw.append(dataset_sublabel_tag(field, value))
             mapping[hexid] = normalize_tags(raw)
