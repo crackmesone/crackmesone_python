@@ -378,13 +378,15 @@
                 <p>Check the tags that apply and uncheck those that don't. A reviewer approves or rejects your request.</p>
                 <form id="tag-request-form" action="/crackme/{{ hexid }}/tags/request" method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div style="max-height: 340px; overflow-y: auto;">
+                    <div class="tags-scroll">
                         {% set tag_input_name = 'applied' %}
                         {% set checked_tags = tags %}
                         {% include 'partial/tags_checkboxes.html' %}
                     </div>
-                    <textarea class="form-input" name="note" placeholder="Optional: why? (e.g. the solution uses UPX)" rows="2" style="margin-top: 10px;"></textarea>
-                    <input type="submit" class="btn active float-right" style="margin-top: 10px;" value="Submit request">
+                    <textarea class="form-input" name="note" placeholder="Optional reason (e.g. the solution uses UPX)" rows="2"></textarea>
+                    <div class="tag-request-actions">
+                        <input type="submit" class="btn active float-right" value="Submit request">
+                    </div>
                 </form>
             </div>
         </div>
