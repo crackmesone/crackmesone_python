@@ -278,8 +278,8 @@ def test_search_by_tag_via_get_is_bookmarkable(client, db, sample_crackme):
     assert response.status_code == 200
     assert b"Test Crackme" in response.data
     assert b"No Tags CM" not in response.data
-    # The tag stays selected so the URL round-trips in the form.
-    assert b'value="UPX" selected' in response.data
+    # The tag stays checked so the URL round-trips in the form.
+    assert b'value="UPX" data-tag-parent="Packer" checked' in response.data
 
 
 def test_crackme_tag_chip_links_to_get_search(client, db, sample_crackme):
@@ -455,9 +455,8 @@ def test_admin_editcrackme_shows_and_saves_tags(app, db, sample_crackme):
 
     page = client.get(f"/review/editcrackme?crackme_uuid={hexid}")
     assert page.status_code == 200
-    # The edit page uses the transfer widget seeded with the current tags.
-    assert b'id="edit-tag-transfer"' in page.data
-    assert b'"Anti-debugging"' in page.data
+    # The edit page uses the grouped tag checkboxes seeded with the current tags.
+    assert b'value="Anti-debugging" data-tag-class="1" checked' in page.data
 
     saved = client.post("/review/editcrackme", data={
         "crackme_uuid": hexid,

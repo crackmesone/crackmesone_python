@@ -111,22 +111,9 @@
                     applies, the specific technique underneath &mdash; ticking a technique ticks its category
                     automatically. Reviewers may adjust these later.
                 </p>
-                {% for group in tag_groups %}
-                <div style="margin-bottom: 6px;">
-                    <label class="form-checkbox" style="font-weight: bold;">
-                        <input type="checkbox" name="tags" value="{{ group.tag }}" data-tag-class="1"><i class="form-icon"></i> {{ group.tag }}
-                    </label>
-                    {% if group.sublabels %}
-                    <div style="margin-left: 24px;">
-                        {% for sub in group.sublabels %}
-                        <label class="form-checkbox" style="display: inline-block; margin-right: 12px;">
-                            <input type="checkbox" name="tags" value="{{ sub }}" data-tag-parent="{{ group.tag }}"><i class="form-icon"></i> {{ sub }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-                {% endfor %}
+                {% set tag_input_name = 'tags' %}
+                {% set checked_tags = [] %}
+                {% include 'partial/tags_checkboxes.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -153,36 +140,8 @@
     </form>
 </div>
 
-<script>
-(function() {
-    var form = document.getElementById('upload-form');
-    if (!form) return;
-
-    function tagInput(value) {
-        return form.querySelector('input[name="tags"][value="' + value.replace(/"/g, '\\"') + '"]');
-    }
-
-    // Ticking a specific technique ticks its parent category.
-    form.querySelectorAll('input[name="tags"][data-tag-parent]').forEach(function(sub) {
-        sub.addEventListener('change', function() {
-            if (sub.checked) {
-                var parent = tagInput(sub.dataset.tagParent);
-                if (parent) parent.checked = true;
-            }
-        });
-    });
-
-    // Un-ticking a category clears its techniques (no orphaned sub-labels).
-    form.querySelectorAll('input[name="tags"][data-tag-class]').forEach(function(cls) {
-        cls.addEventListener('change', function() {
-            if (!cls.checked) {
-                form.querySelectorAll('input[name="tags"][data-tag-parent="' + cls.value.replace(/"/g, '\\"') + '"]')
-                    .forEach(function(s) { s.checked = false; });
-            }
-        });
-    });
-})();
-</script>
+<script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
+<script>TagCheckboxes.init(document.getElementById('upload-form'));</script>
 
 {% include 'partial/footer.html' %}
 {% endblock %}

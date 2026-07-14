@@ -55,46 +55,15 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{ crackme.crackme_uuid }}">
                     <input type="hidden" name="redirect_to" value="view">
-                    <div class="form-group">
-                        {% for group in tag_groups %}
-                        <div style="margin-bottom: 4px;">
-                            <label class="form-checkbox" style="font-weight: bold;">
-                                <input type="checkbox" name="tags" value="{{ group.tag }}" data-tag-class="1" {{ 'checked' if group.tag in crackme.tags else '' }}>
-                                <i class="form-icon"></i> {{ group.tag }}
-                            </label>
-                            {% if group.sublabels %}
-                            <span style="margin-left: 16px;">
-                                {% for sub in group.sublabels %}
-                                <label class="form-checkbox" style="display:inline-block; margin-right:12px;">
-                                    <input type="checkbox" name="tags" value="{{ sub }}" data-tag-parent="{{ group.tag }}" {{ 'checked' if sub in crackme.tags else '' }}>
-                                    <i class="form-icon"></i> {{ sub }}
-                                </label>
-                                {% endfor %}
-                            </span>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                    <div class="form-group" id="view-tags">
+                        {% set tag_input_name = 'tags' %}
+                        {% set checked_tags = crackme.tags %}
+                        {% include 'partial/tags_checkboxes.html' %}
                     </div>
                     <button type="submit" class="btn">Save tags</button>
                 </form>
-                <script>
-                (function() {
-                    function q(v) { return document.querySelector('input[name="tags"][value="' + v.replace(/"/g, '\\"') + '"]'); }
-                    document.querySelectorAll('input[name="tags"][data-tag-parent]').forEach(function(sub) {
-                        sub.addEventListener('change', function() {
-                            if (sub.checked) { var p = q(sub.dataset.tagParent); if (p) p.checked = true; }
-                        });
-                    });
-                    document.querySelectorAll('input[name="tags"][data-tag-class]').forEach(function(cls) {
-                        cls.addEventListener('change', function() {
-                            if (!cls.checked) {
-                                document.querySelectorAll('input[name="tags"][data-tag-parent="' + cls.value.replace(/"/g, '\\"') + '"]')
-                                    .forEach(function(s) { s.checked = false; });
-                            }
-                        });
-                    });
-                })();
-                </script>
+                <script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
+                <script>TagCheckboxes.init(document.getElementById('view-tags'));</script>
                 <div class="divider"></div>
 
                 <h3>
