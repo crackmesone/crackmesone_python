@@ -3,25 +3,43 @@
  * (templates/partial/tags_checkboxes.html).
  *
  * Within the given scope (usually a <form>):
- *   - ticking a specific technique auto-ticks its parent category
- *   - un-ticking a category clears its techniques
- * so a sub-label is never submitted without its parent.
+ *   - ticking a technique auto-ticks its parent category
+ *   - un-ticking a technique un-ticks the category when no sibling technique
+ *     remains ticked
+ *   - un-ticking a category clears all its techniques
+ * so a technique is never selected without its category, and a category is
+ * never left selected on its own once its last technique is removed.
  *
  * Usage:  TagCheckboxes.init(document.getElementById('my-form'));
  */
 window.TagCheckboxes = (function () {
+    function cssEscape(v) {
+        return v.replace(/"/g, '\\"');
+    }
+
     function init(scope) {
         if (!scope) return;
 
         function parentInput(value) {
-            return scope.querySelector('input[data-tag-class][value="' + value.replace(/"/g, '\\"') + '"]');
+            return scope.querySelector('input[data-tag-class][value="' + cssEscape(value) + '"]');
+        }
+
+        function siblings(parentValue) {
+            return scope.querySelectorAll('input[data-tag-parent="' + cssEscape(parentValue) + '"]');
         }
 
         scope.querySelectorAll('input[data-tag-parent]').forEach(function (sub) {
             sub.addEventListener('change', function () {
+                var parentValue = sub.getAttribute('data-tag-parent');
+                var parent = parentInput(parentValue);
+                if (!parent) return;
                 if (sub.checked) {
-                    var parent = parentInput(sub.getAttribute('data-tag-parent'));
-                    if (parent) parent.checked = true;
+                    parent.checked = true;   // selecting a technique selects its category
+                } else {
+                    // deselecting the last remaining technique deselects the category
+                    var anyChecked = Array.prototype.some.call(
+                        siblings(parentValue), function (s) { return s.checked; });
+                    if (!anyChecked) parent.checked = false;
                 }
             });
         });
@@ -29,8 +47,7 @@ window.TagCheckboxes = (function () {
         scope.querySelectorAll('input[data-tag-class]').forEach(function (cls) {
             cls.addEventListener('change', function () {
                 if (!cls.checked) {
-                    scope.querySelectorAll('input[data-tag-parent="' + cls.value.replace(/"/g, '\\"') + '"]')
-                        .forEach(function (s) { s.checked = false; });
+                    siblings(cls.value).forEach(function (s) { s.checked = false; });
                 }
             });
         });
