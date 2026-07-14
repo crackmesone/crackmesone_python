@@ -36,7 +36,7 @@
 
         <div class="columns panel-background">
             <div class="column col-12">
-                <form id="edit-crackme-form" action="{{ url_for('reviewer.editcrackme') }}" method="POST" enctype="multipart/form-data">
+                <form id="edit-crackme-form" action="{{ url_for('reviewer.editcrackme') }}" method="POST" enctype="multipart/form-data" autocomplete="off">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="crackme_uuid" value="{{ crackme.hexid }}">
 
@@ -139,6 +139,15 @@
     </div>
     {% if crackme %}
     <script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
-    <script>TagCheckboxes.init(document.getElementById('edit-crackme-form'));</script>
+    <script>
+    (function() {
+        var form = document.getElementById('edit-crackme-form');
+        if (!form) return;
+        TagCheckboxes.init(form);
+        // Don't let the browser restore a stale draft of the reviewer's edits;
+        // always start from the crackme's saved values (fires on load + bfcache).
+        window.addEventListener('pageshow', function() { form.reset(); });
+    })();
+    </script>
     {% endif %}
 </body>
