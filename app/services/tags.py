@@ -8,8 +8,8 @@ nested under some of those classes. The labels come from the crackmes-RE dataset
 
 The controlled vocabulary is **stored in the ``tag_vocabulary`` MongoDB
 collection** (a single document) so it can be updated without code changes when
-the dataset changes -- regenerate it from the dataset with
-``script/sync_tag_vocabulary.py``. The ``DEFAULT_*`` values below are the
+the dataset changes -- regenerate it (and re-tag crackmes) from the dataset
+with ``script/sync_tags.py``. The ``DEFAULT_*`` values below are the
 built-in baseline: they seed that collection and act as a fallback when it is
 empty (fresh DB, tests, DB unavailable).
 
