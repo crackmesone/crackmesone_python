@@ -1,0 +1,1857 @@
+[
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5ee",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c9ce",
+    "field": "arch",
+    "old": "ARM",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "61cf14fe33c5d413767ca20f",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6248a30433c5d42a191a5aaf",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "626957b733c5d42a191a5e53",
+    "field": "arch",
+    "old": "ARM",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "629263ed33c5d45b75903b81",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6296c1ff33c5d45b75903c0f",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "629a286b33c5d45b75903c7a",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "62a9eef033c5d4251e723865",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "62bb2f0933c5d4251e723a46",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "637c66b633c5d43ab4ecec2a",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "639d12b333c5d43ab4ecefe6",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "63ab02cc33c5d43ab4ecf145",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "63f6881b33c5d447bc761585",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "641bb9a533c5d447bc761b6f",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "641d8c1a33c5d447bc761c24",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "641f0aa033c5d447bc761d0d",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "641f1a7933c5d447bc761d18",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64289ceb33c5d43938912378",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "643ee71b33c5d439389129ef",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6448a8f033c5d43938912bf6",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6452ba5533c5d43938912e35",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64563b8733c5d43938912ee9",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "645d3d4e33c5d43938913079",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64622fb133c5d4393891311b",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64687c3633c5d4393891323a",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "648b452233c5d4393891390d",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6492036733c5d43938913a58",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64976a9833c5d43938913bba",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "649a2ced33c5d43938913c6c",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "649d7c5533c5d460c17f1ead",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64eb62e2d931496abf9092e7",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64ee0f7fd931496abf909393",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "651c44488b6aa566ae72345e",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "651cc9ad8b6aa566ae7234a0",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6522ff948b6aa566ae723692",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6543e9b60f4238b24302b3d2",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6565edc90f4238b24302bfca",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6588b4dc35240bf986f106fd",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65a172f0eef082e477ff5a6e",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65a97cbaeef082e477ff5d84",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65ae9d45eef082e477ff5f98",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65b22109eef082e477ff614c",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65c4021aeef082e477ff688a",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65e30d8d199e6a5d372a3ee7",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "660742abcddae72ae250be62",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6620ffbacddae72ae250c9c8",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "662fab296b8bd8ddfe33c184",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6630f7e16b8bd8ddfe33c20c",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66432d3c6b8bd8ddfe33c8fc",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6648f35e6b8bd8ddfe33cc00",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66621cc7e7b35c09bb26692e",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6666e2d9e7b35c09bb266af2",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "669f73f990c4c2830c820d7c",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66a11e4c90c4c2830c820ea4",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66a288ed90c4c2830c820fa0",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66a3efae90c4c2830c821112",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66a3fb2990c4c2830c82112a",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66b5b9dd90c4c2830c821cd4",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66c724b9b899a3b9dd02ad98",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66c748a4b899a3b9dd02adbe",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66c8a555b899a3b9dd02ae60",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66ccaff2b899a3b9dd02b070",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66dc7b731070323296554bea",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66eb25db107032329655546c",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66f8377a9b533b4c22bd08c7",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "66fc92889b533b4c22bd0b3d",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "671162d89b533b4c22bd160d",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "673f2ad59b533b4c22bd2f99",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "674759c5146699b99d57ff73",
+    "field": "arch",
+    "old": "java",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6798f1fa73b486c1ed42a108",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "java",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "67afd55ae36dd9b0e79b2ec6",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "681cc54a6297cca3ff7d7743",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "681e41de6297cca3ff7d779d",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6853de972b84be7ea7743a1b",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6861d4ccaadb6eeafb398e17",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "686aaeb6aadb6eeafb399059",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "68704639aadb6eeafb3991b7",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "688328248fac2855fe6fb07d",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "68a2074a8fac2855fe6fb69c",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "68a346c48fac2855fe6fb6df",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "68c96889224c0ec5dcedc063",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "68ff92e62d267f28f69b78f1",
+    "field": "arch",
+    "old": "ARM",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69218b532d267f28f69b7fd3",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69245c422d267f28f69b806e",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6943c5440992a052ab22240f",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "694f817e0c16072f40f5a4a0",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69507dc80c16072f40f5a4ef",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69523463044ecfaf9923f9c5",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69593b0a6600fcadc6174ca1",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6969e9e3e3ae2054ed59d494",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6970da549bf7b8997653a66f",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69778aa352ed08086d855c77",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "697e6957e04ca145cd9d13b4",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6985c1cca15272fa37a80c0d",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69b33ffcddd6176826ae8975",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69c66fe1f2d49d8512f64b8e",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69f10a5c3fba64e45dcea921",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69ff482c8fab7bbca273011e",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6a0c8b608fab7bbca2730221",
+    "field": "arch",
+    "old": "x86",
+    "new": "x86-64",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6a182c353fba64e45dceabc2",
+    "field": "arch",
+    "old": "java",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6a1aede117539b5175d123ef",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6a4088b1a4b247348ae806dc",
+    "field": "arch",
+    "old": "x86-64",
+    "new": "x86",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "5ab77f5333c5d40ad448c134",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5333c5d40ad448c136",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5333c5d40ad448c13b",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5433c5d40ad448c15b",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5433c5d40ad448c1a0",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c1e1",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c1e9",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c1ea",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c1ec",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c218",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c23a",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c24f",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5533c5d40ad448c25a",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c29f",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c2a0",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c2a9",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c2aa",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c2d9",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c2db",
+    "field": "lang",
+    "old": ".NET",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5633c5d40ad448c2f6",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c324",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c325",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c328",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c329",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c355",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c35a",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c35f",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c379",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c37b",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5733c5d40ad448c37d",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c395",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c3a5",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c3aa",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c3cf",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c3df",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c401",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c402",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c406",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c407",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c408",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5833c5d40ad448c422",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5933c5d40ad448c4a8",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5933c5d40ad448c4a9",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5a33c5d40ad448c4cd",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5a33c5d40ad448c4e1",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5a33c5d40ad448c4e3",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5a33c5d40ad448c4fe",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5a33c5d40ad448c51a",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5a33c5d40ad448c54c",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c558",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c59b",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5a2",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5a5",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5ac",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5cb",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5cc",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5b33c5d40ad448c5d7",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5c33c5d40ad448c641",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5c33c5d40ad448c648",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5c33c5d40ad448c67c",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5d33c5d40ad448c6bd",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5d33c5d40ad448c6fe",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5d33c5d40ad448c706",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c724",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c768",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c77f",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c780",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c781",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c795",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5f33c5d40ad448c802",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5f33c5d40ad448c803",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f5f33c5d40ad448c828",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6033c5d40ad448c838",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6033c5d40ad448c83b",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6133c5d40ad448c8f9",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6133c5d40ad448c944",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c976",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c977",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "C/C++",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c9a9",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c9ab",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c9cd",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6233c5d40ad448c9ec",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca0d",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca1b",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca1d",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca1f",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca20",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca22",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6333c5d40ad448ca23",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448ca9f",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448cae4",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448cae9",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448cb0e",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448cb1d",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448cb2e",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6433c5d40ad448cb30",
+    "field": "lang",
+    "old": "Python",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6533c5d40ad448cb51",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6533c5d40ad448cb77",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6533c5d40ad448cb8c",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "5ab77f6533c5d40ad448cbb9",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6533c5d40ad448cbba",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6533c5d40ad448cbbe",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6633c5d40ad448cbed",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6633c5d40ad448cc4d",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f6633c5d40ad448cc50",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5b4cc23733c5d467513d2d0d",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "AutoIt",
+    "reason": "DIE: AutoIt3 compiler signature"
+  },
+  {
+    "hexid": "5b4df56233c5d46d830c3f3a",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "AutoIt",
+    "reason": "DIE: AutoIt3 compiler signature"
+  },
+  {
+    "hexid": "5b4f76f233c5d41c0b8ae506",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "AutoIt",
+    "reason": "DIE: AutoIt3 compiler signature"
+  },
+  {
+    "hexid": "5b502da833c5d41c0b8ae514",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "AutoIt",
+    "reason": "DIE: AutoIt3 compiler signature"
+  },
+  {
+    "hexid": "5cca153f33c5d4419da55968",
+    "field": "lang",
+    "old": "Assembler",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5fb3924d33c5d424269a1879",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Go",
+    "reason": ".gopclntab / Go build ID"
+  },
+  {
+    "hexid": "6044083333c5d42c3d016d3d",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Go",
+    "reason": ".gopclntab / Go build ID"
+  },
+  {
+    "hexid": "60ea366133c5d42814fb3220",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "60f7da1a33c5d42814fb3431",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "6101bdf033c5d42814fb35a4",
+    "field": "lang",
+    "old": "Assembler",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "6147267033c5d4649c52bb50",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "6185750e33c5d4329c3454d8",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "6196707833c5d455dece6165",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "61a53a7d33c5d413767c9c77",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Go",
+    "reason": ".gopclntab / Go build ID"
+  },
+  {
+    "hexid": "61d6581033c5d413767ca32f",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "62bb2f0933c5d4251e723a46",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": "Python",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "639abb5033c5d43ab4ecefa6",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "63b9588933c5d43ab4ecf2f5",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Go",
+    "reason": ".gopclntab / Go build ID"
+  },
+  {
+    "hexid": "63f6881b33c5d447bc761585",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "AutoIt",
+    "reason": "DIE: AutoIt3 compiler signature"
+  },
+  {
+    "hexid": "643aea2533c5d439389128d9",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "6442366033c5d43938912a85",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "64441fc533c5d43938912afe",
+    "field": "lang",
+    "old": "Assembler",
+    "new": "(Visual) Basic",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "644fd3a933c5d43938912d55",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "648cb13133c5d4393891396a",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "6492036733c5d43938913a58",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "666c8775e7b35c09bb266d8a",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "(Visual) Basic",
+    "reason": "DIE: PureBasic (merged into Basic)"
+  },
+  {
+    "hexid": "66a61c7990c4c2830c8212a6",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "66aeb69890c4c2830c8218ae",
+    "field": "lang",
+    "old": "Turbo Pascal",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "66c9db02b899a3b9dd02af00",
+    "field": "lang",
+    "old": "(Visual) Basic",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "67491de8146699b99d580035",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Go",
+    "reason": ".gopclntab / Go build ID"
+  },
+  {
+    "hexid": "675c208a60fa67152406b8ba",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Borland Delphi",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "675d13f960fa67152406b942",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "68691a88aadb6eeafb398fc6",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "68d5e451224c0ec5dcedc333",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "693027c02d267f28f69b82b5",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "6976041d9bf7b8997653a6cf",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Python",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "698f40f1e2ba6023bfacaa82",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Go",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "699c06a46ca1599050950670",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "69a138ff7a778cfffbfb6797",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "69a65b6c7a778cfffbfb680e",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Python",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "69d3f1bdf2d49d8512f64c87",
+    "field": "lang",
+    "old": "Unspecified/other",
+    "new": "Python",
+    "reason": ".py/.pyc, no native target"
+  },
+  {
+    "hexid": "69f77046d7ff92e1214bfff7",
+    "field": "lang",
+    "old": "C/C++",
+    "new": ".NET",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "6a4014135f26f108ba18ba0b",
+    "field": "lang",
+    "old": "C/C++",
+    "new": "Python",
+    "reason": "structural marker"
+  },
+  {
+    "hexid": "5ab77f5e33c5d40ad448c794",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Multiplatform",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "5ed0584b33c5d449d91ae67b",
+    "field": "platform",
+    "old": "Unix/linux etc.",
+    "new": "Mac OS X",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "5ef3ba9e33c5d4285070938b",
+    "field": "platform",
+    "old": "Unix/linux etc.",
+    "new": "Mac OS X",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "5f0c333633c5d42a7c6679b1",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Multiplatform",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "60d766c033c5d410b8843039",
+    "field": "platform",
+    "old": "Unix/linux etc.",
+    "new": "Mac OS X",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "629d1dfe33c5d45b75903cd5",
+    "field": "platform",
+    "old": "Unix/linux etc.",
+    "new": "Multiplatform",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "641cc0a133c5d447bc761be0",
+    "field": "platform",
+    "old": "Unix/linux etc.",
+    "new": "Mac OS X",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "644b656e33c5d43938912c7f",
+    "field": "platform",
+    "old": "Mac OS X",
+    "new": "Windows",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "64eb62e2d931496abf9092e7",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Unix/linux etc.",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6516c8018b6aa566ae723220",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Unix/linux etc.",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "65a97cbaeef082e477ff5d84",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Unix/linux etc.",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "6798f1fa73b486c1ed42a108",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Multiplatform",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "688328248fac2855fe6fb07d",
+    "field": "platform",
+    "old": "Windows",
+    "new": "Unix/linux etc.",
+    "reason": "DIE/file header"
+  },
+  {
+    "hexid": "69b282cff2d49d8512f649df",
+    "field": "platform",
+    "old": "Unix/linux etc.",
+    "new": "Multiplatform",
+    "reason": "DIE/file header"
+  }
+]
