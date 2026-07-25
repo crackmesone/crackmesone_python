@@ -35,6 +35,9 @@
         var modal = document.getElementById(id);
         if (modal) {
             modal.classList.add('active');
+            // The tag request dialog keeps no draft between opens: always start
+            // from the crackme's current tags (discard any browser-restored state).
+            if (id === 'modal-tags' && window.resetTagRequestForm) window.resetTagRequestForm();
             var input = modal.querySelector('textarea, input:not([type="hidden"])');
             if (input) setTimeout(function() { input.focus(); }, 100);
         }
@@ -103,6 +106,34 @@
     .modal.active {
         display: flex;
     }
+    .tag-help {
+        display: inline-block;
+        width: 1.1rem;
+        height: 1.1rem;
+        line-height: 1.1rem;
+        text-align: center;
+        border: 1px solid currentColor;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        font-weight: bold;
+        margin-left: 4px;
+        text-decoration: none;
+    }
+    .chip.tag-chip {
+        background: #9acc14;
+        color: #fff;
+        cursor: pointer;
+        font-size: 95%;
+        height: auto;
+        padding: .25rem .5rem;
+        margin: .15rem .15rem;
+    }
+    .chip.tag-chip:hover,
+    .chip.tag-chip:focus {
+        background: #86b310;
+        color: #fff;
+        text-decoration: none;
+    }
 </style>
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
@@ -163,6 +194,39 @@
         <div class="column col-12">
             <p><b>Description</b></p>
             <p><span style="white-space: pre-line">{{ info }}</span></p>
+            <div class="divider"></div>
+        </div>
+
+        <div class="column col-12">
+            <p>
+                <b>Tags</b>
+                <a href="#" class="tag-help" title="What are these tags?"
+                   onclick="var b=document.getElementById('tags-help-info'); b.style.display = (b.style.display==='block')?'none':'block'; return false;">?</a>
+            </p>
+            <div id="tags-help-info" style="display:none; font-size: 0.8rem; margin-bottom: 8px; max-width: 640px;" class="text-gray">
+                Tags describe the anti-analysis / obfuscation techniques a crackme uses. Newer crackmes are tagged by
+                their authors on submission. Many older crackmes were tagged automatically by an AI reading their
+                write-ups &amp; comments (the
+                <a href="{{ tags_dataset_url }}" target="_blank" rel="noopener">crackmes-RE dataset</a>), so those tags
+                may be inaccurate or incomplete &mdash; you can request a change.
+                {% if AuthLevel == "auth" %}
+                <div style="margin-top: 6px;">
+                    <a href="#" onclick="openModal('modal-tags'); return false;">Request a tag change</a>
+                </div>
+                {% else %}
+                <div style="margin-top: 6px;">
+                    <a href="/login">Log in</a> to request a tag change.
+                </div>
+                {% endif %}
+            </div>
+            <div>
+                {% for tag in tags %}
+                <a href="/search?tags={{ tag|urlencode }}" class="chip tag-chip"
+                   title="Search crackmes with this tag">{{ tag }}</a>
+                {% else %}
+                <span class="text-gray">No tags yet.</span>
+                {% endfor %}
+            </div>
             <div class="divider"></div>
         </div>
 
@@ -303,6 +367,96 @@
     </div>
 </div>
 </div>
+
+{% if AuthLevel == "auth" %}
+<div class="modal modal-lg" id="modal-tags">
+    <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
+    <div class="modal-container">
+        <div class="modal-header">
+            <a href="#" onclick="closeModal(); return false;" class="btn btn-clear float-right" aria-label="Close"></a>
+            <div class="modal-title h5">Request a tag change</div>
+        </div>
+        <div class="modal-body">
+            <div class="content">
+                <p>Check the tags that apply and uncheck those that don't. A reviewer approves or rejects your request.</p>
+                <form id="tag-request-form" action="/crackme/{{ hexid }}/tags/request" method="post" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="tags-scroll">
+                        {% set tag_input_name = 'applied' %}
+                        {% set checked_tags = tags %}
+                        {% include 'partial/tags_checkboxes.html' %}
+                    </div>
+                    <textarea class="form-input" name="note" placeholder="Optional reason (e.g. the solution uses UPX)" rows="2"></textarea>
+                    <div class="tag-request-actions">
+                        <button type="button" class="btn btn-sm" id="tag-req-undo">Undo</button>
+                        <button type="button" class="btn btn-sm" id="tag-req-reset">Reset</button>
+                        <input type="submit" class="btn active float-right" value="Submit request">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
+<script>
+(function() {
+    var form = document.getElementById('tag-request-form');
+    if (!form) return;
+    TagCheckboxes.init(form);   // sub<->parent auto-check
+
+    function boxes() { return form.querySelectorAll('input[type="checkbox"][name="applied"]'); }
+    function snapshot() {
+        var s = [];
+        boxes().forEach(function(cb) { if (cb.checked) s.push(cb.value); });
+        return s;
+    }
+    function apply(state) {
+        var set = {};
+        state.forEach(function(v) { set[v] = true; });
+        boxes().forEach(function(cb) { cb.checked = !!set[cb.value]; });
+    }
+    function initialState() {
+        var s = [];
+        boxes().forEach(function(cb) { if (cb.defaultChecked) s.push(cb.value); });
+        return s;
+    }
+
+    var undoBtn = document.getElementById('tag-req-undo');
+    var resetBtn = document.getElementById('tag-req-reset');
+    var history = [snapshot()];
+    function refresh() { undoBtn.disabled = history.length <= 1; }
+
+    // Record a new state after each user toggle (auto-check cascade has already
+    // run by the time this bubbled change event fires).
+    form.addEventListener('change', function(e) {
+        if (e.target && e.target.getAttribute('name') === 'applied') {
+            history.push(snapshot());
+            refresh();
+        }
+    });
+    undoBtn.addEventListener('click', function() {
+        if (history.length <= 1) return;
+        history.pop();
+        apply(history[history.length - 1]);
+        refresh();
+    });
+    resetBtn.addEventListener('click', function() {
+        apply(initialState());
+        history.push(snapshot());
+        refresh();
+    });
+
+    // Called by openModal(): start fresh from the crackme's current tags.
+    window.resetTagRequestForm = function() {
+        apply(initialState());
+        history = [snapshot()];
+        refresh();
+    };
+    refresh();
+})();
+</script>
+{% endif %}
 
 {% include 'partial/footer.html' %}
 

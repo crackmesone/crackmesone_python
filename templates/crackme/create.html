@@ -23,7 +23,7 @@
     <p>Read the full <a href="/upload/crackmerules">crackme submission rules</a> for detailed guidelines.</p>
 
     <div class="divider"></div>
-    <form class="form-horizontal" action="/upload/crackme" method="post" enctype="multipart/form-data">
+    <form id="upload-form" class="form-horizontal" action="/upload/crackme" method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
             <div class="col-3 col-sm-12">
@@ -101,6 +101,22 @@
             </div>
         </div>
         <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Tags</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
+                    Select the anti-analysis / obfuscation techniques your crackme uses. Please tag every technique
+                    that applies; if none apply, it's fine to leave these empty. Pick a broad category and, where it
+                    applies, the specific technique underneath &mdash; ticking a technique ticks its category
+                    automatically. Reviewers may adjust these later.
+                </p>
+                {% set tag_input_name = 'tags' %}
+                {% set checked_tags = [] %}
+                {% include 'partial/tags_checkboxes.html' %}
+            </div>
+        </div>
+        <div class="form-group">
             <div class="col-3">
                 <label class="form-label" for="input-upload">File</label>
             </div>
@@ -123,6 +139,9 @@
         <input type="submit" class="btn active float-right" value="Upload a crackme">
     </form>
 </div>
+
+<script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
+<script>TagCheckboxes.init(document.getElementById('upload-form'));</script>
 
 {% include 'partial/footer.html' %}
 {% endblock %}

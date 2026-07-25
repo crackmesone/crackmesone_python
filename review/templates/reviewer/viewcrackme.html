@@ -48,6 +48,25 @@
                 <div class="divider"></div>
 
                 <h3>
+                    <p>Tags</p>
+                </h3>
+                <p>Author-suggested / current tags. Adjust and save before accepting.</p>
+                <form action="{{ url_for('reviewer.settags') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="uuid" value="{{ crackme.crackme_uuid }}">
+                    <input type="hidden" name="redirect_to" value="view">
+                    <div class="form-group" id="view-tags">
+                        {% set tag_input_name = 'tags' %}
+                        {% set checked_tags = crackme.tags %}
+                        {% include 'partial/tags_checkboxes.html' %}
+                    </div>
+                    <button type="submit" class="btn">Save tags</button>
+                </form>
+                <script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
+                <script>TagCheckboxes.init(document.getElementById('view-tags'));</script>
+                <div class="divider"></div>
+
+                <h3>
                     <p>Review</p>
                 </h3>
 

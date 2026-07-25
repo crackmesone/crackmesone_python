@@ -44,6 +44,12 @@ from review.auth import (
 )
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
+from app.services.tags import get_tag_groups, normalize_tags
+from app.models.tag_request import (
+    tag_requests_pending, count_pending_tag_requests, tag_request_by_hexid,
+    tag_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
+)
+from app.models.errors import ErrNoResult
 
 
 # =============================================================================
@@ -593,7 +599,8 @@ def get_crackme_details(uuid):
         "author": crackme_obj["author"],
         "lang": crackme_obj["lang"],
         "arch": crackme_obj["arch"],
-        "platform": crackme_obj["platform"]
+        "platform": crackme_obj["platform"],
+        "tags": crackme_obj.get("tags", [])
     }, None
 
 
@@ -1364,12 +1371,19 @@ def logout():
 @token_required
 def dashboard(current_user):
     """Display dashboard with pending submission counts."""
+    try:
+        tagreq_cnt = count_pending_tag_requests()
+    except Exception as e:
+        print(f"Error counting tag requests: {e}")
+        tagreq_cnt = 0
+
     return render_template(
         'reviewer/dashboard.html',
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         solution_cnt=count_pending_solutions(),
-        crackme_cnt=count_pending_items('crackme')
+        crackme_cnt=count_pending_items('crackme'),
+        tagreq_cnt=tagreq_cnt
     )
 
 
@@ -1443,7 +1457,8 @@ def viewcrackme(current_user):
         'reviewer/viewcrackme.html',
         user=current_user['username'],
         is_admin=current_user['is_admin'],
-        crackme=crackme
+        crackme=crackme,
+        tag_groups=get_tag_groups()
     )
 
 
@@ -1651,6 +1666,171 @@ def approvecrackme(current_user):
 
 
 # =============================================================================
+# Route Handlers - Tags
+# =============================================================================
+
+@reviewer_bp.route('/settags', methods=['POST'])
+@token_required
+def settags(current_user):
+    """Override the obfuscation tags on a crackme (reviewer).
+
+    Used both when reviewing a pending crackme and from the edit page. The
+    posted ``tags`` values are filtered against the controlled vocabulary.
+    """
+    validate_csrf_token()
+    crackme_uuid = request.form.get('uuid')
+    redirect_to = request.form.get('redirect_to') or 'view'
+
+    if not is_valid_hexid(crackme_uuid):
+        return redirect(url_for('reviewer.reviewcrackme', message="Invalid crackme id"))
+
+    tags = normalize_tags(request.form.getlist('tags'))
+
+    crackme = g_crackmesone_db.crackme.find_one({'hexid': crackme_uuid.lower()})
+    if not crackme:
+        return redirect(url_for('reviewer.reviewcrackme', message="Crackme not found"))
+
+    old_tags = crackme.get('tags', [])
+    g_crackmesone_db.crackme.update_one(
+        {'hexid': crackme_uuid.lower()},
+        {'$set': {'tags': tags}}
+    )
+
+    log_reviewer_operation(
+        "set_crackme_tags", current_user['username'],
+        {"crackme_uuid": crackme_uuid, "old_tags": old_tags, "new_tags": tags},
+        True
+    )
+
+    if redirect_to == 'edit':
+        return redirect(url_for('reviewer.editcrackme', crackme_uuid=crackme_uuid))
+    return redirect(url_for('reviewer.viewcrackme', crackme_uuid=crackme_uuid))
+
+
+def _apply_tag_request(tag_request):
+    """Apply an approved tag request's add/remove sets to the crackme.
+
+    Returns the crackme's new tag list, or None if the crackme is gone.
+    """
+    crackme = g_crackmesone_db.crackme.find_one(
+        {'hexid': tag_request['crackme_hexid']}
+    )
+    if not crackme:
+        return None
+
+    current = list(crackme.get('tags', []))
+    for tag in tag_request.get('add', []):
+        if tag not in current:
+            current.append(tag)
+    for tag in tag_request.get('remove', []):
+        if tag in current:
+            current.remove(tag)
+
+    new_tags = normalize_tags(current)
+    g_crackmesone_db.crackme.update_one(
+        {'hexid': tag_request['crackme_hexid']},
+        {'$set': {'tags': new_tags}}
+    )
+    return new_tags
+
+
+@reviewer_bp.route('/tagrequests')
+@token_required
+def tagrequests(current_user):
+    """List pending tag change requests for review."""
+    try:
+        requests_list = tag_requests_pending()
+    except Exception as e:
+        print(f"Error loading tag requests: {e}")
+        requests_list = []
+
+    return render_template(
+        'reviewer/tagrequests.html',
+        user=current_user['username'],
+        is_admin=current_user['is_admin'],
+        requests=requests_list,
+        message=request.args.get('message')
+    )
+
+
+@reviewer_bp.route('/approvetagrequest', methods=['POST'])
+@token_required
+def approvetagrequest(current_user):
+    """Approve a tag change request and apply it to the crackme."""
+    validate_csrf_token()
+    req_hexid = request.form.get('uuid')
+
+    try:
+        tag_request = tag_request_by_hexid(req_hexid)
+    except ErrNoResult:
+        return redirect(url_for('reviewer.tagrequests', message="Request not found"))
+
+    if tag_request.get('status') != 'pending':
+        return redirect(url_for('reviewer.tagrequests', message="Request already handled"))
+
+    new_tags = _apply_tag_request(tag_request)
+    if new_tags is None:
+        # Crackme no longer exists; close the request as rejected.
+        tag_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
+        return redirect(url_for('reviewer.tagrequests', message="Crackme not found; request closed"))
+
+    tag_request_set_status(req_hexid, STATUS_APPROVED, current_user['username'])
+
+    log_reviewer_operation(
+        "approve_tag_request", current_user['username'],
+        {"request": req_hexid, "crackme": tag_request['crackme_hexid'], "new_tags": new_tags},
+        True
+    )
+
+    try:
+        send_user_notification(
+            tag_request['requester'],
+            f"Your tag change request for '<a href=\"/crackme/{tag_request['crackme_hexid']}\">"
+            f"{html_escape(tag_request['crackme_name'])}</a>' has been approved."
+        )
+    except Exception as e:
+        print(f"Notification error: {e}")
+
+    return redirect(url_for('reviewer.tagrequests', message="Request approved"))
+
+
+@reviewer_bp.route('/rejecttagrequest', methods=['POST'])
+@token_required
+def rejecttagrequest(current_user):
+    """Reject a tag change request."""
+    validate_csrf_token()
+    req_hexid = request.form.get('uuid')
+    reject_reason = request.form.get('reject_reason')
+
+    try:
+        tag_request = tag_request_by_hexid(req_hexid)
+    except ErrNoResult:
+        return redirect(url_for('reviewer.tagrequests', message="Request not found"))
+
+    if tag_request.get('status') != 'pending':
+        return redirect(url_for('reviewer.tagrequests', message="Request already handled"))
+
+    tag_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
+
+    log_reviewer_operation(
+        "reject_tag_request", current_user['username'],
+        {"request": req_hexid, "crackme": tag_request['crackme_hexid'], "reason": reject_reason},
+        True
+    )
+
+    try:
+        notif = (f"Your tag change request for '<a href=\"/crackme/{tag_request['crackme_hexid']}\">"
+                 f"{html_escape(tag_request['crackme_name'])}</a>' has been rejected.")
+        if reject_reason:
+            notif += f" Reason: {html_escape(reject_reason)}"
+        send_user_notification(tag_request['requester'], notif)
+    except Exception as e:
+        print(f"Notification error: {e}")
+
+    return redirect(url_for('reviewer.tagrequests', message="Request rejected"))
+
+
+# =============================================================================
 # Route Handlers - Admin: Delete Approved Content
 # =============================================================================
 
@@ -1723,6 +1903,7 @@ def editcrackme(current_user):
         lang = request.form.get('lang', '')
         arch = request.form.get('arch', '')
         platform = request.form.get('platform', '')
+        tags = normalize_tags(request.form.getlist('tags'))
         notify_author = request.form.get('notify_author') == 'on'
 
         if True:
@@ -1744,6 +1925,8 @@ def editcrackme(current_user):
                     changes.append(f"arch: '{crackme_obj.get('arch')}' -> '{arch}'")
                 if crackme_obj.get('platform') != platform:
                     changes.append(f"platform: '{crackme_obj.get('platform')}' -> '{platform}'")
+                if sorted(crackme_obj.get('tags', [])) != sorted(tags):
+                    changes.append(f"tags: {crackme_obj.get('tags', [])} -> {tags}")
 
                 # Update the crackme (name excluded)
                 g_crackmesone_db.crackme.update_one(
@@ -1752,7 +1935,8 @@ def editcrackme(current_user):
                         "info": info,
                         "lang": lang,
                         "arch": arch,
-                        "platform": platform
+                        "platform": platform,
+                        "tags": tags
                     }}
                 )
 
@@ -1837,7 +2021,8 @@ def editcrackme(current_user):
                 "lang": crackme_obj.get('lang', ''),
                 "arch": crackme_obj.get('arch', ''),
                 "platform": crackme_obj.get('platform', ''),
-                "author": crackme_obj.get('author', '')
+                "author": crackme_obj.get('author', ''),
+                "tags": crackme_obj.get('tags', [])
             }
         else:
             error = "Crackme not found"
@@ -1848,7 +2033,8 @@ def editcrackme(current_user):
         is_admin=current_user['is_admin'],
         crackme=crackme,
         message=message,
-        error=error
+        error=error,
+        tag_groups=get_tag_groups()
     )
 
 

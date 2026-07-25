@@ -490,3 +490,28 @@ h3:hover .anchor-link {
     color: #000;
     border-color: #9acc14;
 }
+
+/* Larger tags modal so the grouped tag checkboxes have room */
+#modal-tags .modal-container {
+    max-width: 900px;
+    width: 94vw;
+}
+/* Let only the checkbox list scroll, so the reason box + submit stay visible. */
+#modal-tags .modal-body {
+    max-height: 84vh;
+    padding-bottom: 1.2rem;
+}
+#modal-tags .tags-scroll {
+    max-height: 50vh;
+    overflow-y: auto;
+    border: .05rem solid #444;
+    border-radius: .1rem;
+    padding: 6px 8px;
+    margin-bottom: 12px;
+}
+/* Contain the floated submit button and leave space beneath it. */
+#modal-tags .tag-request-actions {
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 8px;
+}

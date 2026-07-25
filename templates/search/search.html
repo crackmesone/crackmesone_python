@@ -8,8 +8,7 @@
 <div style="max-width: 80%" class="container d-flex-row wrapper">
 
     <h2>Crackme search</h2>
-    <form class="form-horizontal" method="post" action="/search">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <form class="form-horizontal" method="get" action="/search">
         <div class="form-group">
             <div class="col-3">Crackme name</div>
             <div class="col-9 col-sm-12">
@@ -168,6 +167,19 @@
         </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
+                <label class="form-label" for="tags">Tags</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <div style="max-height: 240px; overflow-y: auto; border: .05rem solid #444; border-radius: .1rem; padding: 6px 8px;">
+                    {% set tag_input_name = 'tags' %}
+                    {% set checked_tags = search_params.get('tags', []) %}
+                    {% include 'partial/tags_checkboxes.html' %}
+                </div>
+                <p class="text-gray" style="font-size: 0.75rem; margin-top: 4px;">Matches crackmes carrying all checked tags. AI-generated, may be inaccurate.</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
                 <label class="form-label">Sort by</label>
             </div>
             <div class="col-9 col-sm-12">
@@ -232,13 +244,13 @@
     {% if crackmes|length > 0 %}
     <div class="pagination-controls">
         {% if show_all %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -262,13 +274,13 @@
         {% elif not has_more and page == 1 %}
         <span class="pagination-info">Showing all {{ crackmes|length }} results</span>
         {% else %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -289,13 +301,13 @@
             <button type="submit" class="btn active">Show All</button>
         </form>
         {% if page > 1 %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -320,13 +332,13 @@
         {% endif %}
         <span class="pagination-info">Page {{ page }}</span>
         {% if has_more %}
-        <form method="post" action="/search" style="display: inline;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form method="get" action="/search" style="display: inline;">
             <input type="hidden" name="name" value="{{ search_params.name }}">
             <input type="hidden" name="author" value="{{ search_params.author }}">
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
