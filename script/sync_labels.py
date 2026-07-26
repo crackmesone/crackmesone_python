@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """
-Sync obfuscation tags from the crackmes-RE dataset into the database.
+Sync obfuscation labels from the crackmes-RE dataset into the database.
 
 Runs two phases, in order:
 
-  1. Vocabulary  -> rebuild the ``tag_vocabulary`` document (the valid classes,
-     sub-labels, and qualification rules) so the site knows what tags exist.
-  2. Crackme tags -> set each crackme's ``tags`` to the dataset-derived set,
+  1. Vocabulary  -> rebuild the ``label_vocabulary`` document (the valid classes,
+     sub-labels, and qualification rules) so the site knows what labels exist.
+  2. Crackme labels -> set each crackme's ``labels`` to the dataset-derived set,
      validated against that vocabulary.
 
-The phases must run in this order -- crackme tags are validated against the
-vocabulary, so re-tagging with a stale vocabulary would silently drop any newly
-added tags. Keeping them in one command makes that ordering automatic.
+The phases must run in this order -- crackme labels are validated against the
+vocabulary, so re-labeling with a stale vocabulary would silently drop any newly
+added labels. Keeping them in one command makes that ordering automatic.
 
 Usage:
     cd /path/to/crackmesone_python/script
-    python sync_tags.py --dataset /path/to/crackmes_dataset.jsonl            # dry run (both phases)
-    python sync_tags.py --dataset /path/to/crackmes_dataset.jsonl --apply    # write both
+    python sync_labels.py --dataset /path/to/crackmes_dataset.jsonl            # dry run (both phases)
+    python sync_labels.py --dataset /path/to/crackmes_dataset.jsonl --apply    # write both
 
     --vocab-only     Only rebuild the vocabulary document
-    --tags-only      Only re-tag crackmes (using the vocabulary already in the DB)
+    --labels-only      Only re-label crackmes (using the vocabulary already in the DB)
     --seed-default   Vocabulary phase writes the built-in default vocabulary
                      instead of deriving it from the dataset
 
@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pymongo import MongoClient
 
-from app.services.tags import (
+from app.services.labels import (
     Vocabulary, default_vocabulary_doc, get_vocabulary, reload_vocabulary,
     VOCAB_COLLECTION, VOCAB_ID, DATASET_URL,
     DEFAULT_FIELD_PARENTS, DEFAULT_QUALIFY_SUFFIX,
@@ -84,9 +84,9 @@ def build_vocabulary_from_dataset(dataset_path):
     sublabels = defaultdict(list)
     for field, parent in field_parents.items():
         for value, _ in field_value_counts[field].most_common():
-            tag = canonical(field, value)
-            if tag not in sublabels[parent]:
-                sublabels[parent].append(tag)
+            label = canonical(field, value)
+            if label not in sublabels[parent]:
+                sublabels[parent].append(label)
 
     for parent in sublabels:
         if parent not in classes:
@@ -105,11 +105,11 @@ def build_vocabulary_from_dataset(dataset_path):
 
 
 # ---------------------------------------------------------------------------
-# Phase 2: derive each crackme's tags from the dataset
+# Phase 2: derive each crackme's labels from the dataset
 # ---------------------------------------------------------------------------
 
-def tags_from_dataset(dataset_path, voc):
-    """Return ``{hexid: [normalized tags]}`` using the given vocabulary."""
+def labels_from_dataset(dataset_path, voc):
+    """Return ``{hexid: [normalized labels]}`` using the given vocabulary."""
     mapping = {}
     for record in _iter_records(dataset_path):
         hexid = record.get("hexid")
@@ -118,7 +118,7 @@ def tags_from_dataset(dataset_path, voc):
         raw = list(record.get("obfuscation_classes") or [])
         for field in voc.field_parents:
             for value in (record.get(field) or []):
-                raw.append(voc.sublabel_tag(field, value))
+                raw.append(voc.sublabel_label(field, value))
         mapping[hexid] = voc.normalize(raw)
     return mapping
 
@@ -148,22 +148,22 @@ def _db(config_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Sync tag vocabulary + crackme tags from the dataset")
+    parser = argparse.ArgumentParser(description="Sync label vocabulary + crackme labels from the dataset")
     parser.add_argument("--dataset", help="Path to crackmes_dataset.jsonl")
     parser.add_argument("--apply", action="store_true", help="Actually write changes")
     parser.add_argument("--vocab-only", action="store_true", help="Only rebuild the vocabulary")
-    parser.add_argument("--tags-only", action="store_true", help="Only re-tag crackmes")
+    parser.add_argument("--labels-only", action="store_true", help="Only re-label crackmes")
     parser.add_argument("--seed-default", action="store_true",
                         help="Vocabulary phase writes the built-in default instead of deriving it")
     args = parser.parse_args()
 
-    if args.vocab_only and args.tags_only:
-        print("Error: --vocab-only and --tags-only are mutually exclusive")
+    if args.vocab_only and args.labels_only:
+        print("Error: --vocab-only and --labels-only are mutually exclusive")
         return 2
 
-    do_vocab = not args.tags_only
-    do_tags = not args.vocab_only
-    needs_dataset = do_tags or (do_vocab and not args.seed_default)
+    do_vocab = not args.labels_only
+    do_labels = not args.vocab_only
+    needs_dataset = do_labels or (do_vocab and not args.seed_default)
     if needs_dataset:
         if not args.dataset:
             print("Error: --dataset <path> is required")
@@ -198,33 +198,33 @@ def main():
     else:
         reload_vocabulary()
         voc = get_vocabulary()
-        print("== Phase 1: skipped (--tags-only); using vocabulary already in the DB ==")
+        print("== Phase 1: skipped (--labels-only); using vocabulary already in the DB ==")
 
-    # ---- Phase 2: crackme tags ----
-    if do_tags:
-        print("\n== Phase 2: crackme tags ==")
-        mapping = tags_from_dataset(args.dataset, voc)
+    # ---- Phase 2: crackme labels ----
+    if do_labels:
+        print("\n== Phase 2: crackme labels ==")
+        mapping = labels_from_dataset(args.dataset, voc)
         crackme = db["crackme"]
 
-        # Authoritative: clear everyone, then set tags for dataset crackmes.
+        # Authoritative: clear everyone, then set labels for dataset crackmes.
         if not dry_run:
-            crackme.update_many({}, {"$set": {"tags": []}})
+            crackme.update_many({}, {"$set": {"labels": []}})
 
-        tagged = not_in_db = no_tags = 0
-        for hexid, tags in mapping.items():
-            if not tags:
-                no_tags += 1
+        labeled = not_in_db = no_labels = 0
+        for hexid, labels in mapping.items():
+            if not labels:
+                no_labels += 1
                 continue
             if not crackme.find_one({"hexid": hexid}, {"_id": 1}):
                 not_in_db += 1
                 continue
             if not dry_run:
-                crackme.update_one({"hexid": hexid}, {"$set": {"tags": tags}})
-            tagged += 1
+                crackme.update_one({"hexid": hexid}, {"$set": {"labels": labels}})
+            labeled += 1
 
         print(f"  dataset records: {len(mapping)}")
-        print(f"  {'would tag' if dry_run else 'tagged'} crackmes: {tagged}")
-        print(f"  dataset records with no valid tags: {no_tags}")
+        print(f"  {'would label' if dry_run else 'labeled'} crackmes: {labeled}")
+        print(f"  dataset records with no valid labels: {no_labels}")
         print(f"  dataset records not in DB: {not_in_db}")
     else:
         print("\n== Phase 2: skipped (--vocab-only) ==")

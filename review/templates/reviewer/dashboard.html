@@ -27,7 +27,7 @@
             <div class="column col-10 col-xs-12 panel-input">
                 <a href="{{ url_for('reviewer.reviewsolution') }}" class="btn btn-link">Review solutions</a>
                 <a href="{{ url_for('reviewer.reviewcrackme') }}" class="btn btn-link">Review crackmes</a>
-                <a href="{{ url_for('reviewer.tagrequests') }}" class="btn btn-link">Review tag requests</a>
+                <a href="{{ url_for('reviewer.labelrequests') }}" class="btn btn-link">Review label requests</a>
                 {% if is_admin %}
                 <a href="{{ url_for('reviewer.deletesolution') }}" class="btn btn-link">Delete solution</a>
                 <a href="{{ url_for('reviewer.deletecrackme') }}" class="btn btn-link">Delete crackme</a>
@@ -61,8 +61,8 @@
         <div class="columns">
             <div class="column col-6">
                 <div class="column col-12 panel-background">
-                    <p>The number of tag change requests to review:</p>
-                    <h2 class="text-center"> {{ tagreq_cnt }} </h2><br>
+                    <p>The number of label change requests to review:</p>
+                    <h2 class="text-center"> {{ labelreq_cnt }} </h2><br>
                 </div>
             </div>
         </div>

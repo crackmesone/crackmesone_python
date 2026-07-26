@@ -1,6 +1,6 @@
 /*
- * TagCheckboxes - hierarchy behaviour for the grouped tag checkbox layout
- * (templates/partial/tags_checkboxes.html).
+ * LabelCheckboxes - hierarchy behaviour for the grouped label checkbox layout
+ * (templates/partial/labels_checkboxes.html).
  *
  * Within the given scope (usually a <form>):
  *   - ticking a technique auto-ticks its parent category
@@ -10,9 +10,9 @@
  * so a technique is never selected without its category, and a category is
  * never left selected on its own once its last technique is removed.
  *
- * Usage:  TagCheckboxes.init(document.getElementById('my-form'));
+ * Usage:  LabelCheckboxes.init(document.getElementById('my-form'));
  */
-window.TagCheckboxes = (function () {
+window.LabelCheckboxes = (function () {
     function cssEscape(v) {
         return v.replace(/"/g, '\\"');
     }
@@ -21,16 +21,16 @@ window.TagCheckboxes = (function () {
         if (!scope) return;
 
         function parentInput(value) {
-            return scope.querySelector('input[data-tag-class][value="' + cssEscape(value) + '"]');
+            return scope.querySelector('input[data-label-class][value="' + cssEscape(value) + '"]');
         }
 
         function siblings(parentValue) {
-            return scope.querySelectorAll('input[data-tag-parent="' + cssEscape(parentValue) + '"]');
+            return scope.querySelectorAll('input[data-label-parent="' + cssEscape(parentValue) + '"]');
         }
 
-        scope.querySelectorAll('input[data-tag-parent]').forEach(function (sub) {
+        scope.querySelectorAll('input[data-label-parent]').forEach(function (sub) {
             sub.addEventListener('change', function () {
-                var parentValue = sub.getAttribute('data-tag-parent');
+                var parentValue = sub.getAttribute('data-label-parent');
                 var parent = parentInput(parentValue);
                 if (!parent) return;
                 if (sub.checked) {
@@ -44,7 +44,7 @@ window.TagCheckboxes = (function () {
             });
         });
 
-        scope.querySelectorAll('input[data-tag-class]').forEach(function (cls) {
+        scope.querySelectorAll('input[data-label-class]').forEach(function (cls) {
             cls.addEventListener('change', function () {
                 if (!cls.checked) {
                     siblings(cls.value).forEach(function (s) { s.checked = false; });

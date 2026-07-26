@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Tag change requests</title>
+    <title>Label change requests</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
@@ -27,10 +27,10 @@
         <div class="toast toast-primary">{{ message }}</div>
         {% endif %}
 
-        <h3>Pending tag change requests</h3>
+        <h3>Pending label change requests</h3>
 
         {% if not requests %}
-        <p>No pending tag change requests.</p>
+        <p>No pending label change requests.</p>
         {% else %}
         {% for req in requests %}
         <div class="columns panel-background" style="margin-bottom: 15px;">
@@ -52,13 +52,13 @@
                 <p><em>Note:</em> {{ req.note }}</p>
                 {% endif %}
 
-                <form action="{{ url_for('reviewer.approvetagrequest') }}" method="POST" style="display:inline;">
+                <form action="{{ url_for('reviewer.approvelabelrequest') }}" method="POST" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{ req.hexid }}">
                     <button type="submit" class="btn active">Approve &amp; apply</button>
                 </form>
 
-                <form action="{{ url_for('reviewer.rejecttagrequest') }}" method="POST" style="display:inline; margin-left: 10px;">
+                <form action="{{ url_for('reviewer.rejectlabelrequest') }}" method="POST" style="display:inline; margin-left: 10px;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{ req.hexid }}">
                     <input class="form-input" type="text" name="reject_reason" placeholder="Reject reason (optional)" style="display:inline-block; width: 250px;">

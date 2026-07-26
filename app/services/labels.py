@@ -1,30 +1,30 @@
 """
-Obfuscation tag vocabulary and helpers.
+Obfuscation label vocabulary and helpers.
 
-Crackmes can be labeled with high-level anti-analysis / obfuscation tags
+Crackmes can be labeled with high-level anti-analysis / obfuscation labels
 (anti-debugging, string encryption, packers, ...) plus finer **sub-labels**
 nested under some of those classes. The labels come from the crackmes-RE dataset
 (AI-generated, so **not guaranteed accurate**).
 
-The controlled vocabulary is **stored in the ``tag_vocabulary`` MongoDB
+The controlled vocabulary is **stored in the ``label_vocabulary`` MongoDB
 collection** (a single document) so it can be updated without code changes when
-the dataset changes -- regenerate it (and re-tag crackmes) from the dataset
-with ``script/sync_tags.py``. The ``DEFAULT_*`` values below are the
+the dataset changes -- regenerate it (and re-label crackmes) from the dataset
+with ``script/sync_labels.py``. The ``DEFAULT_*`` values below are the
 built-in baseline: they seed that collection and act as a fallback when it is
 empty (fresh DB, tests, DB unavailable).
 
-Callers should use the accessor functions (``get_tag_groups()``,
-``normalize_tags()``, ...) rather than reading module-level constants, because
+Callers should use the accessor functions (``get_label_groups()``,
+``normalize_labels()``, ...) rather than reading module-level constants, because
 the active vocabulary is resolved from the database at runtime.
 """
 
 from app.services.database import get_collection, check_connection
 
 # Collection + document id that hold the live vocabulary.
-VOCAB_COLLECTION = "tag_vocabulary"
+VOCAB_COLLECTION = "label_vocabulary"
 VOCAB_ID = "current"
 
-# Where the "?" next to the tags links to (the AI-generated source dataset).
+# Where the "?" next to the labels links to (the AI-generated source dataset).
 DATASET_URL = "https://github.com/crackmesone/crackmes-re-dataset"
 
 # ---------------------------------------------------------------------------
@@ -115,7 +115,7 @@ DEFAULT_SUBLABELS = {
         "Jump-based desync",
     ],
     # AES / Base64 / RC4 / TEA-XTEA also appear as string-encryption ciphers, so
-    # they are qualified with "(crypto)" here to keep each tag under one parent.
+    # they are qualified with "(crypto)" here to keep each label under one parent.
     "Crypto / hash algorithm": [
         "MD5",
         "CRC32",
@@ -186,33 +186,33 @@ class Vocabulary:
         self.dataset_url = doc.get("dataset_url") or DATASET_URL
 
         # Grouped view for templates: class then its (possibly empty) sub-labels.
-        self.tag_groups = [
-            {"tag": c, "sublabels": self.sublabels.get(c, [])}
+        self.label_groups = [
+            {"label": c, "sublabels": self.sublabels.get(c, [])}
             for c in self.classes
         ]
         # Flat canonical order: each class immediately followed by its sub-labels.
-        self.all_tags = []
-        for group in self.tag_groups:
-            self.all_tags.append(group["tag"])
-            self.all_tags.extend(group["sublabels"])
-        self.tag_set = set(self.all_tags)
-        self._order = {tag: i for i, tag in enumerate(self.all_tags)}
+        self.all_labels = []
+        for group in self.label_groups:
+            self.all_labels.append(group["label"])
+            self.all_labels.extend(group["sublabels"])
+        self.label_set = set(self.all_labels)
+        self._order = {label: i for i, label in enumerate(self.all_labels)}
 
-    def normalize(self, raw_tags):
-        if not raw_tags:
+    def normalize(self, raw_labels):
+        if not raw_labels:
             return []
         seen = set()
-        for tag in raw_tags:
-            if isinstance(tag, str):
-                tag = tag.strip()
-            if tag in self.tag_set:
-                seen.add(tag)
+        for label in raw_labels:
+            if isinstance(label, str):
+                label = label.strip()
+            if label in self.label_set:
+                seen.add(label)
         return sorted(seen, key=lambda t: self._order[t])
 
-    def is_valid(self, tag):
-        return tag in self.tag_set
+    def is_valid(self, label):
+        return label in self.label_set
 
-    def sublabel_tag(self, field, value):
+    def sublabel_label(self, field, value):
         suffix = self.qualify_suffix.get(field)
         if suffix and value in self.qualify_values:
             return "{} ({})".format(value, suffix)
@@ -230,7 +230,7 @@ def _load_vocabulary_doc():
             if doc:
                 return doc
     except Exception as e:  # pragma: no cover - defensive; fall back to default
-        print(f"Tag vocabulary load error, using default: {e}")
+        print(f"Label vocabulary load error, using default: {e}")
     return default_vocabulary_doc()
 
 
@@ -252,29 +252,29 @@ def reload_vocabulary():
 # Public API (stable for controllers, templates, scripts)
 # ---------------------------------------------------------------------------
 
-def normalize_tags(raw_tags):
-    """Validate, de-duplicate, and canonically order a list of tags."""
-    return get_vocabulary().normalize(raw_tags)
+def normalize_labels(raw_labels):
+    """Validate, de-duplicate, and canonically order a list of labels."""
+    return get_vocabulary().normalize(raw_labels)
 
 
-def is_valid_tag(tag):
-    """Return True if ``tag`` is part of the active controlled vocabulary."""
-    return get_vocabulary().is_valid(tag)
+def is_valid_label(label):
+    """Return True if ``label`` is part of the active controlled vocabulary."""
+    return get_vocabulary().is_valid(label)
 
 
-def dataset_sublabel_tag(field, value):
-    """Map a raw dataset sub-label ``(field, value)`` to its canonical tag."""
-    return get_vocabulary().sublabel_tag(field, value)
+def dataset_sublabel_label(field, value):
+    """Map a raw dataset sub-label ``(field, value)`` to its canonical label."""
+    return get_vocabulary().sublabel_label(field, value)
 
 
-def get_tag_groups():
-    """Ordered ``[{"tag", "sublabels"}]`` for rendering the tag picker."""
-    return get_vocabulary().tag_groups
+def get_label_groups():
+    """Ordered ``[{"label", "sublabels"}]`` for rendering the label picker."""
+    return get_vocabulary().label_groups
 
 
-def get_all_tags():
-    """Flat list of every valid tag in canonical order."""
-    return get_vocabulary().all_tags
+def get_all_labels():
+    """Flat list of every valid label in canonical order."""
+    return get_vocabulary().all_labels
 
 
 def get_classes():
@@ -293,5 +293,5 @@ def get_sublabel_fields():
 
 
 def get_dataset_url():
-    """URL the tags "?" help link points at."""
+    """URL the labels "?" help link points at."""
     return get_vocabulary().dataset_url

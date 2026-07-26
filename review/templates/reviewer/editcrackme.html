@@ -96,10 +96,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">Tags</label>
-                        {% set tag_input_name = 'tags' %}
-                        {% set checked_tags = crackme.tags %}
-                        {% include 'partial/tags_checkboxes.html' %}
+                        <label class="form-label">Labels</label>
+                        {% set label_input_name = 'labels' %}
+                        {% set checked_labels = crackme.labels %}
+                        {% include 'partial/labels_checkboxes.html' %}
                     </div>
 
                     <div class="divider"></div>
@@ -140,12 +140,12 @@
         {% endif %}
     </div>
     {% if crackme %}
-    <script src="{{ url_for('static', filename='js/tag_checkboxes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/label_checkboxes.js') }}"></script>
     <script>
     (function() {
         var form = document.getElementById('edit-crackme-form');
         if (!form) return;
-        TagCheckboxes.init(form);
+        LabelCheckboxes.init(form);
         // Don't let the browser restore a stale draft of the reviewer's edits;
         // always start from the crackme's saved values (fires on load + bfcache).
         window.addEventListener('pageshow', function() { form.reset(); });
