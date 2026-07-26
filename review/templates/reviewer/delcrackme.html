@@ -26,6 +26,7 @@
             <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
         </section>
         <section class="navbar-section">
+            <a href="/" class="btn btn-link">crackmes.one</a>
             <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
         </section>
     </header>
