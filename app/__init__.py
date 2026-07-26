@@ -85,6 +85,8 @@ def create_app(config_path=None, config=None):
     def inject_globals():
         from flask import session
         from app.models.user import user_get_unread_notifications
+        from app.services.crackme_fields import (
+            LANG_CHOICES, ARCH_CHOICES, PLATFORM_CHOICES)
 
         username = session.get('name', '')
         unread_notifs = 0
@@ -96,7 +98,10 @@ def create_app(config_path=None, config=None):
             'AuthLevel': 'auth' if username else 'anon',
             'usersess': username,
             'unread_notifications': unread_notifs,
-            'RECAPTCHA_SITEKEY': config['Recaptcha'].get('SiteKey', '') if config['Recaptcha'].get('Enabled') else ''
+            'RECAPTCHA_SITEKEY': config['Recaptcha'].get('SiteKey', '') if config['Recaptcha'].get('Enabled') else '',
+            'LANG_CHOICES': LANG_CHOICES,
+            'ARCH_CHOICES': ARCH_CHOICES,
+            'PLATFORM_CHOICES': PLATFORM_CHOICES,
         }
 
     # Register template filters
