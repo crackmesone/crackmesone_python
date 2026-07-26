@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Account deletion requests</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center">
+            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
+        </section>
+        <section class="navbar-section">
+            <a href="/" class="btn btn-link">crackmes.one</a>
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-lg wrapper">
+        {% if message %}
+        <div class="toast toast-primary">{{ message }}</div>
+        {% endif %}
+
+        <h3>Pending account deletion requests</h3>
+
+        {% if not is_admin %}
+        <div class="toast toast-warning">
+            You can review these requests, but only an admin can approve (and thereby
+            permanently delete the account).
+        </div>
+        {% endif %}
+
+        {% if not requests %}
+        <p>No pending account deletion requests.</p>
+        {% else %}
+        {% for req in requests %}
+        <div class="columns panel-background" style="margin-bottom: 15px;">
+            <div class="column col-12">
+                <p>
+                    <strong><a href="https://crackmes.one/user/{{ req.requester }}" target="_blank">{{ req.requester }}</a></strong>
+                    &mdash; {{ req.email }}
+                    <br>
+                    Requested on {{ req.created_at }}
+                </p>
+                {% if req.note %}
+                <p><em>Reason:</em> {{ req.note }}</p>
+                {% endif %}
+
+                {% if is_admin %}
+                <form action="{{ url_for('reviewer.approveaccountdeletion') }}" method="POST" style="display:inline;"
+                      onsubmit="return confirm('Permanently delete account &quot;{{ req.requester }}&quot; and all associated data? This cannot be undone.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="uuid" value="{{ req.hexid }}">
+                    <button type="submit" class="btn btn-error">Approve &amp; delete account</button>
+                </form>
+                {% endif %}
+
+                <form action="{{ url_for('reviewer.rejectaccountdeletion') }}" method="POST" style="display:inline; margin-left: 10px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="uuid" value="{{ req.hexid }}">
+                    <input class="form-input" type="text" name="reject_reason" placeholder="Reject reason (optional)" style="display:inline-block; width: 250px;">
+                    <button type="submit" class="btn">Reject</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+</body>
+
+</html>

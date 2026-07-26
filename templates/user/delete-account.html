@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Delete Account{% endblock %}
+{% block page_title %}Delete Account{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="columns" style="justify-content: center;">
+        <div class="column col-8 col-xs-12 panel-input">
+            <h3>Request account deletion</h3>
+
+            {% if submitted %}
+            <div class="toast toast-success">
+                Your account deletion request has been submitted. It will be reviewed and
+                processed within 30 days, though usually much sooner. We'll email you once
+                your account has been deleted.
+            </div>
+            {% elif already_pending %}
+            <div class="toast toast-primary">
+                You already have a pending account deletion request. It will be reviewed and
+                processed within 30 days, though usually much sooner. If you change your mind,
+                please contact us at
+                <a href="mailto:crackmesone@gmail.com">crackmesone@gmail.com</a>.
+            </div>
+            {% else %}
+            {% if message %}
+            <div class="toast toast-error">{{ message }}</div>
+            {% endif %}
+
+            <div class="toast toast-warning">
+                <strong>Warning:</strong> Deleting your account is permanent and cannot be
+                undone. All of your crackmes, writeups, comments, and ratings will be
+                <strong>permanently removed</strong>, along with everything posted on your
+                crackmes (other users' writeups and comments on them).
+            </div>
+
+            <p>Your request will be reviewed by an admin and processed within 30 days, though
+                usually much sooner. Once your account has been deleted, we'll send a
+                confirmation to your registered email address.</p>
+
+            <form method="POST" action="/delete-account" class="form-horizontal"
+                  onsubmit="return confirm('Are you sure you want to request deletion of your account? This cannot be undone.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="password">Confirm password</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="password" id="password" name="password"
+                               placeholder="Your current password" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="note">Reason (optional)</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <textarea class="form-input" id="note" name="note" rows="3"
+                                  placeholder="Optionally tell us why you're leaving"></textarea>
+                    </div>
+                </div>
+                <input type="submit" value="Request account deletion" class="btn btn-error float-right">
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block foot %}{% endblock %}
