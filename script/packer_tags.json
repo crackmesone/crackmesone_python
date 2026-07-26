@@ -229,10 +229,7 @@
  "5ab77f5a33c5d40ad448c511": [
   "UPX"
  ],
- "5ab77f5a33c5d40ad448c521": [
-  "PE-PACK",
-  "UPX"
- ],
+ "5ab77f5a33c5d40ad448c521": [],
  "5ab77f5a33c5d40ad448c541": [
   "UPX"
  ],
@@ -413,10 +410,7 @@
  "5ab77f6233c5d40ad448c970": [
   "UPX"
  ],
- "5ab77f6233c5d40ad448c972": [
-  "ASPack",
-  "UPX"
- ],
+ "5ab77f6233c5d40ad448c972": [],
  "5ab77f6233c5d40ad448c973": [
   "ASPack"
  ],
@@ -573,11 +567,7 @@
  "5c0da25633c5d41e58e00557": [
   "UPX"
  ],
- "5d12784f33c5d41c6d56e1a6": [
-  "Babel .NET",
-  "ConfuserEx",
-  "Goliath"
- ],
+ "5d12784f33c5d41c6d56e1a6": [],
  "5f2eea5433c5d42a7c667c48": [
   "UPX"
  ],
@@ -587,15 +577,8 @@
  "5f7237e933c5d4357b3b033b": [
   "UPX"
  ],
- "5fd6173633c5d424269a1b81": [
-  "Confuser",
-  "Dotfuscator",
-  "Goliath"
- ],
- "5fe0bfef33c5d4264e590068": [
-  "Confuser",
-  "ConfuserEx"
- ],
+ "5fd6173633c5d424269a1b81": [],
+ "5fe0bfef33c5d4264e590068": [],
  "5fe5ed8633c5d4264e5900d9": [
   "UPX"
  ],
@@ -603,39 +586,20 @@
  "60be2a6033c5d410b8842c91": [
   "UPX"
  ],
- "6139ecce33c5d4649c52b980": [
-  "Babel .NET",
-  "Dotfuscator",
-  "Goliath",
-  "Yano"
- ],
+ "6139ecce33c5d4649c52b980": [],
  "619a59ba33c5d455dece61e3": [
   "SmartAssembly"
  ],
  "61d6581033c5d413767ca32f": [
   "SmartAssembly"
  ],
- "623f6cd033c5d46c8bcc055d": [
-  "Babel .NET",
-  "Yano"
- ],
- "6260362133c5d42a191a5d2e": [
-  "Babel .NET",
-  "Confuser",
-  "Goliath",
-  "Yano"
- ],
+ "623f6cd033c5d46c8bcc055d": [],
+ "6260362133c5d42a191a5d2e": [],
  "62bb2f0933c5d4251e723a46": [
   "PyInstaller"
  ],
  "62cd5ccc33c5d44a934e9750": [],
- "631b0da633c5d4425e2cd2a3": [
-  "Babel .NET",
-  "Confuser",
-  "Goliath",
-  "Sixxpack",
-  "Yano"
- ],
+ "631b0da633c5d4425e2cd2a3": [],
  "64216f6833c5d447bc761e17": [
   "UPX"
  ],
@@ -655,10 +619,7 @@
  "664a153e6b8bd8ddfe33cc66": [
   "UPX"
  ],
- "665bcbdbe7b35c09bb2666a4": [
-  "Confuser",
-  "ConfuserEx"
- ],
+ "665bcbdbe7b35c09bb2666a4": [],
  "6675db88e7b35c09bb26703c": [
   "Confuser"
  ],
@@ -671,13 +632,7 @@
  "66ce5d65b899a3b9dd02b12e": [
   "UPX"
  ],
- "670e2b1f9b533b4c22bd1441": [
-  "Babel .NET",
-  "Confuser",
-  "Goliath",
-  "Sixxpack",
-  "Yano"
- ],
+ "670e2b1f9b533b4c22bd1441": [],
  "673ff5da9b533b4c22bd2fff": [
   "UPX"
  ],
