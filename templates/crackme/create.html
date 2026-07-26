@@ -92,9 +92,11 @@
                     applies, the specific technique underneath &mdash; ticking a technique ticks its category
                     automatically. Reviewers may adjust these later.
                 </p>
-                {% set label_input_name = 'labels' %}
-                {% set checked_labels = [] %}
-                {% include 'partial/labels_checkboxes.html' %}
+                <div class="choice-box">
+                    {% set label_input_name = 'labels' %}
+                    {% set checked_labels = [] %}
+                    {% include 'partial/labels_checkboxes.html' %}
+                </div>
             </div>
         </div>
         <div class="form-group">
