@@ -19,6 +19,7 @@ def clear_main_auth():
     """Clear main site auth session keys only."""
     session.pop('name', None)
     session.pop('email', None)
+    session.pop('hexid', None)
     session.pop('login_attempt', None)
 
 
@@ -87,6 +88,9 @@ def login_post():
             clear_main_auth()
             session['email'] = user['email']
             session['name'] = user['name']
+            # Store the immutable id so the session survives a later username
+            # change (the name in the cookie is refreshed from this each request).
+            session['hexid'] = user.get('hexid') or str(user['_id'])
             flash('Login successful!', FLASH_SUCCESS)
 
             # Retrieve and clear the redirect from session

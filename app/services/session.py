@@ -21,6 +21,7 @@ def clear_session():
     """Clear main site auth session keys only."""
     flask_session.pop('name', None)
     flask_session.pop('email', None)
+    flask_session.pop('hexid', None)
     flask_session.pop('login_attempt', None)
 
 

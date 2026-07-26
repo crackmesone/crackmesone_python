@@ -233,6 +233,54 @@ def test_pending_writeup_survives_username_change(app, db, alice, alice_client):
 
 
 # --------------------------------------------------------------------------- #
+# Stale sessions on other devices self-heal from the immutable id
+# --------------------------------------------------------------------------- #
+
+def _device_logged_in_as(app, user):
+    """A fresh client whose cookie carries the user's id (as login would set)."""
+    client = app.test_client()
+    with client.session_transaction() as sess:
+        sess['name'] = user['name']
+        sess['email'] = user['email']
+        sess['hexid'] = user['hexid']
+    return client
+
+
+def test_stale_session_name_refreshes_after_rename(app, db, alice):
+    # Device B is logged in as alice.
+    device_b = _device_logged_in_as(app, alice)
+    # Device A renames the account.
+    user_rename('alice', 'alice_renamed')
+
+    device_b.get('/')  # any request triggers the before_request refresh
+
+    with device_b.session_transaction() as sess:
+        assert sess['name'] == 'alice_renamed'
+
+
+def test_stale_session_posts_comment_under_current_name(app, db, alice, sample_crackme):
+    """The exact desync case: a comment from a stale session must NOT use the old name."""
+    device_b = _device_logged_in_as(app, alice)
+    user_rename('alice', 'alice_renamed')
+
+    device_b.post(f"/comment/{sample_crackme['hexid']}", data={'comment': 'hello'})
+
+    # No comment is authored under the stale 'alice'; it uses the healed name.
+    assert db.comment.count_documents({'author': 'alice'}) == 0
+    assert db.comment.count_documents({'author': 'alice_renamed'}) == 1
+
+
+def test_session_cleared_when_user_no_longer_exists(app, db, alice):
+    device = _device_logged_in_as(app, alice)
+    db.user.delete_one({'_id': alice['_id']})
+
+    device.get('/')
+
+    with device.session_transaction() as sess:
+        assert sess.get('name') is None
+
+
+# --------------------------------------------------------------------------- #
 # Controller: email change
 # --------------------------------------------------------------------------- #
 
