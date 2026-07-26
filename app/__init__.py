@@ -86,7 +86,7 @@ def create_app(config_path=None, config=None):
         from flask import session
         from app.models.user import user_get_unread_notifications
         from app.services.crackme_fields import (
-            LANG_CHOICES, ARCH_CHOICES, PLATFORM_CHOICES)
+            DIFFICULTY_CHOICES, LANG_CHOICES, ARCH_CHOICES, PLATFORM_CHOICES)
 
         username = session.get('name', '')
         unread_notifs = 0
@@ -99,6 +99,7 @@ def create_app(config_path=None, config=None):
             'usersess': username,
             'unread_notifications': unread_notifs,
             'RECAPTCHA_SITEKEY': config['Recaptcha'].get('SiteKey', '') if config['Recaptcha'].get('Enabled') else '',
+            'DIFFICULTY_CHOICES': DIFFICULTY_CHOICES,
             'LANG_CHOICES': LANG_CHOICES,
             'ARCH_CHOICES': ARCH_CHOICES,
             'PLATFORM_CHOICES': PLATFORM_CHOICES,

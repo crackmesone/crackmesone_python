@@ -16,10 +16,11 @@
                 <label class="form-label" for="lang">Language</label>
             </div>
             <div class="col-9 col-sm-12">
-                {% set radio_name = 'lang' %}
-                {% set radio_options = LANG_CHOICES %}
-                {% set radio_selected = crackme.lang %}
-                {% include 'partial/choice_radios.html' %}
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'lang' %}
+                {% set choice_options = LANG_CHOICES %}
+                {% set choice_selected = crackme.lang %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -27,10 +28,11 @@
                 <label class="form-label" for="arch">Arch</label>
             </div>
             <div class="col-9 col-sm-12">
-                {% set radio_name = 'arch' %}
-                {% set radio_options = ARCH_CHOICES %}
-                {% set radio_selected = crackme.arch %}
-                {% include 'partial/choice_radios.html' %}
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'arch' %}
+                {% set choice_options = ARCH_CHOICES %}
+                {% set choice_selected = crackme.arch %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -38,10 +40,11 @@
                 <label class="form-label" for="platform">Platform</label>
             </div>
             <div class="col-9 col-sm-12">
-                {% set radio_name = 'platform' %}
-                {% set radio_options = PLATFORM_CHOICES %}
-                {% set radio_selected = crackme.platform %}
-                {% include 'partial/choice_radios.html' %}
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'platform' %}
+                {% set choice_options = PLATFORM_CHOICES %}
+                {% set choice_selected = crackme.platform %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">

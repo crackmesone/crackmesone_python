@@ -114,21 +114,11 @@
                 <label class="form-label" for="lang">Language</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="lang" name="lang" multiple="">
-                    <option value="C/C++" {{ 'selected' if 'C/C++' in search_params.get('lang', []) else '' }}>C/C++</option>
-                    <option value="Assembler" {{ 'selected' if 'Assembler' in search_params.get('lang', []) else '' }}>Assembler</option>
-                    <option value="Java" {{ 'selected' if 'Java' in search_params.get('lang', []) else '' }}>Java</option>
-                    <option value="Go" {{ 'selected' if 'Go' in search_params.get('lang', []) else '' }}>Go</option>
-                    <option value="Rust" {{ 'selected' if 'Rust' in search_params.get('lang', []) else '' }}>Rust</option>
-                    <option value="WebAssembly" {{ 'selected' if 'WebAssembly' in search_params.get('lang', []) else '' }}>WebAssembly</option>
-                    <option value="Python" {{ 'selected' if 'Python' in search_params.get('lang', []) else '' }}>Python</option>
-                    <option value="AutoIt" {{ 'selected' if 'AutoIt' in search_params.get('lang', []) else '' }}>AutoIt</option>
-                    <option value="(Visual) Basic" {{ 'selected' if '(Visual) Basic' in search_params.get('lang', []) else '' }}>(Visual) Basic</option>
-                    <option value="Borland Delphi" {{ 'selected' if 'Borland Delphi' in search_params.get('lang', []) else '' }}>Borland Delphi</option>
-                    <option value="Turbo Pascal" {{ 'selected' if 'Turbo Pascal' in search_params.get('lang', []) else '' }}>Turbo Pascal</option>
-                    <option value=".NET" {{ 'selected' if '.NET' in search_params.get('lang', []) else '' }}>.NET</option>
-                    <option value="Unspecified/other" {{ 'selected' if 'Unspecified/other' in search_params.get('lang', []) else '' }}>Unspecified/other</option>
-                </select>
+                {% set choice_type = 'checkbox' %}
+                {% set choice_name = 'lang' %}
+                {% set choice_options = LANG_CHOICES %}
+                {% set choice_selected = search_params.get('lang', []) %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -136,15 +126,11 @@
                 <label class="form-label" for="arch">Arch</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="arch" name="arch" multiple="">
-                    <option value="x86" {{ 'selected' if 'x86' in search_params.get('arch', []) else '' }}>x86</option>
-                    <option value="x86-64" {{ 'selected' if 'x86-64' in search_params.get('arch', []) else '' }}>x86-64</option>
-                    <option value="java" {{ 'selected' if 'java' in search_params.get('arch', []) else '' }}>java</option>
-                    <option value="ARM" {{ 'selected' if 'ARM' in search_params.get('arch', []) else '' }}>ARM</option>
-                    <option value="MIPS" {{ 'selected' if 'MIPS' in search_params.get('arch', []) else '' }}>MIPS</option>
-                    <option value="RISC-V" {{ 'selected' if 'RISC-V' in search_params.get('arch', []) else '' }}>RISC-V</option>
-                    <option value="other" {{ 'selected' if 'other' in search_params.get('arch', []) else '' }}>other</option>
-                </select>
+                {% set choice_type = 'checkbox' %}
+                {% set choice_name = 'arch' %}
+                {% set choice_options = ARCH_CHOICES %}
+                {% set choice_selected = search_params.get('arch', []) %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -152,19 +138,11 @@
                 <label class="form-label" for="platform">Platform</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="platform" name="platform" multiple="">
-                    <option value="DOS" {{ 'selected' if 'DOS' in search_params.get('platform', []) else '' }}>DOS</option>
-                    <option value="Mac OS X" {{ 'selected' if 'Mac OS X' in search_params.get('platform', []) else '' }}>Mac OS X</option>
-                    <option value="Multiplatform" {{ 'selected' if 'Multiplatform' in search_params.get('platform', []) else '' }}>Multiplatform</option>
-                    <option value="Unix/linux etc." {{ 'selected' if 'Unix/linux etc.' in search_params.get('platform', []) else '' }}>Unix/linux etc.</option>
-                    <option value="Windows" {{ 'selected' if 'Windows' in search_params.get('platform', []) else '' }}>Windows</option>
-                    <option value="Windows 2000/XP only" {{ 'selected' if 'Windows 2000/XP only' in search_params.get('platform', []) else '' }}>Windows 2000/XP only</option>
-                    <option value="Windows 7 Only" {{ 'selected' if 'Windows 7 Only' in search_params.get('platform', []) else '' }}>Windows 7 Only</option>
-                    <option value="Windows Vista Only" {{ 'selected' if 'Windows Vista Only' in search_params.get('platform', []) else '' }}>Windows Vista Only</option>
-                    <option value="Android" {{ 'selected' if 'Android' in search_params.get('platform', []) else '' }}>Android</option>
-                    <option value="iOS" {{ 'selected' if 'iOS' in search_params.get('platform', []) else '' }}>iOS</option>
-                    <option value="Unspecified/other" {{ 'selected' if 'Unspecified/other' in search_params.get('platform', []) else '' }}>Unspecified/other</option>
-                </select>
+                {% set choice_type = 'checkbox' %}
+                {% set choice_name = 'platform' %}
+                {% set choice_options = PLATFORM_CHOICES %}
+                {% set choice_selected = search_params.get('platform', []) %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
