@@ -1894,9 +1894,16 @@ def accountdeletionrequests(current_user):
 @reviewer_bp.route('/approveaccountdeletion', methods=['POST'])
 @admin_required
 def approveaccountdeletion(current_user):
-    """Approve an account deletion request and delete the account (admin only)."""
+    """Preview and approve an account deletion request (admin only).
+
+    Approval is a two-step flow that mirrors the manual delete-user tool: the
+    first POST resolves the target account and shows a full preview of what
+    deletion would remove; a second POST (``action=confirm_delete``) performs
+    the irreversible deletion.
+    """
     validate_csrf_token()
     req_hexid = request.form.get('uuid')
+    action = request.form.get('action', 'preview')
 
     try:
         del_request = account_deletion_request_by_hexid(req_hexid)
@@ -1924,6 +1931,21 @@ def approveaccountdeletion(current_user):
             message="Request has no email on file; cannot delete"
         ))
 
+    if action != 'confirm_delete':
+        # Step 1: show the same deletion impact preview the manual delete-user
+        # tool shows, so the admin sees exactly what approval will remove.
+        preview_data, error = preview_user_deletion(delete_email)
+        if error:
+            return redirect(url_for('reviewer.accountdeletionrequests', message=error))
+        return render_template(
+            'reviewer/approveaccountdeletion.html',
+            user=current_user['username'],
+            is_admin=current_user['is_admin'],
+            req=del_request,
+            preview=preview_data,
+        )
+
+    # Step 2: admin confirmed the preview -- perform the irreversible deletion.
     result = delete_user_account(delete_email, admin_username=current_user['username'])
     success = "successful" in result.lower()
 

@@ -92,8 +92,22 @@ def test_admin_approves_deletion_and_emails_user(app, db, alice, monkeypatch):
     monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **k: None)
 
     client = _admin_client(app)
+
+    # Step 1: the first POST shows a deletion impact preview without deleting.
+    preview = client.post('/review/approveaccountdeletion', data={
+        'uuid': req['hexid'], 'csrf_token': 'admin-csrf',
+    })
+
+    assert preview.status_code == 200
+    assert b'DELETION PREVIEW' in preview.data
+    assert db.user.find_one({'name': 'alice'}) is not None
+    assert db.account_deletion_request.find_one(
+        {'hexid': req['hexid']})['status'] == 'pending'
+
+    # Step 2: confirming the preview performs the irreversible deletion.
     response = client.post('/review/approveaccountdeletion', data={
         'uuid': req['hexid'], 'csrf_token': 'admin-csrf',
+        'action': 'confirm_delete',
     })
 
     assert response.status_code == 302
