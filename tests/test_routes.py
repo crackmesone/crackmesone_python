@@ -90,3 +90,48 @@ def test_existing_user_profile_loads(client, alice):
 
 def test_missing_user_profile_is_404(client):
     assert client.get('/user/missing').status_code == 404
+
+
+def test_spoiler_comment_is_hidden_on_user_profile(client, db, alice):
+    from bson import ObjectId
+    from datetime import datetime, timezone
+
+    secret = 'the flag is 1234'
+    db.comment.insert_one({
+        '_id': ObjectId(),
+        'info': secret,
+        'author': 'alice',
+        'crackmehexid': 'deadbeef',
+        'crackmename': 'Test Crackme',
+        'created_at': datetime.now(timezone.utc),
+        'visible': True,
+        'deleted': False,
+        'spoiler': True,
+    })
+
+    html = client.get('/user/alice').get_data(as_text=True)
+    # The spoiler content is present but wrapped so it is hidden by default.
+    assert '[Click to reveal]' in html
+    assert 'spoiler-content-' in html
+    assert 'revealSpoiler(' in html
+
+
+def test_non_spoiler_comment_is_shown_on_user_profile(client, db, alice):
+    from bson import ObjectId
+    from datetime import datetime, timezone
+
+    db.comment.insert_one({
+        '_id': ObjectId(),
+        'info': 'just a normal comment',
+        'author': 'alice',
+        'crackmehexid': 'deadbeef',
+        'crackmename': 'Test Crackme',
+        'created_at': datetime.now(timezone.utc),
+        'visible': True,
+        'deleted': False,
+        'spoiler': False,
+    })
+
+    html = client.get('/user/alice').get_data(as_text=True)
+    assert 'just a normal comment' in html
+    assert '[Click to reveal]' not in html

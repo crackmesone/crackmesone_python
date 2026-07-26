@@ -9,7 +9,29 @@
         document.getElementById(id2).style.display = 'none';
         document.getElementById(id1).style.display = 'block';
     }
+
+    function revealSpoiler(id) {
+        var hidden = document.getElementById('spoiler-hidden-' + id);
+        var content = document.getElementById('spoiler-content-' + id);
+        if (hidden && content) {
+            hidden.style.display = 'none';
+            content.style.display = 'inline';
+        }
+    }
 </script>
+<style>
+    .spoiler-hidden {
+        background-color: #333;
+        color: #333;
+        padding: 2px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        user-select: none;
+    }
+    .spoiler-hidden:hover {
+        background-color: #555;
+    }
+</style>
 <div class="container grid-lg wrapper">
     <h3><a href="">{{ username }}</a>'s profile</h3>
     <div class="columns col-12 ">
@@ -131,7 +153,13 @@
                         {% for comment in comments %}
                         <tr class="text-center">
                             <td><a href="/crackme/{{ comment.crackmehexid }}">{{ comment.crackmename }}</a></td>
-                            <td> <span style="white-space: pre-line">{{ comment.info }}</span> </td>
+                            <td>
+                                {% if comment.spoiler %}
+                                <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal]</span><span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info }}</span>
+                                {% else %}
+                                <span style="white-space: pre-line">{{ comment.info }}</span>
+                                {% endif %}
+                            </td>
                             <td>{{ comment.created_at|PRETTYTIME }}</td>
                         </tr>
                         {% endfor %}
