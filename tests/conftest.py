@@ -68,11 +68,11 @@ def reset_external_service_config(app):
     """Prevent tests that change process-global service config leaking state."""
     from app.services.recaptcha import init_recaptcha
     from review import auth, routes
-    from app.services.tags import reload_vocabulary
+    from app.services.labels import reload_vocabulary
 
     init_recaptcha(app, app.config['APP_CONFIG']['Recaptcha'])
     auth.configure(routes.users)
-    # The tag vocabulary is cached per-process; drop it so each test re-reads
+    # The label vocabulary is cached per-process; drop it so each test re-reads
     # the (usually empty -> default) vocabulary against its fresh database.
     reload_vocabulary()
 

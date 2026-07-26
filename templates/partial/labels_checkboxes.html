@@ -1,0 +1,23 @@
+{# Grouped label checkboxes: each class as a bold checkbox with its sub-labels
+   indented underneath. Callers set:
+     label_input_name : the input `name` (e.g. 'labels' or 'applied')
+     checked_labels   : iterable of labels that should start checked (default: none)
+   Pair with static/js/label_checkboxes.js -> LabelCheckboxes.init(form) for the
+   sub->parent auto-check behaviour. #}
+{% set checked_labels = checked_labels|default([]) %}
+{% for group in label_groups %}
+<div style="margin-bottom: 6px;">
+    <label class="form-checkbox" style="font-weight: bold;">
+        <input type="checkbox" name="{{ label_input_name }}" value="{{ group.label }}" data-label-class="1"{{ ' checked' if group.label in checked_labels else '' }}><i class="form-icon"></i> {{ group.label }}
+    </label>
+    {% if group.sublabels %}
+    <div style="margin-left: 24px;">
+        {% for sub in group.sublabels %}
+        <label class="form-checkbox" style="display: inline-block; margin-right: 12px;">
+            <input type="checkbox" name="{{ label_input_name }}" value="{{ sub }}" data-label-parent="{{ group.label }}"{{ ' checked' if sub in checked_labels else '' }}><i class="form-icon"></i> {{ sub }}
+        </label>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}

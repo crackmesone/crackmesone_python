@@ -5,7 +5,7 @@ Search controller - Searching crackmes.
 from flask import Blueprint, render_template, request
 from app.models.crackme import search_crackme, random_crackmes
 from app.models.errors import ErrUnavailable
-from app.services.tags import get_tag_groups, normalize_tags
+from app.services.labels import get_label_groups, normalize_labels
 
 search_bp = Blueprint('search', __name__)
 
@@ -16,11 +16,11 @@ def search_get():
 
     Searches are driven by URL query parameters so results are bookmarkable and
     shareable (issue #162). A bare ``/search`` with no parameters shows the empty
-    form; any parameter (e.g. ``/search?tags=Packer``) runs a search.
+    form; any parameter (e.g. ``/search?labels=Packer``) runs a search.
     """
     if not request.args:
         return render_template('search/search.html', crackmes=[], page=1, has_more=False,
-                               show_all=False, search_params={}, tag_groups=get_tag_groups())
+                               show_all=False, search_params={}, label_groups=get_label_groups())
     return _render_search(request.args)
 
 
@@ -42,7 +42,9 @@ def _render_search(source):
     lang = source.getlist('lang')
     arch = source.getlist('arch')
     platform = source.getlist('platform')
-    tags = normalize_tags(source.getlist('tags'))
+    # Accept the legacy ``tags`` param name so pre-rename bookmarked/shared
+    # search URLs (issue #167) keep working.
+    labels = normalize_labels(source.getlist('labels') or source.getlist('tags'))
 
     # Get difficulty range
     try:
@@ -180,7 +182,7 @@ def _render_search(source):
         'lang': lang,  # list
         'arch': arch,  # list
         'platform': platform,  # list
-        'tags': tags,  # list
+        'labels': labels,  # list
         'difficulty-min': difficulty_min,
         'difficulty-max': difficulty_max,
         'quality-min': quality_min,
@@ -207,7 +209,7 @@ def _render_search(source):
                 lang=lang,
                 arch=arch,
                 platform=platform,
-                tags=tags,
+                labels=labels,
                 difficulty_min=difficulty_min,
                 difficulty_max=difficulty_max,
                 quality_min=quality_min,
@@ -233,7 +235,7 @@ def _render_search(source):
                 lang=lang,
                 arch=arch,
                 platform=platform,
-                tags=tags,
+                labels=labels,
                 difficulty_min=difficulty_min,
                 difficulty_max=difficulty_max,
                 quality_min=quality_min,
@@ -261,7 +263,7 @@ def _render_search(source):
                            has_more=has_more,
                            show_all=show_all,
                            search_params=search_params,
-                           tag_groups=get_tag_groups())
+                           label_groups=get_label_groups())
 
 
 @search_bp.route('/random', methods=['GET'])
@@ -300,4 +302,4 @@ def random_get():
                            has_more=False,
                            show_all=True,
                            search_params=search_params,
-                           tag_groups=get_tag_groups())
+                           label_groups=get_label_groups())

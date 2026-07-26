@@ -123,7 +123,7 @@ SORT_FIELDS = {
 
 
 def search_crackme(name='', author='', lang='', arch='', platform='',
-                   tags=None,
+                   labels=None,
                    difficulty_min=0, difficulty_max=6,
                    quality_min=0, quality_max=6,
                    downloads_min=0, downloads_max=None,
@@ -191,12 +191,12 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
             query['platform'] = {'$in': platform}
         else:
             query['platform'] = platform
-    # tags: a crackme must carry *all* selected tags ($all)
-    if tags:
-        if isinstance(tags, str):
-            tags = [tags]
-        if tags:
-            query['tags'] = {'$all': tags}
+    # labels: a crackme must carry *all* selected labels ($all)
+    if labels:
+        if isinstance(labels, str):
+            labels = [labels]
+        if labels:
+            query['labels'] = {'$all': labels}
 
     skip = (page - 1) * per_page
     # Determine sort field and direction
@@ -281,7 +281,7 @@ def crackme_by_user_and_name(username, name, visible=True):
     return result
 
 
-def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename, tags=None):
+def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename, labels=None):
     """Prepare a crackme object without inserting it."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
@@ -307,7 +307,7 @@ def crackme_create_prepare(name, info, username, lang, arch, platform, size, ori
         'platform': platform,
         'size': size,
         'original_filename': original_filename,
-        'tags': tags or []
+        'labels': labels or []
     }
 
 
@@ -356,7 +356,7 @@ def crackme_update(hexid, updates):
         raise ErrUnavailable("Database is unavailable")
 
     # Only allow updating these fields (name is excluded to avoid database issues)
-    allowed_fields = {'info', 'lang', 'arch', 'platform', 'tags'}
+    allowed_fields = {'info', 'lang', 'arch', 'platform', 'labels'}
     filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
 
     if not filtered_updates:
@@ -385,27 +385,27 @@ def crackme_update(hexid, updates):
     return changes
 
 
-def crackme_set_tags(hexid, tags):
-    """Overwrite the obfuscation tags on a crackme.
+def crackme_set_labels(hexid, labels):
+    """Overwrite the obfuscation labels on a crackme.
 
     Args:
         hexid: The hex ID of the crackme
-        tags: The full (already validated) list of tags to store
+        labels: The full (already validated) list of labels to store
 
     Returns:
-        The previous list of tags, or None if the crackme was not found.
+        The previous list of labels, or None if the crackme was not found.
     """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('crackme')
-    crackme = collection.find_one({'hexid': hexid}, {'tags': 1})
+    crackme = collection.find_one({'hexid': hexid}, {'labels': 1})
     if not crackme:
         return None
 
-    old_tags = crackme.get('tags', [])
-    collection.update_one({'hexid': hexid}, {'$set': {'tags': list(tags)}})
-    return old_tags
+    old_labels = crackme.get('labels', [])
+    collection.update_one({'hexid': hexid}, {'$set': {'labels': list(labels)}})
+    return old_labels
 
 
 def crackme_by_hexid_any(hexid):

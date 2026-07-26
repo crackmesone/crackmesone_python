@@ -169,15 +169,15 @@
         </div>
         <div class="form-group">
             <div class="col-3 col-sm-12">
-                <label class="form-label" for="tags">Tags</label>
+                <label class="form-label" for="labels">Labels</label>
             </div>
             <div class="col-9 col-sm-12">
                 <div style="max-height: 240px; overflow-y: auto; border: .05rem solid #444; border-radius: .1rem; padding: 6px 8px;">
-                    {% set tag_input_name = 'tags' %}
-                    {% set checked_tags = search_params.get('tags', []) %}
-                    {% include 'partial/tags_checkboxes.html' %}
+                    {% set label_input_name = 'labels' %}
+                    {% set checked_labels = search_params.get('labels', []) %}
+                    {% include 'partial/labels_checkboxes.html' %}
                 </div>
-                <p class="text-gray" style="font-size: 0.75rem; margin-top: 4px;">Matches crackmes carrying all checked tags. AI-generated, may be inaccurate.</p>
+                <p class="text-gray" style="font-size: 0.75rem; margin-top: 4px;">Matches crackmes carrying all checked labels. AI-generated, may be inaccurate.</p>
             </div>
         </div>
         <div class="form-group">
@@ -252,7 +252,7 @@
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
-            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('labels', []) %}<input type="hidden" name="labels" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -282,7 +282,7 @@
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
-            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('labels', []) %}<input type="hidden" name="labels" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -309,7 +309,7 @@
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
-            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('labels', []) %}<input type="hidden" name="labels" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">
@@ -340,7 +340,7 @@
             {% for v in search_params.get('lang', []) %}<input type="hidden" name="lang" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('arch', []) %}<input type="hidden" name="arch" value="{{ v }}">{% endfor %}
             {% for v in search_params.get('platform', []) %}<input type="hidden" name="platform" value="{{ v }}">{% endfor %}
-            {% for v in search_params.get('tags', []) %}<input type="hidden" name="tags" value="{{ v }}">{% endfor %}
+            {% for v in search_params.get('labels', []) %}<input type="hidden" name="labels" value="{{ v }}">{% endfor %}
             <input type="hidden" name="difficulty-min" value="{{ search_params['difficulty-min'] }}">
             <input type="hidden" name="difficulty-max" value="{{ search_params['difficulty-max'] }}">
             <input type="hidden" name="quality-min" value="{{ search_params['quality-min'] }}">

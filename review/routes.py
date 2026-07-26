@@ -44,10 +44,10 @@ from review.auth import (
 )
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
-from app.services.tags import get_tag_groups, normalize_tags
-from app.models.tag_request import (
-    tag_requests_pending, count_pending_tag_requests, tag_request_by_hexid,
-    tag_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
+from app.services.labels import get_label_groups, normalize_labels
+from app.models.label_request import (
+    label_requests_pending, count_pending_label_requests, label_request_by_hexid,
+    label_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
 )
 from app.models.errors import ErrNoResult
 
@@ -600,7 +600,7 @@ def get_crackme_details(uuid):
         "lang": crackme_obj["lang"],
         "arch": crackme_obj["arch"],
         "platform": crackme_obj["platform"],
-        "tags": crackme_obj.get("tags", [])
+        "labels": crackme_obj.get("labels", [])
     }, None
 
 
@@ -1372,10 +1372,10 @@ def logout():
 def dashboard(current_user):
     """Display dashboard with pending submission counts."""
     try:
-        tagreq_cnt = count_pending_tag_requests()
+        labelreq_cnt = count_pending_label_requests()
     except Exception as e:
-        print(f"Error counting tag requests: {e}")
-        tagreq_cnt = 0
+        print(f"Error counting label requests: {e}")
+        labelreq_cnt = 0
 
     return render_template(
         'reviewer/dashboard.html',
@@ -1383,7 +1383,7 @@ def dashboard(current_user):
         is_admin=current_user['is_admin'],
         solution_cnt=count_pending_solutions(),
         crackme_cnt=count_pending_items('crackme'),
-        tagreq_cnt=tagreq_cnt
+        labelreq_cnt=labelreq_cnt
     )
 
 
@@ -1458,7 +1458,7 @@ def viewcrackme(current_user):
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         crackme=crackme,
-        tag_groups=get_tag_groups()
+        label_groups=get_label_groups()
     )
 
 
@@ -1666,16 +1666,16 @@ def approvecrackme(current_user):
 
 
 # =============================================================================
-# Route Handlers - Tags
+# Route Handlers - Labels
 # =============================================================================
 
-@reviewer_bp.route('/settags', methods=['POST'])
+@reviewer_bp.route('/setlabels', methods=['POST'])
 @token_required
-def settags(current_user):
-    """Override the obfuscation tags on a crackme (reviewer).
+def setlabels(current_user):
+    """Override the obfuscation labels on a crackme (reviewer).
 
     Used both when reviewing a pending crackme and from the edit page. The
-    posted ``tags`` values are filtered against the controlled vocabulary.
+    posted ``labels`` values are filtered against the controlled vocabulary.
     """
     validate_csrf_token()
     crackme_uuid = request.form.get('uuid')
@@ -1684,21 +1684,21 @@ def settags(current_user):
     if not is_valid_hexid(crackme_uuid):
         return redirect(url_for('reviewer.reviewcrackme', message="Invalid crackme id"))
 
-    tags = normalize_tags(request.form.getlist('tags'))
+    labels = normalize_labels(request.form.getlist('labels'))
 
     crackme = g_crackmesone_db.crackme.find_one({'hexid': crackme_uuid.lower()})
     if not crackme:
         return redirect(url_for('reviewer.reviewcrackme', message="Crackme not found"))
 
-    old_tags = crackme.get('tags', [])
+    old_labels = crackme.get('labels', [])
     g_crackmesone_db.crackme.update_one(
         {'hexid': crackme_uuid.lower()},
-        {'$set': {'tags': tags}}
+        {'$set': {'labels': labels}}
     )
 
     log_reviewer_operation(
-        "set_crackme_tags", current_user['username'],
-        {"crackme_uuid": crackme_uuid, "old_tags": old_tags, "new_tags": tags},
+        "set_crackme_labels", current_user['username'],
+        {"crackme_uuid": crackme_uuid, "old_labels": old_labels, "new_labels": labels},
         True
     )
 
@@ -1707,45 +1707,45 @@ def settags(current_user):
     return redirect(url_for('reviewer.viewcrackme', crackme_uuid=crackme_uuid))
 
 
-def _apply_tag_request(tag_request):
-    """Apply an approved tag request's add/remove sets to the crackme.
+def _apply_label_request(label_request):
+    """Apply an approved label request's add/remove sets to the crackme.
 
-    Returns the crackme's new tag list, or None if the crackme is gone.
+    Returns the crackme's new label list, or None if the crackme is gone.
     """
     crackme = g_crackmesone_db.crackme.find_one(
-        {'hexid': tag_request['crackme_hexid']}
+        {'hexid': label_request['crackme_hexid']}
     )
     if not crackme:
         return None
 
-    current = list(crackme.get('tags', []))
-    for tag in tag_request.get('add', []):
-        if tag not in current:
-            current.append(tag)
-    for tag in tag_request.get('remove', []):
-        if tag in current:
-            current.remove(tag)
+    current = list(crackme.get('labels', []))
+    for label in label_request.get('add', []):
+        if label not in current:
+            current.append(label)
+    for label in label_request.get('remove', []):
+        if label in current:
+            current.remove(label)
 
-    new_tags = normalize_tags(current)
+    new_labels = normalize_labels(current)
     g_crackmesone_db.crackme.update_one(
-        {'hexid': tag_request['crackme_hexid']},
-        {'$set': {'tags': new_tags}}
+        {'hexid': label_request['crackme_hexid']},
+        {'$set': {'labels': new_labels}}
     )
-    return new_tags
+    return new_labels
 
 
-@reviewer_bp.route('/tagrequests')
+@reviewer_bp.route('/labelrequests')
 @token_required
-def tagrequests(current_user):
-    """List pending tag change requests for review."""
+def labelrequests(current_user):
+    """List pending label change requests for review."""
     try:
-        requests_list = tag_requests_pending()
+        requests_list = label_requests_pending()
     except Exception as e:
-        print(f"Error loading tag requests: {e}")
+        print(f"Error loading label requests: {e}")
         requests_list = []
 
     return render_template(
-        'reviewer/tagrequests.html',
+        'reviewer/labelrequests.html',
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         requests=requests_list,
@@ -1753,81 +1753,81 @@ def tagrequests(current_user):
     )
 
 
-@reviewer_bp.route('/approvetagrequest', methods=['POST'])
+@reviewer_bp.route('/approvelabelrequest', methods=['POST'])
 @token_required
-def approvetagrequest(current_user):
-    """Approve a tag change request and apply it to the crackme."""
+def approvelabelrequest(current_user):
+    """Approve a label change request and apply it to the crackme."""
     validate_csrf_token()
     req_hexid = request.form.get('uuid')
 
     try:
-        tag_request = tag_request_by_hexid(req_hexid)
+        label_request = label_request_by_hexid(req_hexid)
     except ErrNoResult:
-        return redirect(url_for('reviewer.tagrequests', message="Request not found"))
+        return redirect(url_for('reviewer.labelrequests', message="Request not found"))
 
-    if tag_request.get('status') != 'pending':
-        return redirect(url_for('reviewer.tagrequests', message="Request already handled"))
+    if label_request.get('status') != 'pending':
+        return redirect(url_for('reviewer.labelrequests', message="Request already handled"))
 
-    new_tags = _apply_tag_request(tag_request)
-    if new_tags is None:
+    new_labels = _apply_label_request(label_request)
+    if new_labels is None:
         # Crackme no longer exists; close the request as rejected.
-        tag_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
-        return redirect(url_for('reviewer.tagrequests', message="Crackme not found; request closed"))
+        label_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
+        return redirect(url_for('reviewer.labelrequests', message="Crackme not found; request closed"))
 
-    tag_request_set_status(req_hexid, STATUS_APPROVED, current_user['username'])
+    label_request_set_status(req_hexid, STATUS_APPROVED, current_user['username'])
 
     log_reviewer_operation(
-        "approve_tag_request", current_user['username'],
-        {"request": req_hexid, "crackme": tag_request['crackme_hexid'], "new_tags": new_tags},
+        "approve_label_request", current_user['username'],
+        {"request": req_hexid, "crackme": label_request['crackme_hexid'], "new_labels": new_labels},
         True
     )
 
     try:
         send_user_notification(
-            tag_request['requester'],
-            f"Your tag change request for '<a href=\"/crackme/{tag_request['crackme_hexid']}\">"
-            f"{html_escape(tag_request['crackme_name'])}</a>' has been approved."
+            label_request['requester'],
+            f"Your label change request for '<a href=\"/crackme/{label_request['crackme_hexid']}\">"
+            f"{html_escape(label_request['crackme_name'])}</a>' has been approved."
         )
     except Exception as e:
         print(f"Notification error: {e}")
 
-    return redirect(url_for('reviewer.tagrequests', message="Request approved"))
+    return redirect(url_for('reviewer.labelrequests', message="Request approved"))
 
 
-@reviewer_bp.route('/rejecttagrequest', methods=['POST'])
+@reviewer_bp.route('/rejectlabelrequest', methods=['POST'])
 @token_required
-def rejecttagrequest(current_user):
-    """Reject a tag change request."""
+def rejectlabelrequest(current_user):
+    """Reject a label change request."""
     validate_csrf_token()
     req_hexid = request.form.get('uuid')
     reject_reason = request.form.get('reject_reason')
 
     try:
-        tag_request = tag_request_by_hexid(req_hexid)
+        label_request = label_request_by_hexid(req_hexid)
     except ErrNoResult:
-        return redirect(url_for('reviewer.tagrequests', message="Request not found"))
+        return redirect(url_for('reviewer.labelrequests', message="Request not found"))
 
-    if tag_request.get('status') != 'pending':
-        return redirect(url_for('reviewer.tagrequests', message="Request already handled"))
+    if label_request.get('status') != 'pending':
+        return redirect(url_for('reviewer.labelrequests', message="Request already handled"))
 
-    tag_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
+    label_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
 
     log_reviewer_operation(
-        "reject_tag_request", current_user['username'],
-        {"request": req_hexid, "crackme": tag_request['crackme_hexid'], "reason": reject_reason},
+        "reject_label_request", current_user['username'],
+        {"request": req_hexid, "crackme": label_request['crackme_hexid'], "reason": reject_reason},
         True
     )
 
     try:
-        notif = (f"Your tag change request for '<a href=\"/crackme/{tag_request['crackme_hexid']}\">"
-                 f"{html_escape(tag_request['crackme_name'])}</a>' has been rejected.")
+        notif = (f"Your label change request for '<a href=\"/crackme/{label_request['crackme_hexid']}\">"
+                 f"{html_escape(label_request['crackme_name'])}</a>' has been rejected.")
         if reject_reason:
             notif += f" Reason: {html_escape(reject_reason)}"
-        send_user_notification(tag_request['requester'], notif)
+        send_user_notification(label_request['requester'], notif)
     except Exception as e:
         print(f"Notification error: {e}")
 
-    return redirect(url_for('reviewer.tagrequests', message="Request rejected"))
+    return redirect(url_for('reviewer.labelrequests', message="Request rejected"))
 
 
 # =============================================================================
@@ -1903,7 +1903,7 @@ def editcrackme(current_user):
         lang = request.form.get('lang', '')
         arch = request.form.get('arch', '')
         platform = request.form.get('platform', '')
-        tags = normalize_tags(request.form.getlist('tags'))
+        labels = normalize_labels(request.form.getlist('labels'))
         notify_author = request.form.get('notify_author') == 'on'
 
         if True:
@@ -1925,8 +1925,8 @@ def editcrackme(current_user):
                     changes.append(f"arch: '{crackme_obj.get('arch')}' -> '{arch}'")
                 if crackme_obj.get('platform') != platform:
                     changes.append(f"platform: '{crackme_obj.get('platform')}' -> '{platform}'")
-                if sorted(crackme_obj.get('tags', [])) != sorted(tags):
-                    changes.append(f"tags: {crackme_obj.get('tags', [])} -> {tags}")
+                if sorted(crackme_obj.get('labels', [])) != sorted(labels):
+                    changes.append(f"labels: {crackme_obj.get('labels', [])} -> {labels}")
 
                 # Update the crackme (name excluded)
                 g_crackmesone_db.crackme.update_one(
@@ -1936,7 +1936,7 @@ def editcrackme(current_user):
                         "lang": lang,
                         "arch": arch,
                         "platform": platform,
-                        "tags": tags
+                        "labels": labels
                     }}
                 )
 
@@ -2022,7 +2022,7 @@ def editcrackme(current_user):
                 "arch": crackme_obj.get('arch', ''),
                 "platform": crackme_obj.get('platform', ''),
                 "author": crackme_obj.get('author', ''),
-                "tags": crackme_obj.get('tags', [])
+                "labels": crackme_obj.get('labels', [])
             }
         else:
             error = "Crackme not found"
@@ -2034,7 +2034,7 @@ def editcrackme(current_user):
         crackme=crackme,
         message=message,
         error=error,
-        tag_groups=get_tag_groups()
+        label_groups=get_label_groups()
     )
 
 
