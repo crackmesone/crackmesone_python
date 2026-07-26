@@ -54,11 +54,10 @@
                 {% endif %}
 
                 {% if is_admin %}
-                <form action="{{ url_for('reviewer.approveaccountdeletion') }}" method="POST" style="display:inline;"
-                      onsubmit="return confirm('Permanently delete account &quot;{{ req.requester }}&quot; and all associated data? This cannot be undone.');">
+                <form action="{{ url_for('reviewer.approveaccountdeletion') }}" method="POST" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{ req.hexid }}">
-                    <button type="submit" class="btn btn-error">Approve &amp; delete account</button>
+                    <button type="submit" class="btn btn-error">Review &amp; approve deletion</button>
                 </form>
                 {% endif %}
 
