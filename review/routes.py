@@ -49,6 +49,11 @@ from app.models.label_request import (
     label_requests_pending, count_pending_label_requests, label_request_by_hexid,
     label_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
 )
+from app.models.account_deletion_request import (
+    account_deletion_requests_pending, count_pending_account_deletion_requests,
+    account_deletion_request_by_hexid, account_deletion_request_set_status,
+)
+from app.services.email import send_email
 from app.models.errors import ErrNoResult
 
 
@@ -1377,13 +1382,20 @@ def dashboard(current_user):
         print(f"Error counting label requests: {e}")
         labelreq_cnt = 0
 
+    try:
+        acctdel_cnt = count_pending_account_deletion_requests()
+    except Exception as e:
+        print(f"Error counting account deletion requests: {e}")
+        acctdel_cnt = 0
+
     return render_template(
         'reviewer/dashboard.html',
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         solution_cnt=count_pending_solutions(),
         crackme_cnt=count_pending_items('crackme'),
-        labelreq_cnt=labelreq_cnt
+        labelreq_cnt=labelreq_cnt,
+        acctdel_cnt=acctdel_cnt
     )
 
 
@@ -1828,6 +1840,145 @@ def rejectlabelrequest(current_user):
         print(f"Notification error: {e}")
 
     return redirect(url_for('reviewer.labelrequests', message="Request rejected"))
+
+
+# =============================================================================
+# Route Handlers - Account Deletion Requests
+# =============================================================================
+
+def send_account_deleted_email(email, username):
+    """Email a user confirming their account has been deleted.
+
+    Best-effort: returns True on success, False otherwise. Never raises.
+    """
+    if not email:
+        return False
+
+    subject = "Your crackmes.one account has been deleted"
+    body = (
+        f"Hello {username},\n\n"
+        "As you requested, your crackmes.one account and all of its associated "
+        "data (crackmes, writeups, comments, and ratings) have been permanently "
+        "deleted.\n\n"
+        "If you did not request this, or you believe this was a mistake, please "
+        "reply to this email or contact us at crackmesone@gmail.com.\n\n"
+        "Thanks for having been part of the community.\n"
+        "- The crackmes.one team"
+    )
+    try:
+        return send_email(email, subject, body)
+    except Exception as e:
+        print(f"Error sending account deletion email: {e}")
+        return False
+
+
+@reviewer_bp.route('/accountdeletionrequests')
+@token_required
+def accountdeletionrequests(current_user):
+    """List pending account deletion requests for review."""
+    try:
+        requests_list = account_deletion_requests_pending()
+    except Exception as e:
+        print(f"Error loading account deletion requests: {e}")
+        requests_list = []
+
+    return render_template(
+        'reviewer/accountdeletionrequests.html',
+        user=current_user['username'],
+        is_admin=current_user['is_admin'],
+        requests=requests_list,
+        message=request.args.get('message')
+    )
+
+
+@reviewer_bp.route('/approveaccountdeletion', methods=['POST'])
+@admin_required
+def approveaccountdeletion(current_user):
+    """Approve an account deletion request and delete the account (admin only)."""
+    validate_csrf_token()
+    req_hexid = request.form.get('uuid')
+
+    try:
+        del_request = account_deletion_request_by_hexid(req_hexid)
+    except ErrNoResult:
+        return redirect(url_for('reviewer.accountdeletionrequests', message="Request not found"))
+
+    if del_request.get('status') != 'pending':
+        return redirect(url_for('reviewer.accountdeletionrequests', message="Request already handled"))
+
+    username = del_request.get('requester')
+    email = del_request.get('email', '')
+
+    # The stored email is what the account had when the request was made; fall
+    # back to the current account email so deletion still targets the right user.
+    delete_email = email
+    if username:
+        user = g_crackmesone_db.user.find_one({'name': username})
+        if user and user.get('email'):
+            delete_email = user['email']
+            email = email or user['email']
+
+    if not delete_email:
+        return redirect(url_for(
+            'reviewer.accountdeletionrequests',
+            message="Request has no email on file; cannot delete"
+        ))
+
+    result = delete_user_account(delete_email, admin_username=current_user['username'])
+    success = "successful" in result.lower()
+
+    log_reviewer_operation(
+        "approve_account_deletion", current_user['username'],
+        {"request": req_hexid, "user": username, "email": delete_email, "result": result},
+        success
+    )
+
+    if not success:
+        return redirect(url_for('reviewer.accountdeletionrequests', message=result))
+
+    account_deletion_request_set_status(req_hexid, STATUS_APPROVED, current_user['username'])
+
+    email_sent = send_account_deleted_email(email, username)
+
+    msg = f"Account '{username}' deleted."
+    msg += " Confirmation email sent." if email_sent else " (Confirmation email not sent.)"
+    return redirect(url_for('reviewer.accountdeletionrequests', message=msg))
+
+
+@reviewer_bp.route('/rejectaccountdeletion', methods=['POST'])
+@token_required
+def rejectaccountdeletion(current_user):
+    """Reject an account deletion request."""
+    validate_csrf_token()
+    req_hexid = request.form.get('uuid')
+    reject_reason = request.form.get('reject_reason')
+
+    try:
+        del_request = account_deletion_request_by_hexid(req_hexid)
+    except ErrNoResult:
+        return redirect(url_for('reviewer.accountdeletionrequests', message="Request not found"))
+
+    if del_request.get('status') != 'pending':
+        return redirect(url_for('reviewer.accountdeletionrequests', message="Request already handled"))
+
+    account_deletion_request_set_status(req_hexid, STATUS_REJECTED, current_user['username'])
+
+    log_reviewer_operation(
+        "reject_account_deletion", current_user['username'],
+        {"request": req_hexid, "user": del_request.get('requester'), "reason": reject_reason},
+        True
+    )
+
+    try:
+        notif = "Your account deletion request has been declined."
+        if reject_reason:
+            notif += f" Reason: {html_escape(reject_reason)}"
+        notif += " If you still wish to delete your account, please contact crackmesone@gmail.com."
+        send_user_notification(del_request['requester'], notif)
+    except Exception as e:
+        print(f"Notification error: {e}")
+
+    return redirect(url_for('reviewer.accountdeletionrequests', message="Request rejected"))
 
 
 # =============================================================================

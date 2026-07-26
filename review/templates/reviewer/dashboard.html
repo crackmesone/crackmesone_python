@@ -29,6 +29,7 @@
                 <a href="{{ url_for('reviewer.reviewsolution') }}" class="btn btn-link">Review solutions</a>
                 <a href="{{ url_for('reviewer.reviewcrackme') }}" class="btn btn-link">Review crackmes</a>
                 <a href="{{ url_for('reviewer.labelrequests') }}" class="btn btn-link">Review label requests</a>
+                <a href="{{ url_for('reviewer.accountdeletionrequests') }}" class="btn btn-link">Account deletion requests</a>
                 {% if is_admin %}
                 <a href="{{ url_for('reviewer.deletesolution') }}" class="btn btn-link">Delete solution</a>
                 <a href="{{ url_for('reviewer.deletecrackme') }}" class="btn btn-link">Delete crackme</a>
@@ -64,6 +65,12 @@
                 <div class="column col-12 panel-background">
                     <p>The number of label change requests to review:</p>
                     <h2 class="text-center"> {{ labelreq_cnt }} </h2><br>
+                </div>
+            </div>
+            <div class="column col-6">
+                <div class="column col-12 panel-background">
+                    <p>The number of account deletion requests to review:</p>
+                    <h2 class="text-center"> {{ acctdel_cnt }} </h2><br>
                 </div>
             </div>
         </div>

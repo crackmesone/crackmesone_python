@@ -20,6 +20,7 @@ def register_blueprints(app):
     from app.controllers.rules import rules_bp
     from app.controllers.password import password_bp
     from app.controllers.password_reset import password_reset_bp
+    from app.controllers.account_deletion import account_deletion_bp
     from app.controllers.static import static_bp
     from app.controllers.error import error_bp
 
@@ -38,5 +39,6 @@ def register_blueprints(app):
     app.register_blueprint(rules_bp)
     app.register_blueprint(password_bp)
     app.register_blueprint(password_reset_bp)
+    app.register_blueprint(account_deletion_bp)
     app.register_blueprint(static_bp)
     app.register_blueprint(error_bp)
