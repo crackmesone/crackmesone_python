@@ -57,6 +57,7 @@ def test_admin_edits_crackme_metadata_and_notifies_author(
     response = client.post('/review/editcrackme', data={
         'csrf_token': 'workflow-csrf',
         'crackme_uuid': sample_crackme['hexid'],
+        'name': sample_crackme['name'],
         'info': 'Reviewer-updated description',
         'lang': 'Rust', 'arch': 'ARM', 'platform': 'Linux',
         'notify_author': 'on',
@@ -67,6 +68,47 @@ def test_admin_edits_crackme_metadata_and_notifies_author(
     assert updated['info'] == 'Reviewer-updated description'
     assert updated['lang'] == 'Rust'
     assert db.notifications.count_documents({'user': 'alice'}) == 1
+    _cleanup_admin()
+
+
+def test_admin_renames_crackme_and_cascades(app, db, sample_crackme, monkeypatch):
+    from review import routes
+
+    client = _admin_client(app)
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **k: None)
+    hexid = sample_crackme['hexid']
+    db.solution.insert_one({
+        '_id': ObjectId(), 'hexid': str(ObjectId()), 'author': 'bob',
+        'crackmeid': sample_crackme['_id'], 'crackmehexid': hexid,
+        'crackmename': 'Test Crackme', 'visible': True, 'deleted': False,
+    })
+
+    response = client.post('/review/editcrackme', data={
+        'csrf_token': 'workflow-csrf', 'crackme_uuid': hexid,
+        'name': 'Reviewer Renamed', 'info': sample_crackme['info'],
+        'lang': sample_crackme['lang'], 'arch': sample_crackme['arch'],
+        'platform': sample_crackme['platform'],
+    })
+
+    assert response.status_code == 200
+    assert db.crackme.find_one({'hexid': hexid})['name'] == 'Reviewer Renamed'
+    assert db.solution.find_one({'crackmehexid': hexid})['crackmename'] == 'Reviewer Renamed'
+    _cleanup_admin()
+
+
+def test_admin_edit_rejects_empty_crackme_name(app, db, sample_crackme, monkeypatch):
+    from review import routes
+
+    client = _admin_client(app)
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **k: None)
+    response = client.post('/review/editcrackme', data={
+        'csrf_token': 'workflow-csrf', 'crackme_uuid': sample_crackme['hexid'],
+        'name': '   ', 'info': 'x', 'lang': 'Rust', 'arch': 'ARM',
+        'platform': 'Linux',
+    })
+
+    assert response.status_code == 200
+    assert db.crackme.find_one({'_id': sample_crackme['_id']})['name'] == 'Test Crackme'
     _cleanup_admin()
 
 
@@ -82,6 +124,7 @@ def test_admin_replaces_crackme_file(app, db, sample_crackme, monkeypatch, tmp_p
     )
     response = client.post('/review/editcrackme', data={
         'csrf_token': 'workflow-csrf', 'crackme_uuid': sample_crackme['hexid'],
+        'name': sample_crackme['name'],
         'info': sample_crackme['info'], 'lang': sample_crackme['lang'],
         'arch': sample_crackme['arch'], 'platform': sample_crackme['platform'],
         'file': (BytesIO(b'replacement'), 'replacement.bin'),

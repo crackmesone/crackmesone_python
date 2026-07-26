@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Account Settings{% endblock %}
+{% block page_title %}Account Settings{% endblock %}
+{% block head %}{% endblock %}
+{% block content %}
+
+<div class="container grid-lg wrapper">
+    <div class="columns" style="justify-content: center;">
+        <div class="column col-8 col-xs-12 panel-input">
+            <h3>Change Username</h3>
+            <p>Your username identifies you across your crackmes, writeups and comments. Changing it updates all of them.</p>
+            <form method="POST" action="/settings/username" class="form-horizontal">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="new_username">New Username</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="text" id="new_username" name="name" value="{{ current_username }}" placeholder="New Username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="username_password">Current Password</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="password" id="username_password" name="current_password" placeholder="Current Password" required>
+                    </div>
+                </div>
+                <input type="submit" value="Update Username" class="btn active float-right">
+            </form>
+
+            <div class="divider" style="margin-top: 40px;"></div>
+
+            <h3>Change Email</h3>
+            <p>Your email is used for password resets and account notifications. It is never shown publicly.</p>
+            <form method="POST" action="/settings/email" class="form-horizontal">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="new_email">New Email</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="email" id="new_email" name="email" value="{{ current_email }}" placeholder="New Email" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-4 col-sm-12">
+                        <label class="form-label" for="email_password">Current Password</label>
+                    </div>
+                    <div class="col-8 col-sm-12">
+                        <input class="form-input" type="password" id="email_password" name="current_password" placeholder="Current Password" required>
+                    </div>
+                </div>
+                <input type="submit" value="Update Email" class="btn active float-right">
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block foot %}{% endblock %}

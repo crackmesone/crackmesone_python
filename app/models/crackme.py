@@ -342,6 +342,46 @@ def random_crackmes(count=50):
     return list(collection.aggregate(pipeline))
 
 
+# Collections that keep a denormalized copy of a crackme's name, as
+# (collection, hexid-match-field, name-field). Renaming a crackme must refresh
+# every one of these so listings (e.g. a user's writeups, the label-request
+# review queue) don't show the stale old name.
+CRACKME_NAME_REFERENCES = (
+    ('comment', 'crackmehexid', 'crackmename'),
+    ('solution', 'crackmehexid', 'crackmename'),
+    ('label_request', 'crackme_hexid', 'crackme_name'),
+)
+
+
+def cascade_crackme_name(hexid, new_name):
+    """Update every denormalized copy of a renamed crackme's name.
+
+    Shared by the user-facing edit flow (via :func:`crackme_update`) and the
+    reviewer edit tool so both keep the copies in sync.
+    """
+    for collection_name, match_field, name_field in CRACKME_NAME_REFERENCES:
+        get_collection(collection_name).update_many(
+            {match_field: hexid},
+            {'$set': {name_field: new_name}}
+        )
+
+
+def crackme_name_taken_by_user(username, name, exclude_hexid=None):
+    """Return True if the user already has a (different) crackme with this name.
+
+    Used to keep ``crackme_by_user_and_name`` lookups unambiguous when a user
+    renames one of their crackmes. Matches across all visibility states.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('crackme')
+    query = {'author': username, 'name': name}
+    if exclude_hexid:
+        query['hexid'] = {'$ne': exclude_hexid}
+    return collection.find_one(query, {'_id': 1}) is not None
+
+
 def crackme_update(hexid, updates):
     """Update a crackme's fields.
 
@@ -351,12 +391,16 @@ def crackme_update(hexid, updates):
 
     Returns:
         Dictionary with old values of changed fields, or None if crackme not found
+
+    When ``name`` changes, the denormalized copies of it on comments, solutions
+    and label requests are refreshed too (see :func:`_cascade_crackme_name`).
     """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
-    # Only allow updating these fields (name is excluded to avoid database issues)
-    allowed_fields = {'info', 'lang', 'arch', 'platform', 'labels'}
+    # Fields a user may edit. ``name`` is now editable; any change to it cascades
+    # to the denormalized copies below.
+    allowed_fields = {'name', 'info', 'lang', 'arch', 'platform', 'labels'}
     filtered_updates = {k: v for k, v in updates.items() if k in allowed_fields}
 
     if not filtered_updates:
@@ -381,6 +425,8 @@ def crackme_update(hexid, updates):
             {'hexid': hexid},
             {'$set': filtered_updates}
         )
+        if 'name' in changes:
+            cascade_crackme_name(hexid, changes['name']['new'])
 
     return changes
 

@@ -11,7 +11,7 @@ from app.models.crackme import (
     crackme_by_hexid, last_crackmes, crackme_create_prepare,
     crackme_insert, crackme_delete_by_hexid, crackme_by_user_and_name,
     crackme_update_difficulty, crackme_update_quality, crackme_increment_downloads,
-    crackme_update
+    crackme_update, crackme_name_taken_by_user
 )
 from app.models.solution import solutions_by_crackme
 from app.models.comment import comments_by_crackme
@@ -158,12 +158,19 @@ def upload_crackme_post():
         flash(f'Field missing: {missing}', FLASH_ERROR)
         return render_template('crackme/create.html', label_groups=get_label_groups())
 
-    name = bleach.clean(request.form.get('name', ''))
+    # Strip so the stored name matches what the edit form later submits back
+    # (the edit path also strips); otherwise a later no-op edit would look like
+    # a rename and fire a spurious cascade.
+    name = bleach.clean(request.form.get('name', '')).strip()
     info = bleach.clean(request.form.get('info', ''))
     lang = bleach.clean(request.form.get('lang', ''))
     arch = bleach.clean(request.form.get('arch', ''))
     platform = request.form.get('platform', '')
     difficulty = request.form.get('difficulty', '')
+
+    if not name:
+        flash('Field missing: name', FLASH_ERROR)
+        return render_template('crackme/create.html', label_groups=get_label_groups())
     # Keep only values from the controlled vocabulary. Labels are not mandatory
     # (a crackme with no matching technique may legitimately have none).
     labels = normalize_labels(request.form.getlist('labels'))
@@ -336,14 +343,27 @@ def edit_crackme_post(hexid):
         flash('You can only edit your own crackmes.', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
-    # Get form data (name is not editable)
+    # Get form data
+    name = bleach.clean(request.form.get('name', '')).strip()
     info = bleach.clean(request.form.get('info', ''))
     lang = bleach.clean(request.form.get('lang', ''))
     arch = bleach.clean(request.form.get('arch', ''))
     platform = request.form.get('platform', '')
 
+    if not name:
+        flash('Crackme name cannot be empty.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}/edit')
+
+    # Renaming must not collide with another of the user's own crackmes, so that
+    # crackme_by_user_and_name lookups stay unambiguous.
+    if name != crackme.get('name') and \
+            crackme_name_taken_by_user(username, name, exclude_hexid=hexid):
+        flash('You already have another crackme with that name.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}/edit')
+
     # Update the crackme
     updates = {
+        'name': name,
         'info': info,
         'lang': lang,
         'arch': arch,
@@ -362,7 +382,7 @@ def edit_crackme_post(hexid):
     if changes:
         # Send notification to the author about the edit
         try:
-            notification_add(username, f"Your crackme '<a href=\"/crackme/{hexid}\">{html_escape(crackme.get('name'))}</a>' has been updated.")
+            notification_add(username, f"Your crackme '<a href=\"/crackme/{hexid}\">{html_escape(name)}</a>' has been updated.")
         except Exception as e:
             print(f"Notification error: {e}")
 

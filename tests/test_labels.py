@@ -459,7 +459,7 @@ def test_admin_editcrackme_shows_and_saves_labels(app, db, sample_crackme):
     assert b'value="Anti-debugging" data-label-class="1" checked' in page.data
 
     saved = client.post("/review/editcrackme", data={
-        "crackme_uuid": hexid,
+        "crackme_uuid": hexid, "name": sample_crackme["name"],
         "info": sample_crackme["info"], "lang": sample_crackme["lang"],
         "arch": sample_crackme["arch"], "platform": sample_crackme["platform"],
         "labels": ["Packer", "bogus"], "csrf_token": "admin-csrf",

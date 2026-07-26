@@ -45,6 +45,7 @@ from review.auth import (
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
 from app.services.labels import get_label_groups, normalize_labels
+from app.models.crackme import cascade_crackme_name, crackme_name_taken_by_user
 from app.models.label_request import (
     label_requests_pending, count_pending_label_requests, label_request_by_hexid,
     label_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
@@ -2071,7 +2072,8 @@ def editcrackme(current_user):
     if request.method == 'POST' and crackme_uuid:
         validate_csrf_token()
 
-        # Get form data (name is not editable)
+        # Get form data
+        name = request.form.get('name', '').strip()
         info = request.form.get('info', '').strip()
         lang = request.form.get('lang', '')
         arch = request.form.get('arch', '')
@@ -2087,9 +2089,18 @@ def editcrackme(current_user):
 
             if not crackme_obj:
                 error = "Crackme not found"
+            elif not name:
+                error = "Crackme name cannot be empty"
+            elif name != crackme_obj.get('name') and crackme_name_taken_by_user(
+                    crackme_obj.get('author'), name, exclude_hexid=crackme_obj['hexid']):
+                # Keep crackme_by_user_and_name lookups unambiguous.
+                error = "The author already has another crackme with that name"
             else:
-                # Track changes (name is not editable)
+                # Track changes
                 changes = []
+                name_changed = crackme_obj.get('name') != name
+                if name_changed:
+                    changes.append(f"name: '{crackme_obj.get('name')}' -> '{name}'")
                 if crackme_obj.get('info') != info:
                     changes.append("description updated")
                 if crackme_obj.get('lang') != lang:
@@ -2101,10 +2112,11 @@ def editcrackme(current_user):
                 if sorted(crackme_obj.get('labels', [])) != sorted(labels):
                     changes.append(f"labels: {crackme_obj.get('labels', [])} -> {labels}")
 
-                # Update the crackme (name excluded)
+                # Update the crackme
                 g_crackmesone_db.crackme.update_one(
                     {"_id": ObjectId(crackme_uuid)},
                     {"$set": {
+                        "name": name,
                         "info": info,
                         "lang": lang,
                         "arch": arch,
@@ -2112,6 +2124,11 @@ def editcrackme(current_user):
                         "labels": labels
                     }}
                 )
+
+                # A renamed crackme has denormalized name copies on comments,
+                # solutions and label requests that must be refreshed too.
+                if name_changed:
+                    cascade_crackme_name(crackme_obj['hexid'], name)
 
                 # Handle file replacement
                 file_replaced = False

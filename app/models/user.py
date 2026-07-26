@@ -139,6 +139,129 @@ def user_create(name, email, password):
     collection.insert_one(user)
 
 
+# Collections (and the field on each) that store a username as a reference to a
+# user. The username is denormalized onto all of these, so renaming a user must
+# cascade to every one of them or the user would silently lose ownership of their
+# crackmes, comments, solutions, ratings, notifications, and pending requests.
+#
+# Reviewer identities (e.g. ``label_request.reviewed_by`` and
+# ``account_deletion_request.reviewed_by``) are deliberately NOT included:
+# reviewers authenticate through review/users.json, a namespace separate from the
+# user collection, so their names are never main-site usernames.
+USERNAME_REFERENCES = (
+    ('crackme', 'author'),
+    ('comment', 'author'),
+    ('solution', 'author'),
+    ('rating_difficulty', 'author'),
+    ('rating_quality', 'author'),
+    ('notifications', 'user'),
+    ('label_request', 'requester'),
+    ('account_deletion_request', 'requester'),
+)
+
+
+def user_rename(old_name, new_name):
+    """Rename a user and update every stored reference to their old username.
+
+    Because the username is denormalized across many collections (see
+    :data:`USERNAME_REFERENCES`), a rename must touch all of them so nothing
+    orphans — including content still awaiting review (a pending crackme or
+    writeup keeps working because the reviewer queue reads ``author`` from the
+    database at review time).
+
+    Callers must validate that ``new_name`` is available first (see the
+    availability checks in the account-settings controller). ``old_name`` must
+    be the user's exact stored name.
+
+    Returns:
+        The number of user documents renamed (1 on success).
+
+    Raises:
+        ErrNoResult: If no user matches ``old_name``.
+        ErrUnavailable: If the database is unavailable.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    if old_name == new_name:
+        return 0
+
+    user_collection = get_collection('user')
+    if user_collection.find_one({'name': old_name}, {'_id': 1}) is None:
+        raise ErrNoResult("No user found with the provided username")
+
+    # MongoDB has no cheap way to do this atomically without a replica-set
+    # transaction, so ordering is the safety net: cascade the references FIRST
+    # and flip the user document LAST. If a reference update fails partway, the
+    # user document still carries the old name, so the caller's session keeps
+    # resolving (no lockout) and re-running the rename converges. Renaming the
+    # user document first would risk exactly that lockout.
+    for collection_name, field in USERNAME_REFERENCES:
+        get_collection(collection_name).update_many(
+            {field: old_name},
+            {'$set': {field: new_name}}
+        )
+
+    result = user_collection.update_one(
+        {'name': old_name},
+        {'$set': {'name': new_name}}
+    )
+
+    return result.modified_count
+
+
+def user_change_email(username, new_email):
+    """Change a user's email and refresh denormalized copies of it.
+
+    The email also lives on any pending account-deletion request (kept there so
+    the confirmation email survives the user document being deleted), and it
+    keys password-reset tokens. Both are handled here: the deletion-request copy
+    is updated, and any reset tokens for the old address are dropped since the
+    user no longer controls it.
+
+    Args:
+        username: The account's exact stored username.
+        new_email: The new email address (stored lower-cased, matching
+            registration).
+
+    Returns:
+        The previous email address, or None if it was unset.
+
+    Raises:
+        ErrNoResult: If no user matches ``username``.
+        ErrUnavailable: If the database is unavailable.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    new_email = new_email.lower()
+    user_collection = get_collection('user')
+    user = user_collection.find_one({'name': username}, {'email': 1})
+    if not user:
+        raise ErrNoResult("No user found with the provided username")
+
+    old_email = user.get('email')
+    if old_email == new_email:
+        return old_email
+
+    user_collection.update_one({'name': username}, {'$set': {'email': new_email}})
+
+    # Keep the denormalized copy on any pending deletion request fresh.
+    get_collection('account_deletion_request').update_many(
+        {'requester': username},
+        {'$set': {'email': new_email}}
+    )
+
+    # Reset tokens for the old address now point somewhere the user no longer
+    # owns; discard them so they can't be used against the wrong mailbox.
+    if old_email:
+        get_collection('password_reset_tokens').delete_many(
+            {'email': old_email.lower()}
+        )
+
+    return old_email
+
+
 def update_user_password(username, hashed_password):
     """Update user password.
 
