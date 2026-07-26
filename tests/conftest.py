@@ -84,7 +84,11 @@ def runner(app):
 
 @pytest.fixture
 def alice(db):
+    from bson import ObjectId
+    obj_id = ObjectId()
     user = {
+        '_id': obj_id,
+        'hexid': str(obj_id),
         'name': 'alice',
         'email': 'alice@example.test',
         'password': hash_string('alice-password'),
@@ -98,7 +102,11 @@ def alice(db):
 
 @pytest.fixture
 def bob(db):
+    from bson import ObjectId
+    obj_id = ObjectId()
     user = {
+        '_id': obj_id,
+        'hexid': str(obj_id),
         'name': 'bob',
         'email': 'bob@example.test',
         'password': hash_string('bob-password'),

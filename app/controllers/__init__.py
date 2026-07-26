@@ -19,6 +19,7 @@ def register_blueprints(app):
     from app.controllers.rating import rating_bp
     from app.controllers.rules import rules_bp
     from app.controllers.password import password_bp
+    from app.controllers.account_settings import account_settings_bp
     from app.controllers.password_reset import password_reset_bp
     from app.controllers.account_deletion import account_deletion_bp
     from app.controllers.static import static_bp
@@ -38,6 +39,7 @@ def register_blueprints(app):
     app.register_blueprint(rating_bp)
     app.register_blueprint(rules_bp)
     app.register_blueprint(password_bp)
+    app.register_blueprint(account_settings_bp)
     app.register_blueprint(password_reset_bp)
     app.register_blueprint(account_deletion_bp)
     app.register_blueprint(static_bp)

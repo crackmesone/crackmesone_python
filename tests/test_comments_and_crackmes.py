@@ -103,12 +103,12 @@ def test_owner_can_edit_crackme_but_other_user_cannot(
     path = f"/crackme/{sample_crackme['hexid']}/edit"
 
     denied = bob_client.post(path, data={
-        'info': 'Unauthorized', 'lang': 'Python', 'arch': 'ARM',
-        'platform': 'Windows',
+        'name': 'Hijacked', 'info': 'Unauthorized', 'lang': 'Python',
+        'arch': 'ARM', 'platform': 'Windows',
     })
     allowed = alice_client.post(path, data={
-        'info': 'Updated information', 'lang': 'Rust', 'arch': 'ARM',
-        'platform': 'Linux',
+        'name': sample_crackme['name'], 'info': 'Updated information',
+        'lang': 'Rust', 'arch': 'ARM', 'platform': 'Linux',
     })
 
     assert denied.status_code == 302

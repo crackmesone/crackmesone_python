@@ -80,18 +80,72 @@ def create_app(config_path=None, config=None):
         # Exempt reviewer routes from main CSRF (reviewer has its own CSRF)
         csrf.exempt(reviewer_bp)
 
+    # Re-resolve the logged-in user from their immutable id on every request.
+    # Usernames are mutable (they can be changed in account settings), so the
+    # name stored in the signed cookie can go stale on other devices. Keying off
+    # the id lets us refresh the cookie's name in place — otherwise a stale
+    # session could post content under a username that no longer exists, or lose
+    # ownership of its own (now-renamed) content. If the account is gone, the
+    # auth keys are cleared so the request is treated as anonymous.
+    @app.before_request
+    def refresh_session_identity():
+        from bson import ObjectId
+        from bson.errors import InvalidId
+        from flask import request, session, g
+        from app.models.user import user_by_name
+        from app.services.database import get_collection
+        from app.models.errors import ErrNoResult
+
+        g.current_user = None
+        if request.endpoint == 'static' or not session.get('name'):
+            return
+
+        try:
+            user = None
+            hexid = session.get('hexid')
+            if hexid:
+                # Resolve by the primary key (indexed point-read), not the
+                # unindexed hexid field, so this stays the cheapest query there is.
+                try:
+                    user = get_collection('user').find_one({'_id': ObjectId(hexid)})
+                except InvalidId:
+                    user = None
+            else:
+                # Legacy session issued before ids were stored; resolve by name
+                # once and backfill the id so future requests are id-based.
+                try:
+                    user = user_by_name(session['name'])
+                except ErrNoResult:
+                    user = None
+
+            if user is None:
+                # Account deleted (or the old name was freed and re-registered by
+                # someone else): drop our stale auth rather than impersonate.
+                session.pop('name', None)
+                session.pop('email', None)
+                session.pop('hexid', None)
+            else:
+                session['name'] = user['name']
+                session['email'] = user.get('email', session.get('email'))
+                session['hexid'] = user.get('hexid') or str(user['_id'])
+                g.current_user = user
+        except Exception as e:
+            # A transient DB error shouldn't break the request; leave the
+            # session untouched and let downstream handlers cope.
+            print(f"Session identity refresh error: {e}")
+
     # Register template context processors
     @app.context_processor
     def inject_globals():
-        from flask import session
-        from app.models.user import user_get_unread_notifications
+        from flask import session, g
         from app.services.crackme_fields import (
             DIFFICULTY_CHOICES, LANG_CHOICES, ARCH_CHOICES, PLATFORM_CHOICES)
 
         username = session.get('name', '')
-        unread_notifs = 0
-        if username:
-            unread_notifs = user_get_unread_notifications(username)
+        # Reuse the user loaded in refresh_session_identity so this doesn't add a
+        # second per-request query.
+        current_user = getattr(g, 'current_user', None)
+        unread_notifs = current_user.get('unread_notifications', 0) if current_user else 0
 
         return {
             'BaseURI': '/',
