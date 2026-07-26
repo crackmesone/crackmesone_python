@@ -37,6 +37,19 @@ a:active { color: #9acc14;}
 .form-select:focus {
     border-color: #9acc14;
 }
+/* Boxed inline radio/checkbox group (templates/partial/choice_inputs.html).
+   Keeps each metadata field (difficulty/lang/arch/platform) visually
+   separated instead of blending into the fields around it. */
+.choice-box {
+    border: .05rem solid #444;
+    border-radius: .1rem;
+    padding: 8px 10px 4px;
+}
+.choice-box .form-radio,
+.choice-box .form-checkbox {
+    margin-bottom: 4px;
+}
+
 button, select {
     text-transform: none;
 }

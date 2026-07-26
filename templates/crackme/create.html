@@ -38,14 +38,11 @@
                 <label class="form-label">Difficulty</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="difficulty" name="difficulty" multiple="">
-                    <option value="1">1. Very Easy</option>
-                    <option value="2">2. Easy</option>
-                    <option value="3">3. Medium</option>
-                    <option value="4">4. Hard</option>
-                    <option value="5">5. Very Hard</option>
-                    <option value="6">6. Insane</option>
-                </select>
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'difficulty' %}
+                {% set choice_options = DIFFICULTY_CHOICES %}
+                {% set choice_selected = '' %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -53,21 +50,11 @@
                 <label class="form-label" for="lang">Language</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="lang" name="lang" multiple="">
-                    <option value="C/C++">C/C++</option>
-                    <option value="Assembler">Assembler</option>
-                    <option value="Java">Java</option>
-                    <option value="Go">Go</option>
-                    <option value="Rust">Rust</option>
-                    <option value="WebAssembly">WebAssembly</option>
-                    <option value="Python">Python</option>
-                    <option value="AutoIt">AutoIt</option>
-                    <option value="(Visual) Basic">(Visual) Basic</option>
-                    <option value="Borland Delphi">Borland Delphi</option>
-                    <option value="Turbo Pascal">Turbo Pascal</option>
-                    <option value=".NET">.NET</option>
-                    <option value="Unspecified/other">Unspecified/other</option>
-                </select>
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'lang' %}
+                {% set choice_options = LANG_CHOICES %}
+                {% set choice_selected = '' %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -75,15 +62,11 @@
                 <label class="form-label" for="arch">Arch</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="arch" name="arch" multiple="">
-                    <option value="x86">x86</option>
-                    <option value="x86-64">x86-64</option>
-                    <option value="java">java</option>
-                    <option value="ARM">ARM</option>
-                    <option value="MIPS">MIPS</option>
-                    <option value="RISC-V">RISC-V</option>
-                    <option value="other">other</option>
-                </select>
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'arch' %}
+                {% set choice_options = ARCH_CHOICES %}
+                {% set choice_selected = '' %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -91,15 +74,11 @@
                 <label class="form-label" for="platform">Platform</label>
             </div>
             <div class="col-9 col-sm-12">
-                <select class="form-select" id="platform" name="platform" multiple="">
-                    <option value="Mac OS X">Mac OS X</option>
-                    <option value="Multiplatform">Multiplatform</option>
-                    <option value="Unix/linux etc.">Unix/linux etc.</option>
-                    <option value="Windows">Windows</option>
-                    <option value="Android">Android</option>
-                    <option value="iOS">iOS</option>
-                    <option value="Unspecified/other">Unspecified/other</option>
-                </select>
+                {% set choice_type = 'radio' %}
+                {% set choice_name = 'platform' %}
+                {% set choice_options = PLATFORM_CHOICES %}
+                {% set choice_selected = '' %}
+                {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
         <div class="form-group">
@@ -113,9 +92,11 @@
                     applies, the specific technique underneath &mdash; ticking a technique ticks its category
                     automatically. Reviewers may adjust these later.
                 </p>
-                {% set label_input_name = 'labels' %}
-                {% set checked_labels = [] %}
-                {% include 'partial/labels_checkboxes.html' %}
+                <div class="choice-box">
+                    {% set label_input_name = 'labels' %}
+                    {% set checked_labels = [] %}
+                    {% include 'partial/labels_checkboxes.html' %}
+                </div>
             </div>
         </div>
         <div class="form-group">
