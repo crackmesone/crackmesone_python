@@ -263,6 +263,31 @@ def crackmes_by_user(username):
                 .sort('created_at', DESCENDING))
 
 
+def crackmes_by_hexids(hexids):
+    """Look up several crackmes at once.
+
+    Args:
+        hexids: An iterable of crackme hex IDs.
+
+    Returns:
+        A dict of hexid -> crackme document, holding only the ids that exist and
+        are visible. Callers listing references to crackmes (a user's solves,
+        say) use this to resolve names in one query instead of one per row.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    hexids = list(hexids)
+    if not hexids:
+        return {}
+
+    collection = get_collection('crackme')
+    return {
+        crackme['hexid']: crackme
+        for crackme in collection.find({'hexid': {'$in': hexids}, 'visible': True})
+    }
+
+
 def crackme_by_user_and_name(username, name, visible=True):
     """Get crackme by user and name."""
     if not check_connection():
@@ -281,8 +306,17 @@ def crackme_by_user_and_name(username, name, visible=True):
     return result
 
 
-def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename, labels=None):
-    """Prepare a crackme object without inserting it."""
+def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename,
+                           labels=None, flag_hash=None, source_original_filename=None):
+    """Prepare a crackme object without inserting it.
+
+    Args:
+        flag_hash: bcrypt hash of the author's flag when they opted into
+            auto-validation, else None. Its presence is what marks a crackme as
+            auto-validated -- there is no separate flag to keep in sync.
+        source_original_filename: Filename of the private source archive that
+            accompanies an auto-validated submission (reviewers only).
+    """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
@@ -307,8 +341,17 @@ def crackme_create_prepare(name, info, username, lang, arch, platform, size, ori
         'platform': platform,
         'size': size,
         'original_filename': original_filename,
-        'labels': labels or []
+        'labels': labels or [],
+        'flag_hash': flag_hash,
+        'source_original_filename': source_original_filename,
+        # Assigned by a reviewer at approval time; see app.services.points.
+        'official_difficulty': None,
     }
+
+
+def crackme_is_auto_validated(crackme):
+    """Return True if a crackme accepts flag submissions."""
+    return bool(crackme.get('flag_hash'))
 
 
 def crackme_insert(crackme):
@@ -406,6 +449,39 @@ def crackme_set_labels(hexid, labels):
     old_labels = crackme.get('labels', [])
     collection.update_one({'hexid': hexid}, {'$set': {'labels': list(labels)}})
     return old_labels
+
+
+def crackme_set_official_difficulty(hexid, difficulty):
+    """Store the difficulty level a reviewer assigned to a crackme.
+
+    This is the number solves are priced at (see :mod:`app.services.points`).
+    It is deliberately separate from the ``difficulty`` field, which is the
+    community rating average and keeps moving as people rate the crackme.
+
+    Args:
+        hexid: The hex ID of the crackme
+        difficulty: Difficulty level 1-6
+
+    Returns:
+        True if the crackme was updated, False if it was not found or the
+        difficulty was out of range.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    try:
+        difficulty = int(difficulty)
+    except (TypeError, ValueError):
+        return False
+
+    if difficulty < 1 or difficulty > 6:
+        return False
+
+    result = get_collection('crackme').update_one(
+        {'hexid': hexid},
+        {'$set': {'official_difficulty': difficulty}}
+    )
+    return result.matched_count == 1
 
 
 def crackme_by_hexid_any(hexid):

@@ -60,6 +60,10 @@
     </div>
 
     <div class="preview-item">
+        <strong>{{ preview.solves }} Solves</strong> by user (the points they earned go too)
+    </div>
+
+    <div class="preview-item">
         <strong>{{ preview.user_comments }} Comments</strong> by user on other crackmes
     </div>
 
@@ -82,6 +86,7 @@
         <div class="cascade-info">
             -> {{ crackme.solutions }} solutions will be cascade deleted<br>
             -> {{ crackme.comments }} comments will be cascade deleted<br>
+            -> {{ crackme.solves }} solves by other users will be cascade deleted (they lose those points)<br>
             -> {{ crackme.difficulty_ratings }} difficulty ratings will be cascade deleted<br>
             -> {{ crackme.quality_ratings }} quality ratings will be cascade deleted
         </div>
@@ -99,6 +104,7 @@
             <li>{{ preview.solutions + preview.total_solutions_on_user_crackmes }} solutions ({{ preview.solutions }} by user + {{ preview.total_solutions_on_user_crackmes }} on user's crackmes)</li>
             <li>{{ preview.total_comments }} comments ({{ preview.user_comments }} by user + {{ preview.total_comments - preview.user_comments }} on user's crackmes)</li>
             <li>{{ preview.crackmes }} crackmes</li>
+            <li>{{ preview.solves }} solves by user</li>
             <li>Difficulty/quality ratings will be recalculated for affected crackmes</li>
         </ul>
     </div>

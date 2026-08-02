@@ -4,9 +4,10 @@ User controller - User profiles.
 
 from flask import Blueprint, render_template, session, abort
 from app.models.user import user_by_name
-from app.models.crackme import crackmes_by_user
+from app.models.crackme import crackmes_by_user, crackmes_by_hexids
 from app.models.solution import solutions_by_user
 from app.models.comment import comments_by_user
+from app.models.solve import solves_by_user
 from app.models.errors import ErrNoResult
 
 user_bp = Blueprint('user', __name__)
@@ -46,6 +47,22 @@ def user_profile(name):
                 'crackmename': solution.get('crackmename', '')
             })
 
+        # Solved crackmes and the score they add up to. Names are looked up in
+        # one batch rather than stored on the solve, so a renamed or deleted
+        # crackme can't leave a stale title behind on the profile.
+        solves = solves_by_user(user.get('hexid') or str(user['_id']))
+        solved_crackmes = crackmes_by_hexids([s['crackme_hexid'] for s in solves])
+        solves_extended = [
+            {
+                'solve': solve,
+                'crackmehexid': solve['crackme_hexid'],
+                'crackmename': solved_crackmes.get(solve['crackme_hexid'], {})
+                                              .get('name', 'Unknown crackme'),
+            }
+            for solve in solves
+        ]
+        score = sum(solve.get('points', 0) for solve in solves)
+
         # Check if viewing own profile
         session_username = session.get('name', '')
         viewing_own_page = session_username and session_username == actual_username
@@ -55,9 +72,11 @@ def user_profile(name):
                                NbCrackmes=nb_crackmes,
                                NbSolutions=nb_solutions,
                                NbComments=nb_comments,
+                               Score=score,
                                crackmes=crackmes,
                                solutions=solutions_extended,
                                comments=comments,
+                               solves=solves_extended,
                                viewingOwnPage=viewing_own_page)
 
     except Exception as e:

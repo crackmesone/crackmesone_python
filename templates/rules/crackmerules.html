@@ -67,6 +67,20 @@
             <li><b>Platform:</b> Windows, Linux, macOS, etc.</li>
         </ul>
 
+        <h3>Auto-validation (optional)</h3>
+        <p>Tick <b>Auto-validation</b> if you want solvers to prove they beat your crackme and earn points for it. Two
+            things are needed:</p>
+        <ul>
+            <li><b>The flag</b> your crackme prints when it is solved, in the format <code>CM1{...}</code> &mdash; no
+                spaces or braces inside. It is stored hashed and never shown to anyone, including you, so keep your own
+                copy.</li>
+            <li><b>A source archive</b> (zip) with your source code, build scripts and anything else needed to rebuild
+                the crackme. It is visible to <b>reviewers only</b>, never published or downloadable, and it is how a
+                reviewer confirms the flag you gave is really the right one.</li>
+        </ul>
+        <p>A reviewer assigns the crackme an official difficulty when approving it, and that fixes what a solve of it is
+            worth. Scoring is new and the exact numbers may still change.</p>
+
         <h3>Difficulty Rating Guide</h3>
         <ul>
             <li><b>1 - Very Easy:</b> Plaintext strings, no obfuscation, simple comparisons</li>

@@ -45,6 +45,10 @@ from review.auth import (
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
 from app.services.labels import get_label_groups, normalize_labels
+from app.services.flag import (
+    FLAG_FORMAT_HINT, is_valid_flag_format, normalize_flag, verify_flag
+)
+from app.models.crackme import crackme_set_official_difficulty
 from app.models.label_request import (
     label_requests_pending, count_pending_label_requests, label_request_by_hexid,
     label_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
@@ -169,6 +173,27 @@ def get_static_dir(item_type):
         Absolute path to the static directory for that item type
     """
     return os.path.join(CRACKMESONE_DIR, 'static', item_type)
+
+
+def get_source_dir():
+    """
+    Get the directory holding private source archives.
+
+    Auto-validated crackmes ship with a source archive that only reviewers may
+    read, so it lives outside static/ and is never linked from the public site.
+
+    Returns:
+        Absolute path to the private source archive directory
+    """
+    return os.path.join(CRACKMESONE_DIR, 'private', 'crackme_source')
+
+
+def delete_source_archive(hexid):
+    """Remove a crackme's private source archive, if it has one."""
+    try:
+        os.remove(os.path.join(get_source_dir(), hexid))
+    except OSError:
+        pass
 
 
 def find_pending_file(item_type, hexid):
@@ -605,7 +630,13 @@ def get_crackme_details(uuid):
         "lang": crackme_obj["lang"],
         "arch": crackme_obj["arch"],
         "platform": crackme_obj["platform"],
-        "labels": crackme_obj.get("labels", [])
+        "labels": crackme_obj.get("labels", []),
+        # Auto-validation: the flag itself is only stored hashed, so the review
+        # page offers a "does this flag match?" test instead of showing it.
+        "auto_validation": bool(crackme_obj.get("flag_hash")),
+        "has_source_archive": bool(crackme_obj.get("source_original_filename")),
+        "difficulty": crackme_obj.get("difficulty", 0),
+        "official_difficulty": crackme_obj.get("official_difficulty")
     }, None
 
 
@@ -640,6 +671,10 @@ def reject_pending_crackme(hexid, reject_reason=None):
         file_path = os.path.join(get_tmp_dir('crackme'), hexid)
         if os.path.exists(file_path):
             os.remove(file_path)
+
+        # A rejected submission's private source archive has no reason to stay
+        # on disk.
+        delete_source_archive(hexid)
 
         # Notify author
         notif_text = f"Your crackme '{html_escape(crackme['name'])}' has been rejected!"
@@ -933,6 +968,8 @@ def delete_approved_crackme(crackme_uuid):
     except Exception:
         pass
 
+    delete_source_archive(crackme_uuid)
+
     # Delete crackme document
     g_crackmesone_db.crackme.delete_one({"_id": ObjectId(crackme_uuid)})
 
@@ -940,7 +977,8 @@ def delete_approved_crackme(crackme_uuid):
         f"Cascade deleted: {deleted['solutions']} solutions, "
         f"{deleted['comments']} comments, "
         f"{deleted['difficulty_ratings']} difficulty ratings, "
-        f"{deleted['quality_ratings']} quality ratings\n"
+        f"{deleted['quality_ratings']} quality ratings, "
+        f"{deleted['solves']} solves\n"
         "Crackme deleted"
     )
 
@@ -960,7 +998,8 @@ def _cascade_delete_crackme_data(crackme_id, crackme_hexid):
         'solutions': 0,
         'comments': 0,
         'difficulty_ratings': 0,
-        'quality_ratings': 0
+        'quality_ratings': 0,
+        'solves': 0
     }
 
     # Delete solutions
@@ -987,6 +1026,13 @@ def _cascade_delete_crackme_data(crackme_id, crackme_hexid):
         'crackmehexid': crackme_hexid
     })
     deleted['quality_ratings'] = result.deleted_count
+
+    # Solve records, and with them the points their solvers earned: the crackme
+    # they were awarded for no longer exists to back them up.
+    result = g_crackmesone_db.solve.delete_many({
+        'crackme_hexid': crackme_hexid
+    })
+    deleted['solves'] = result.deleted_count
 
     return deleted
 
@@ -1057,6 +1103,7 @@ def preview_user_deletion(user_email):
         'email': user_email,
         'notifications': 0,
         'solutions': 0,
+        'solves': 0,
         'crackmes': 0,
         'crackme_details': [],
         'user_comments': 0,
@@ -1075,6 +1122,9 @@ def preview_user_deletion(user_email):
         preview['solutions'] = db.solution.count_documents({
             "author": username
         })
+        preview['solves'] = db.solve.count_documents({
+            "user_hexid": user.get("hexid") or str(user["_id"])
+        })
 
         # Count data for each crackme
         for crackme in db.crackme.find({"author": username}):
@@ -1087,6 +1137,7 @@ def preview_user_deletion(user_email):
                     'hexid': hexid,
                     'solutions': db.solution.count_documents({"crackmeid": cid}),
                     'comments': db.comment.count_documents({"crackmehexid": hexid}),
+                    'solves': db.solve.count_documents({"crackme_hexid": hexid}),
                     'difficulty_ratings': db.rating_difficulty.count_documents({
                         "crackmehexid": hexid
                     }),
@@ -1164,7 +1215,13 @@ def delete_user_account(user_email, admin_username=None):
         result = db.notifications.delete_many({"user": username})
         deletion_log.append(f"Deleted {result.deleted_count} notifications")
 
-        # 2. Delete user's solutions
+        # 2. Delete the user's solve records (their score goes with the account)
+        result = db.solve.delete_many({
+            "user_hexid": user.get("hexid") or str(user["_id"])
+        })
+        deletion_log.append(f"Deleted {result.deleted_count} solves by user")
+
+        # 2b. Delete user's solutions
         solution_count = 0
         for solution in db.solution.find({"author": username}):
             delete_approved_solution(str(solution["_id"]))
@@ -1470,40 +1527,46 @@ def viewcrackme(current_user):
         user=current_user['username'],
         is_admin=current_user['is_admin'],
         crackme=crackme,
-        label_groups=get_label_groups()
+        label_groups=get_label_groups(),
+        message=request.args.get('message')
     )
 
 
 @reviewer_bp.route('/downloadreview')
 @token_required
 def downloadreview(current_user):
-    """Download a pending submission file for review."""
+    """Download a pending submission file, or a crackme's private source, for review."""
     download_type = request.args.get("type")
     uuid = request.args.get("uuid")
 
-    if download_type not in ('solution', 'crackme'):
+    if download_type not in ('solution', 'crackme', 'source'):
         abort(404)
 
     if not is_valid_hexid(uuid):
         abort(404)
 
     uuid = uuid.lower()
-    tmp_dir = get_tmp_dir(download_type)
-    file_path = os.path.join(tmp_dir, uuid)
+    if download_type == 'source':
+        # Source archives stay reviewer-only for the crackme's whole life, so
+        # they live in their own private directory rather than tmp/.
+        file_path = os.path.join(get_source_dir(), uuid)
+    else:
+        file_path = os.path.join(get_tmp_dir(download_type), uuid)
 
     if not os.path.exists(file_path):
         abort(404)
 
     # Get original filename from database
-    if download_type == 'crackme':
-        doc = g_crackmesone_db.crackme.find_one({'hexid': uuid})
-    else:
+    if download_type == 'solution':
         doc = g_crackmesone_db.solution.find_one({'hexid': uuid})
+    else:
+        doc = g_crackmesone_db.crackme.find_one({'hexid': uuid})
 
     if not doc:
         print(f"Warning: Orphaned {download_type} file {uuid} exists on disk but not in database")
 
-    original_filename = (doc.get('original_filename') if doc else None) or uuid
+    filename_field = 'source_original_filename' if download_type == 'source' else 'original_filename'
+    original_filename = (doc.get(filename_field) if doc else None) or uuid
 
     return send_file(
         file_path,
@@ -1657,6 +1720,23 @@ def approvecrackme(current_user):
             message="Crackme file not found"
         ))
 
+    # The official difficulty is what solves of this crackme are worth. It is
+    # set here, at approval, because issue #127 wants it fixed from then on.
+    official_difficulty = request.form.get('official_difficulty')
+    if official_difficulty:
+        if crackme_set_official_difficulty(crackme_file, official_difficulty):
+            log_reviewer_operation(
+                "set_official_difficulty", current_user['username'],
+                {"crackme_uuid": crackme_uuid, "official_difficulty": official_difficulty},
+                True
+            )
+        else:
+            return redirect(url_for(
+                'reviewer.viewcrackme',
+                crackme_uuid=crackme_uuid,
+                message="Invalid official difficulty"
+            ))
+
     success, message = approve_pending_crackme(crackme_file)
 
     log_reviewer_operation(
@@ -1675,6 +1755,48 @@ def approvecrackme(current_user):
             )
 
     return redirect(url_for('reviewer.reviewcrackme', message=message))
+
+
+@reviewer_bp.route('/checkflag', methods=['POST'])
+@token_required
+def checkflag(current_user):
+    """Test a flag against an auto-validated crackme's stored hash.
+
+    Flags are only ever stored hashed, so this is how a reviewer confirms the
+    author submitted the right one: build the crackme from its private source
+    archive, solve it, and check the flag you get back here. A crackme whose
+    flag doesn't match is unsolvable for points and should be rejected.
+    """
+    validate_csrf_token()
+    crackme_uuid = request.form.get('uuid')
+
+    if not is_valid_hexid(crackme_uuid):
+        return redirect(url_for('reviewer.reviewcrackme', message="Invalid crackme id"))
+
+    crackme = g_crackmesone_db.crackme.find_one({'hexid': crackme_uuid.lower()})
+    if not crackme:
+        return redirect(url_for('reviewer.reviewcrackme', message="Crackme not found"))
+
+    flag = normalize_flag(request.form.get('flag', ''))
+    if not crackme.get('flag_hash'):
+        message = "This crackme has no flag (auto-validation was not requested)"
+    elif not is_valid_flag_format(flag):
+        message = f"Not a valid flag format. {FLAG_FORMAT_HINT}"
+    elif verify_flag(crackme.get('flag_hash'), flag):
+        message = "Match: this is the author's flag"
+    else:
+        message = "No match: this is NOT the author's flag"
+
+    # The tested flag is deliberately left out of the log -- writing it there
+    # would undo the point of storing only a hash.
+    log_reviewer_operation(
+        "check_crackme_flag", current_user['username'],
+        {"crackme_uuid": crackme_uuid, "result": message},
+        True
+    )
+
+    return redirect(url_for('reviewer.viewcrackme',
+                            crackme_uuid=crackme_uuid, message=message))
 
 
 # =============================================================================

@@ -197,6 +197,35 @@
             <div class="divider"></div>
         </div>
 
+        {% if auto_validation %}
+        <div class="column col-12">
+            <p><b>Flag</b></p>
+            <p class="text-gray" style="font-size: 0.9rem;">
+                This crackme is auto-validated: submit the flag it prints when you beat it and you'll earn
+                <b>{{ solve_points }} points</b>. Solved by {{ nbsolves }} {{ 'person' if nbsolves == 1 else 'people' }} so far.
+                Scoring is new and still being tuned, so what a solve is worth may change.
+            </p>
+            {% if user_solve %}
+            <p class="text-success">
+                <b>Solved!</b> You cracked this on {{ user_solve.created_at|PRETTYTIME }} for {{ user_solve.points }} points.
+            </p>
+            {% elif usersess == username %}
+            <p class="text-gray">This is your crackme &mdash; you can't submit its flag.</p>
+            {% elif AuthLevel == "auth" %}
+            <form action="/crackme/{{ hexid }}/solve" method="post" class="form-horizontal">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="input-group" style="max-width: 480px;">
+                    <input class="form-input" type="text" name="flag" placeholder="{{ flag_format_hint }}" autocomplete="off">
+                    <input type="submit" class="btn active input-group-btn" value="Submit flag">
+                </div>
+            </form>
+            {% else %}
+            <p><a href="/login">Log in</a> to submit the flag.</p>
+            {% endif %}
+            <div class="divider"></div>
+        </div>
+        {% endif %}
+
         <div class="column col-12">
             <p>
                 <b>Labels</b>

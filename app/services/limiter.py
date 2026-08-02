@@ -15,6 +15,7 @@ The following rate limits are applied to protect against spam and abuse:
 | POST /upload/crackme    | 10 per day     | Username    | Prevent submission spam          |
 | POST /upload/solution   | 20 per day     | Username    | Prevent submission spam          |
 | POST /comment           | 30 per hour    | Username    | Prevent comment spam             |
+| POST /crackme/../solve  | 20 per hour    | Username    | Prevent flag brute-forcing       |
 +-------------------------+----------------+-------------+----------------------------------+
 
 Configuration

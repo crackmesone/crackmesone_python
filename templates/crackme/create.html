@@ -115,6 +115,31 @@
                 <textarea class="form-input" id="info" name="info" placeholder="Textarea" rows="3"></textarea>
             </div>
         </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Auto-validation</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <label class="form-checkbox">
+                    <input type="checkbox" id="auto_validation" name="auto_validation">
+                    <i class="form-icon"></i> Let solvers submit a flag and earn points
+                </label>
+                <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
+                    Optional. Give us the flag your crackme prints when it is beaten, and solvers can prove they
+                    cracked it by submitting that flag &mdash; a correct one earns them points. The flag is stored
+                    hashed and is never shown to anyone, so keep your own copy.
+                </p>
+                <div id="auto-validation-fields" style="display: none;">
+                    <input class="form-input" type="text" id="flag" name="flag" placeholder="CM1{the_flag_your_crackme_prints}">
+                    <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
+                        Source archive (zip): your source code, build scripts, and anything else a reviewer needs to
+                        rebuild the crackme and confirm the flag is right. <b>Reviewers only</b> &mdash; it is never
+                        published or offered for download on the site.
+                    </p>
+                    <input class="form-input upload-btn" type="file" id="source" name="source">
+                </div>
+            </div>
+        </div>
         {% if RECAPTCHA_SITEKEY %}
         <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
         </br></br></br></br>
@@ -125,6 +150,18 @@
 
 <script src="{{ url_for('static', filename='js/label_checkboxes.js') }}"></script>
 <script>LabelCheckboxes.init(document.getElementById('upload-form'));</script>
+<script>
+(function() {
+    // The flag and source inputs only mean anything once auto-validation is
+    // ticked, so keep them out of the way until then.
+    var toggle = document.getElementById('auto_validation');
+    var fields = document.getElementById('auto-validation-fields');
+    if (!toggle || !fields) return;
+    function sync() { fields.style.display = toggle.checked ? 'block' : 'none'; }
+    toggle.addEventListener('change', sync);
+    sync();
+})();
+</script>
 
 {% include 'partial/footer.html' %}
 {% endblock %}
