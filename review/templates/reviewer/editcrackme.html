@@ -33,7 +33,12 @@
 
         {% if crackme %}
         <h3>Edit crackme: "{{ crackme.name }}" by {{ crackme.author }}</h3>
+        {% if crackme.visible %}
         <p>View on site: <a href="https://crackmes.one/crackme/{{ crackme.hexid }}" target="_blank">{{ crackme.name }}</a></p>
+        {% else %}
+        <p>Still pending review &mdash; not visible on the site yet.
+            <a href="{{ url_for('reviewer.viewcrackme', crackme_uuid=crackme.hexid) }}">Review it</a>.</p>
+        {% endif %}
 
         <div class="columns panel-background">
             <div class="column col-12">
@@ -46,49 +51,48 @@
                         <input class="form-input" type="text" value="{{ crackme.name }}" disabled>
                     </div>
 
+                    {# Option lists come from app/services/crackme_fields.py (injected app-wide),
+                       so the reviewer form can't drift from the upload form. #}
                     <div class="form-group">
                         <label class="form-label" for="lang">Language</label>
                         <select class="form-select" id="lang" name="lang">
-                            <option value="C/C++" {{ 'selected' if crackme.lang == 'C/C++' else '' }}>C/C++</option>
-                            <option value="Assembler" {{ 'selected' if crackme.lang == 'Assembler' else '' }}>Assembler</option>
-                            <option value="Java" {{ 'selected' if crackme.lang == 'Java' else '' }}>Java</option>
-                            <option value="Go" {{ 'selected' if crackme.lang == 'Go' else '' }}>Go</option>
-                            <option value="Rust" {{ 'selected' if crackme.lang == 'Rust' else '' }}>Rust</option>
-                            <option value="WebAssembly" {{ 'selected' if crackme.lang == 'WebAssembly' else '' }}>WebAssembly</option>
-                            <option value="Python" {{ 'selected' if crackme.lang == 'Python' else '' }}>Python</option>
-                            <option value="AutoIt" {{ 'selected' if crackme.lang == 'AutoIt' else '' }}>AutoIt</option>
-                            <option value="(Visual) Basic" {{ 'selected' if crackme.lang == '(Visual) Basic' else '' }}>(Visual) Basic</option>
-                            <option value="Borland Delphi" {{ 'selected' if crackme.lang == 'Borland Delphi' else '' }}>Borland Delphi</option>
-                            <option value="Turbo Pascal" {{ 'selected' if crackme.lang == 'Turbo Pascal' else '' }}>Turbo Pascal</option>
-                            <option value=".NET" {{ 'selected' if crackme.lang == '.NET' else '' }}>.NET</option>
-                            <option value="Unspecified/other" {{ 'selected' if crackme.lang == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                            {% for choice in LANG_CHOICES %}
+                            <option value="{{ choice }}" {{ 'selected' if crackme.lang == choice else '' }}>{{ choice }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label" for="arch">Arch</label>
                         <select class="form-select" id="arch" name="arch">
-                            <option value="x86" {{ 'selected' if crackme.arch == 'x86' else '' }}>x86</option>
-                            <option value="x86-64" {{ 'selected' if crackme.arch == 'x86-64' else '' }}>x86-64</option>
-                            <option value="java" {{ 'selected' if crackme.arch == 'java' else '' }}>java</option>
-                            <option value="ARM" {{ 'selected' if crackme.arch == 'ARM' else '' }}>ARM</option>
-                            <option value="MIPS" {{ 'selected' if crackme.arch == 'MIPS' else '' }}>MIPS</option>
-                            <option value="RISC-V" {{ 'selected' if crackme.arch == 'RISC-V' else '' }}>RISC-V</option>
-                            <option value="other" {{ 'selected' if crackme.arch == 'other' else '' }}>other</option>
+                            {% for choice in ARCH_CHOICES %}
+                            <option value="{{ choice }}" {{ 'selected' if crackme.arch == choice else '' }}>{{ choice }}</option>
+                            {% endfor %}
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label" for="platform">Platform</label>
                         <select class="form-select" id="platform" name="platform">
-                            <option value="Mac OS X" {{ 'selected' if crackme.platform == 'Mac OS X' else '' }}>Mac OS X</option>
-                            <option value="Multiplatform" {{ 'selected' if crackme.platform == 'Multiplatform' else '' }}>Multiplatform</option>
-                            <option value="Unix/linux etc." {{ 'selected' if crackme.platform == 'Unix/linux etc.' else '' }}>Unix/linux etc.</option>
-                            <option value="Windows" {{ 'selected' if crackme.platform == 'Windows' else '' }}>Windows</option>
-                            <option value="Android" {{ 'selected' if crackme.platform == 'Android' else '' }}>Android</option>
-                            <option value="iOS" {{ 'selected' if crackme.platform == 'iOS' else '' }}>iOS</option>
-                            <option value="Unspecified/other" {{ 'selected' if crackme.platform == 'Unspecified/other' else '' }}>Unspecified/other</option>
+                            {% for choice in PLATFORM_CHOICES %}
+                            <option value="{{ choice }}" {{ 'selected' if crackme.platform == choice else '' }}>{{ choice }}</option>
+                            {% endfor %}
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="official_difficulty">Official difficulty</label>
+                        <select class="form-select" id="official_difficulty" name="official_difficulty">
+                            <option value="">-- Not set (falls back to the community rating) --</option>
+                            {% for value, label in DIFFICULTY_CHOICES %}
+                            <option value="{{ value }}" {{ 'selected' if crackme.official_difficulty == value|int else '' }}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="form-input-hint">
+                            Fixes what a solve of this crackme is worth (difficulty &times; 100 points), independently of
+                            the community rating, which keeps moving as people rate it (currently
+                            {{ "%.1f"|format(crackme.difficulty or 0) }}). Already-earned points are not re-priced.
+                        </p>
                     </div>
 
                     <div class="form-group">
@@ -104,6 +108,35 @@
                     </div>
 
                     <div class="divider"></div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="flag">Flag</label>
+                        <input class="form-input" type="text" id="flag" name="flag" value="{{ crackme.flag }}"
+                               placeholder="{{ flag_format_hint }}">
+                        <p class="form-input-hint">
+                            The flag solvers submit for points. Leave empty (or tick below) and this crackme accepts no
+                            flag submissions at all. Setting one on a crackme that had none turns auto-validation on.
+                            Existing solves keep the points they earned either way.
+                        </p>
+                        <label class="form-checkbox">
+                            <input type="checkbox" name="remove_flag">
+                            <i class="form-icon"></i> Remove the flag (turn auto-validation off)
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="source_file">Private source archive</label>
+                        {% if crackme.source_original_filename %}
+                        <p class="form-input-hint">
+                            Current: <a href="{{ url_for('reviewer.downloadreview', uuid=crackme.hexid, type='source') }}">{{ crackme.source_original_filename }}</a>
+                            &mdash; reviewers only, never published.
+                        </p>
+                        {% else %}
+                        <p class="form-input-hint">No source archive on file.</p>
+                        {% endif %}
+                        <input class="form-input" type="file" id="source_file" name="source_file">
+                        <p class="form-input-hint">Upload a zip to replace it. Leave empty to keep the current one.</p>
+                    </div>
 
                     <div class="form-group">
                         <label class="form-label" for="file">Replace file (optional)</label>

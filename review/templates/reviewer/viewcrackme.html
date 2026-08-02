@@ -67,18 +67,15 @@
                 <p><strong>No source archive was uploaded.</strong> Reject unless you can verify the flag another way.</p>
                 {% endif %}
                 <p>
-                    The flag is stored hashed and can't be displayed. Build the crackme from its source, solve it, and
-                    check the flag you get here &mdash; if it doesn't match, the author submitted the wrong flag and the
-                    crackme would be unsolvable for points.
+                    Author's flag: <code>{{ crackme.flag }}</code>
                 </p>
-                <form action="{{ url_for('reviewer.checkflag') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="uuid" value="{{ crackme.crackme_uuid }}">
-                    <div class="input-group" style="max-width: 520px;">
-                        <input class="form-input" type="text" name="flag" placeholder="CM1{...}" autocomplete="off">
-                        <button type="submit" class="btn input-group-btn">Check flag</button>
-                    </div>
-                </form>
+                <p>
+                    Build the crackme from its source and check that this really is the flag it prints. If it isn't, the
+                    crackme is unsolvable for points &mdash;
+                    {% if is_admin %}fix the flag on the
+                    <a href="{{ url_for('reviewer.editcrackme', crackme_uuid=crackme.crackme_uuid) }}">edit page</a> or
+                    reject it.{% else %}reject it, or ask an admin to fix the flag on the edit page.{% endif %}
+                </p>
                 {% else %}
                 <p>The author did not opt into auto-validation. This crackme accepts no flag submissions and awards no points.</p>
                 {% endif %}

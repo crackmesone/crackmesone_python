@@ -307,13 +307,14 @@ def crackme_by_user_and_name(username, name, visible=True):
 
 
 def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename,
-                           labels=None, flag_hash=None, source_original_filename=None):
+                           labels=None, flag=None, source_original_filename=None):
     """Prepare a crackme object without inserting it.
 
     Args:
-        flag_hash: bcrypt hash of the author's flag when they opted into
-            auto-validation, else None. Its presence is what marks a crackme as
-            auto-validated -- there is no separate flag to keep in sync.
+        flag: The author's flag when they opted into auto-validation, else None.
+            Its presence is what marks a crackme as auto-validated -- there is
+            no separate flag to keep in sync. Stored in cleartext for reviewers;
+            never rendered on the public site.
         source_original_filename: Filename of the private source archive that
             accompanies an auto-validated submission (reviewers only).
     """
@@ -342,16 +343,16 @@ def crackme_create_prepare(name, info, username, lang, arch, platform, size, ori
         'size': size,
         'original_filename': original_filename,
         'labels': labels or [],
-        'flag_hash': flag_hash,
+        'flag': flag,
         'source_original_filename': source_original_filename,
-        # Assigned by a reviewer at approval time; see app.services.points.
+        # Assigned by a reviewer when approving or editing; see app.services.points.
         'official_difficulty': None,
     }
 
 
 def crackme_is_auto_validated(crackme):
     """Return True if a crackme accepts flag submissions."""
-    return bool(crackme.get('flag_hash'))
+    return bool(crackme.get('flag'))
 
 
 def crackme_insert(crackme):

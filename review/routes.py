@@ -27,6 +27,7 @@ import bcrypt
 import requests
 from rustyzipper import compress_file, EncryptionMethod
 from bson.objectid import ObjectId
+from werkzeug.utils import secure_filename
 
 from review.logger import log_reviewer_operation
 from review.auth import (
@@ -46,7 +47,10 @@ from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
 from app.services.labels import get_label_groups, normalize_labels
 from app.services.flag import (
-    FLAG_FORMAT_HINT, is_valid_flag_format, normalize_flag, verify_flag
+    FLAG_FORMAT_HINT, is_valid_flag_format, normalize_flag
+)
+from app.services.archive import (
+    is_archive_password_protected, is_unsupported_archive
 )
 from app.models.crackme import crackme_set_official_difficulty
 from app.models.label_request import (
@@ -631,9 +635,10 @@ def get_crackme_details(uuid):
         "arch": crackme_obj["arch"],
         "platform": crackme_obj["platform"],
         "labels": crackme_obj.get("labels", []),
-        # Auto-validation: the flag itself is only stored hashed, so the review
-        # page offers a "does this flag match?" test instead of showing it.
-        "auto_validation": bool(crackme_obj.get("flag_hash")),
+        # Auto-validation. The flag is reviewer-only data: it reaches this
+        # template and nowhere else.
+        "flag": crackme_obj.get("flag"),
+        "auto_validation": bool(crackme_obj.get("flag")),
         "has_source_archive": bool(crackme_obj.get("source_original_filename")),
         "difficulty": crackme_obj.get("difficulty", 0),
         "official_difficulty": crackme_obj.get("official_difficulty")
@@ -1757,48 +1762,6 @@ def approvecrackme(current_user):
     return redirect(url_for('reviewer.reviewcrackme', message=message))
 
 
-@reviewer_bp.route('/checkflag', methods=['POST'])
-@token_required
-def checkflag(current_user):
-    """Test a flag against an auto-validated crackme's stored hash.
-
-    Flags are only ever stored hashed, so this is how a reviewer confirms the
-    author submitted the right one: build the crackme from its private source
-    archive, solve it, and check the flag you get back here. A crackme whose
-    flag doesn't match is unsolvable for points and should be rejected.
-    """
-    validate_csrf_token()
-    crackme_uuid = request.form.get('uuid')
-
-    if not is_valid_hexid(crackme_uuid):
-        return redirect(url_for('reviewer.reviewcrackme', message="Invalid crackme id"))
-
-    crackme = g_crackmesone_db.crackme.find_one({'hexid': crackme_uuid.lower()})
-    if not crackme:
-        return redirect(url_for('reviewer.reviewcrackme', message="Crackme not found"))
-
-    flag = normalize_flag(request.form.get('flag', ''))
-    if not crackme.get('flag_hash'):
-        message = "This crackme has no flag (auto-validation was not requested)"
-    elif not is_valid_flag_format(flag):
-        message = f"Not a valid flag format. {FLAG_FORMAT_HINT}"
-    elif verify_flag(crackme.get('flag_hash'), flag):
-        message = "Match: this is the author's flag"
-    else:
-        message = "No match: this is NOT the author's flag"
-
-    # The tested flag is deliberately left out of the log -- writing it there
-    # would undo the point of storing only a hash.
-    log_reviewer_operation(
-        "check_crackme_flag", current_user['username'],
-        {"crackme_uuid": crackme_uuid, "result": message},
-        True
-    )
-
-    return redirect(url_for('reviewer.viewcrackme',
-                            crackme_uuid=crackme_uuid, message=message))
-
-
 # =============================================================================
 # Route Handlers - Labels
 # =============================================================================
@@ -2180,9 +2143,13 @@ def deletecrackme(current_user):
 @reviewer_bp.route('/editcrackme', methods=['GET', 'POST'])
 @admin_required
 def editcrackme(current_user):
-    """Edit an approved crackme (admin only).
+    """Edit every field of a crackme, approved or still pending (admin only).
 
-    Allows editing crackme metadata and optionally replacing the file.
+    This is the one place a crackme can be corrected after the fact: metadata,
+    labels, the binary, and everything auto-validation depends on -- the flag,
+    the private source archive and the official difficulty that fixes what a
+    solve is worth. Difficulty in particular used to be settable only while
+    approving, which left a typo unfixable once the crackme was live.
     """
     message = None
     error = None
@@ -2190,118 +2157,14 @@ def editcrackme(current_user):
 
     crackme_uuid = request.args.get('crackme_uuid') or request.form.get('crackme_uuid')
 
-    if request.method == 'POST' and crackme_uuid:
+    if request.method == 'POST' and crackme_uuid and ObjectId.is_valid(crackme_uuid):
         validate_csrf_token()
+        crackme_obj = g_crackmesone_db.crackme.find_one({"_id": ObjectId(crackme_uuid)})
 
-        # Get form data (name is not editable)
-        info = request.form.get('info', '').strip()
-        lang = request.form.get('lang', '')
-        arch = request.form.get('arch', '')
-        platform = request.form.get('platform', '')
-        labels = normalize_labels(request.form.getlist('labels'))
-        notify_author = request.form.get('notify_author') == 'on'
-
-        if True:
-            # Get current crackme
-            crackme_obj = g_crackmesone_db.crackme.find_one({
-                "_id": ObjectId(crackme_uuid)
-            })
-
-            if not crackme_obj:
-                error = "Crackme not found"
-            else:
-                # Track changes (name is not editable)
-                changes = []
-                if crackme_obj.get('info') != info:
-                    changes.append("description updated")
-                if crackme_obj.get('lang') != lang:
-                    changes.append(f"language: '{crackme_obj.get('lang')}' -> '{lang}'")
-                if crackme_obj.get('arch') != arch:
-                    changes.append(f"arch: '{crackme_obj.get('arch')}' -> '{arch}'")
-                if crackme_obj.get('platform') != platform:
-                    changes.append(f"platform: '{crackme_obj.get('platform')}' -> '{platform}'")
-                if sorted(crackme_obj.get('labels', [])) != sorted(labels):
-                    changes.append(f"labels: {crackme_obj.get('labels', [])} -> {labels}")
-
-                # Update the crackme (name excluded)
-                g_crackmesone_db.crackme.update_one(
-                    {"_id": ObjectId(crackme_uuid)},
-                    {"$set": {
-                        "info": info,
-                        "lang": lang,
-                        "arch": arch,
-                        "platform": platform,
-                        "labels": labels
-                    }}
-                )
-
-                # Handle file replacement
-                file_replaced = False
-                if 'file' in request.files:
-                    file = request.files['file']
-                    if file.filename:
-                        file_data = file.read()
-                        if len(file_data) > 0:
-                            # Save to temp location
-                            temp_path = os.path.join(
-                                CRACKMESONE_DIR, 'tmp',
-                                f"replace_{crackme_uuid}_{file.filename}"
-                            )
-                            os.makedirs(os.path.dirname(temp_path), exist_ok=True)
-
-                            with open(temp_path, 'wb') as f:
-                                f.write(file_data)
-
-                            # Create password-protected zip
-                            dest_path = os.path.join(
-                                get_static_dir('crackme'),
-                                crackme_obj['hexid']
-                            )
-
-                            # Remove old zip first
-                            old_zip = dest_path + ".zip"
-                            if os.path.exists(old_zip):
-                                os.remove(old_zip)
-
-                            success, zip_error = create_password_protected_zip(
-                                temp_path, dest_path, file.filename
-                            )
-
-                            if success:
-                                file_replaced = True
-                                changes.append("file replaced")
-                            else:
-                                error = f"Failed to replace file: {zip_error}"
-
-                if changes:
-                    # Log the operation
-                    log_reviewer_operation(
-                        "edit_crackme_admin", current_user['username'],
-                        {
-                            "crackme_uuid": crackme_uuid,
-                            "crackme_name": crackme_obj.get('name'),
-                            "changes": changes
-                        },
-                        True
-                    )
-
-                    # Notify author if requested
-                    if notify_author and not error:
-                        try:
-                            change_summary = ", ".join(changes[:3])
-                            if len(changes) > 3:
-                                change_summary += f" and {len(changes) - 3} more"
-                            send_user_notification(
-                                crackme_obj['author'],
-                                f"Your crackme '<a href=\"/crackme/{crackme_obj.get('hexid')}\">{html_escape(crackme_obj.get('name'))}</a>' has been updated by an admin: {html_escape(change_summary)}"
-                            )
-                        except Exception as e:
-                            print(f"Notification error: {e}")
-
-                    if not error:
-                        message = f"Crackme '{crackme_obj.get('name')}' updated successfully"
-                else:
-                    message = "No changes were made"
+        if not crackme_obj:
+            error = "Crackme not found"
+        else:
+            error, message = _apply_crackme_edit(current_user, crackme_obj, request)
 
     # Load crackme for display
     if crackme_uuid and ObjectId.is_valid(crackme_uuid):
@@ -2317,9 +2180,15 @@ def editcrackme(current_user):
                 "arch": crackme_obj.get('arch', ''),
                 "platform": crackme_obj.get('platform', ''),
                 "author": crackme_obj.get('author', ''),
-                "labels": crackme_obj.get('labels', [])
+                "labels": crackme_obj.get('labels', []),
+                "visible": crackme_obj.get('visible', False),
+                "difficulty": crackme_obj.get('difficulty', 0),
+                "official_difficulty": crackme_obj.get('official_difficulty'),
+                # Reviewer-only fields; no public view renders either of these.
+                "flag": crackme_obj.get('flag') or '',
+                "source_original_filename": crackme_obj.get('source_original_filename') or ''
             }
-        else:
+        elif not error:
             error = "Crackme not found"
 
     return render_template(
@@ -2329,8 +2198,184 @@ def editcrackme(current_user):
         crackme=crackme,
         message=message,
         error=error,
+        flag_format_hint=FLAG_FORMAT_HINT,
         label_groups=get_label_groups()
     )
+
+
+def _apply_crackme_edit(current_user, crackme_obj, request):
+    """Apply a submitted crackme edit.
+
+    Returns:
+        Tuple of (error, message), either of which may be None.
+    """
+    crackme_uuid = crackme_obj['hexid']
+
+    # Metadata (the crackme's name is not edited here)
+    updates = {
+        'info': request.form.get('info', '').strip(),
+        'lang': request.form.get('lang', ''),
+        'arch': request.form.get('arch', ''),
+        'platform': request.form.get('platform', ''),
+        'labels': normalize_labels(request.form.getlist('labels')),
+    }
+    notify_author = request.form.get('notify_author') == 'on'
+
+    # Official difficulty: what a solve of this crackme is worth. An empty
+    # selection clears it, dropping the crackme back to its community rating.
+    official_difficulty = request.form.get('official_difficulty', '').strip()
+    if official_difficulty:
+        try:
+            official_difficulty = int(official_difficulty)
+        except ValueError:
+            return "Invalid official difficulty", None
+        if not 1 <= official_difficulty <= 6:
+            return "Invalid official difficulty", None
+        updates['official_difficulty'] = official_difficulty
+    else:
+        updates['official_difficulty'] = None
+
+    # Flag. Clearing it turns auto-validation off; existing solves and the
+    # points they carry are left alone, since they were earned fairly.
+    if request.form.get('remove_flag') == 'on':
+        updates['flag'] = None
+    else:
+        flag = normalize_flag(request.form.get('flag', ''))
+        if flag and not is_valid_flag_format(flag):
+            return f"Invalid flag format. {FLAG_FORMAT_HINT}", None
+        updates['flag'] = flag or None
+
+    # Replacement source archive (reviewer-only, never published)
+    source_data = None
+    source_file = request.files.get('source_file')
+    if source_file and source_file.filename:
+        source_data = source_file.read()
+        if is_unsupported_archive(source_data):
+            return "Source archive must be a ZIP (RAR/tar are not supported)", None
+        if is_archive_password_protected(source_data):
+            return "Source archive must not be password-protected", None
+        updates['source_original_filename'] = secure_filename(source_file.filename) or "source"
+
+    changes = _describe_crackme_changes(crackme_obj, updates)
+    if source_data is not None:
+        changes.append("source archive replaced")
+
+    g_crackmesone_db.crackme.update_one(
+        {"_id": crackme_obj['_id']}, {"$set": updates}
+    )
+
+    if source_data is not None:
+        try:
+            os.makedirs(get_source_dir(), exist_ok=True)
+            with open(os.path.join(get_source_dir(), crackme_uuid), 'wb') as f:
+                f.write(source_data)
+        except OSError as e:
+            return f"Failed to save source archive: {e}", None
+
+    error = None
+    replaced, replace_error = _replace_crackme_file(crackme_obj, request)
+    if replaced:
+        changes.append("file replaced")
+    if replace_error:
+        error = replace_error
+
+    if not changes:
+        return error, "No changes were made"
+
+    log_reviewer_operation(
+        "edit_crackme_admin", current_user['username'],
+        {
+            "crackme_uuid": crackme_uuid,
+            "crackme_name": crackme_obj.get('name'),
+            "changes": changes
+        },
+        True
+    )
+
+    if notify_author and not error:
+        try:
+            change_summary = ", ".join(changes[:3])
+            if len(changes) > 3:
+                change_summary += f" and {len(changes) - 3} more"
+            send_user_notification(
+                crackme_obj['author'],
+                f"Your crackme '<a href=\"/crackme/{crackme_uuid}\">{html_escape(crackme_obj.get('name'))}</a>' has been updated by an admin: {html_escape(change_summary)}"
+            )
+        except Exception as e:
+            print(f"Notification error: {e}")
+
+    if error:
+        return error, None
+    return None, f"Crackme '{crackme_obj.get('name')}' updated successfully"
+
+
+def _describe_crackme_changes(crackme_obj, updates):
+    """Summarise an edit for the operation log and the author's notification.
+
+    The flag is reported as changed but never quoted: the log is mirrored to a
+    Discord channel, which is one more place a live flag doesn't need to be.
+    """
+    labels = ('description', 'language', 'arch', 'platform', 'labels',
+              'official difficulty')
+    fields = ('info', 'lang', 'arch', 'platform', 'labels', 'official_difficulty')
+
+    changes = []
+    for label, field in zip(labels, fields):
+        old, new = crackme_obj.get(field), updates[field]
+        if field == 'labels':
+            if sorted(old or []) != sorted(new):
+                changes.append(f"labels: {old or []} -> {new}")
+        elif old != new:
+            if field == 'info':
+                changes.append("description updated")
+            else:
+                changes.append(f"{label}: '{old}' -> '{new}'")
+
+    old_flag, new_flag = crackme_obj.get('flag'), updates['flag']
+    if old_flag != new_flag:
+        if not new_flag:
+            changes.append("flag removed (auto-validation off)")
+        elif not old_flag:
+            changes.append("flag set (auto-validation on)")
+        else:
+            changes.append("flag changed")
+
+    return changes
+
+
+def _replace_crackme_file(crackme_obj, request):
+    """Replace the downloadable crackme archive, if a new file was uploaded.
+
+    Returns:
+        Tuple of (replaced: bool, error: str or None).
+    """
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return False, None
+
+    file_data = file.read()
+    if not file_data:
+        return False, None
+
+    temp_path = os.path.join(
+        CRACKMESONE_DIR, 'tmp',
+        f"replace_{crackme_obj['hexid']}_{file.filename}"
+    )
+    os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+    with open(temp_path, 'wb') as f:
+        f.write(file_data)
+
+    dest_path = os.path.join(get_static_dir('crackme'), crackme_obj['hexid'])
+    old_zip = dest_path + ".zip"
+    if os.path.exists(old_zip):
+        os.remove(old_zip)
+
+    success, zip_error = create_password_protected_zip(
+        temp_path, dest_path, file.filename
+    )
+    if not success:
+        return False, f"Failed to replace file: {zip_error}"
+    return True, None
 
 
 @reviewer_bp.route('/delcomment', methods=['GET', 'POST'])

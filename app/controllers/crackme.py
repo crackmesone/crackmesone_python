@@ -32,7 +32,7 @@ from app.services.labels import get_label_groups, get_dataset_url, normalize_lab
 from app.services.archive import is_archive_password_protected, is_single_file_archive, is_unsupported_archive
 from app.services.discord import notify_new_crackme
 from app.services.flag import (
-    FLAG_FORMAT_HINT, hash_flag, is_valid_flag_format, normalize_flag, verify_flag
+    FLAG_FORMAT_HINT, flags_match, is_valid_flag_format, normalize_flag
 )
 from app.services.points import points_for_solve, solve_difficulty
 from app.controllers.decorators import login_required
@@ -260,7 +260,7 @@ def upload_crackme_post():
 
     # Auto-validation opt-in: the flag users will submit, plus the private source
     # archive a reviewer needs to confirm that flag is actually the right one.
-    flag_hash = None
+    flag = None
     source_data = None
     source_filename = None
     if request.form.get('auto_validation'):
@@ -285,7 +285,6 @@ def upload_crackme_post():
             flash('Password-protected source archives are not allowed - reviewers need to be able to open it.', FLASH_ERROR)
             return render_template('crackme/create.html', label_groups=get_label_groups())
 
-        flag_hash = hash_flag(flag)
         source_filename = secure_filename(source.filename) or "source"
 
     # Store the uploaded file size
@@ -305,7 +304,7 @@ def upload_crackme_post():
     # Prepare crackme
     try:
         crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename,
-                                         labels=labels, flag_hash=flag_hash,
+                                         labels=labels, flag=flag,
                                          source_original_filename=source_filename)
     except Exception as e:
         print(f"Error preparing crackme: {e}")
@@ -435,7 +434,7 @@ def submit_flag(hexid):
         flash(f'That is not a valid flag. {FLAG_FORMAT_HINT}', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
-    if not verify_flag(crackme.get('flag_hash'), flag):
+    if not flags_match(crackme.get('flag'), flag):
         flash('Wrong flag. Keep trying!', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 

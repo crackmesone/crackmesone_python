@@ -5,9 +5,7 @@ from io import BytesIO
 
 import pytest
 
-from app.services.flag import (
-    hash_flag, is_valid_flag_format, normalize_flag, verify_flag
-)
+from app.services.flag import flags_match, is_valid_flag_format, normalize_flag
 from app.services.points import points_for_solve, solve_difficulty
 
 FLAG = 'CM1{a_perfectly_good_flag}'
@@ -34,7 +32,7 @@ def flagged_crackme(db, sample_crackme):
     db.crackme.update_one(
         {'_id': sample_crackme['_id']},
         {'$set': {
-            'flag_hash': hash_flag(FLAG),
+            'flag': FLAG,
             'source_original_filename': 'source.zip',
             'official_difficulty': 3,
         }}
@@ -72,13 +70,12 @@ def test_surrounding_whitespace_is_not_a_wrong_answer():
     assert normalize_flag(f'  {FLAG}\n') == FLAG
 
 
-def test_flag_is_stored_hashed_and_verifies():
-    stored = hash_flag(FLAG)
-
-    assert FLAG not in stored
-    assert verify_flag(stored, FLAG)
-    assert not verify_flag(stored, 'CM1{wrong}')
-    assert not verify_flag(None, FLAG)
+def test_flags_match_only_the_exact_flag():
+    assert flags_match(FLAG, FLAG)
+    assert not flags_match(FLAG, 'CM1{wrong}')
+    assert not flags_match(FLAG, FLAG.upper())
+    assert not flags_match(None, FLAG)
+    assert not flags_match(FLAG, '')
 
 
 # -------------------------------------------------------------------- scoring
@@ -126,8 +123,7 @@ def test_opting_into_auto_validation_stores_flag_hash_and_private_source(
 
     assert response.status_code == 200
     crackme = db.crackme.find_one({'name': 'Flagged Challenge'})
-    assert crackme['flag_hash'] != FLAG
-    assert verify_flag(crackme['flag_hash'], FLAG)
+    assert crackme['flag'] == FLAG
     assert crackme['source_original_filename'] == 'source.zip'
     assert crackme['official_difficulty'] is None
     # The source archive lands outside static/, where nothing serves it.
@@ -139,7 +135,7 @@ def test_upload_without_opting_in_stores_no_flag(
     response = _upload(alice_client, monkeypatch, tmp_path)
 
     assert response.status_code == 200
-    assert db.crackme.find_one({'name': 'Flagged Challenge'})['flag_hash'] is None
+    assert db.crackme.find_one({'name': 'Flagged Challenge'})['flag'] is None
 
 
 def test_auto_validation_requires_a_well_formed_flag_and_a_source_archive(
@@ -279,26 +275,6 @@ def _review_dirs(monkeypatch, tmp_path):
     return pending, approved, source
 
 
-def test_reviewer_can_test_a_flag_against_the_stored_hash(
-        reviewer_client, db, flagged_crackme, monkeypatch):
-    from review import routes
-
-    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
-    path = '/review/checkflag'
-
-    match = reviewer_client.post(path, data={
-        'uuid': flagged_crackme['hexid'], 'flag': FLAG,
-        'csrf_token': 'test-csrf-token',
-    })
-    mismatch = reviewer_client.post(path, data={
-        'uuid': flagged_crackme['hexid'], 'flag': 'CM1{wrong}',
-        'csrf_token': 'test-csrf-token',
-    })
-
-    assert 'message=Match' in match.headers['Location']
-    assert 'message=No+match' in mismatch.headers['Location']
-
-
 def test_reviewer_downloads_the_private_source_archive(
         reviewer_client, db, flagged_crackme, monkeypatch, tmp_path):
     _, _, source = _review_dirs(monkeypatch, tmp_path)
@@ -403,12 +379,10 @@ def test_review_page_offers_the_flag_tools_for_an_opted_in_crackme(
     )
 
     assert response.status_code == 200
-    assert b'Check flag' in response.data
     assert b'Download source archive' in response.data
     assert b'Official difficulty' in response.data
-    # The flag itself is only stored hashed, so nothing can print it here.
-    assert FLAG.encode() not in response.data
-    assert flagged_crackme['flag_hash'].encode() not in response.data
+    # Reviewers need to see the flag to confirm the crackme is really solvable.
+    assert FLAG.encode() in response.data
 
 
 def test_review_page_says_so_when_a_crackme_is_not_auto_validated(
@@ -419,4 +393,171 @@ def test_review_page_says_so_when_a_crackme_is_not_auto_validated(
 
     assert response.status_code == 200
     assert b'did not opt into auto-validation' in response.data
-    assert b'Check flag' not in response.data
+
+
+def test_public_pages_never_render_the_flag(client, bob_client, db, flagged_crackme):
+    # The flag is stored in cleartext for reviewers, so the public views must
+    # keep rendering a fixed set of fields that doesn't include it.
+    pages = [
+        client.get(f"/crackme/{flagged_crackme['hexid']}"),
+        bob_client.get(f"/crackme/{flagged_crackme['hexid']}"),
+        client.get('/lasts/1'),
+        client.get('/user/alice'),
+        client.get('/search?name=Test'),
+        client.get('/rss'),
+    ]
+
+    for page in pages:
+        assert FLAG.encode() not in page.data
+
+
+def _admin_client(app):
+    from review import routes
+    from review.routes import (
+        REVIEWER_ADMIN_KEY, REVIEWER_CSRF_KEY, REVIEWER_SESSION_KEY
+    )
+
+    routes.users['admin'] = {'password_hash': 'x', 'is_admin': True}
+    client = app.test_client()
+    with client.session_transaction() as session:
+        session[REVIEWER_SESSION_KEY] = 'admin'
+        session[REVIEWER_ADMIN_KEY] = True
+        session[REVIEWER_CSRF_KEY] = 'test-csrf-token'
+    return client
+
+
+@pytest.fixture
+def admin_client(app):
+    from review import routes
+
+    client = _admin_client(app)
+    yield client
+    routes.users.pop('admin', None)
+
+
+def _edit(client, crackme, **overrides):
+    data = {
+        'crackme_uuid': crackme['hexid'],
+        'csrf_token': 'test-csrf-token',
+        'info': crackme.get('info', ''),
+        'lang': crackme.get('lang', ''),
+        'arch': crackme.get('arch', ''),
+        'platform': crackme.get('platform', ''),
+        'flag': crackme.get('flag') or '',
+        'official_difficulty': str(crackme.get('official_difficulty') or ''),
+    }
+    data.update(overrides)
+    return client.post('/review/editcrackme', data=data,
+                       content_type='multipart/form-data')
+
+
+def test_admin_edits_every_crackme_field_including_flag_and_difficulty(
+        admin_client, db, flagged_crackme, monkeypatch):
+    from review import routes
+
+    logged = []
+    monkeypatch.setattr(routes, 'log_reviewer_operation',
+                        lambda op, who, details, ok: logged.append(details))
+
+    response = _edit(admin_client, flagged_crackme,
+                     info='Rewritten description', lang='Rust', arch='ARM',
+                     platform='Windows', flag='CM1{corrected}',
+                     official_difficulty='6', notify_author='on')
+
+    assert response.status_code == 200
+    stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
+    assert stored['info'] == 'Rewritten description'
+    assert stored['lang'] == 'Rust'
+    assert stored['arch'] == 'ARM'
+    assert stored['platform'] == 'Windows'
+    assert stored['flag'] == 'CM1{corrected}'
+    assert stored['official_difficulty'] == 6
+    # The flag change is recorded, but neither the log nor the author's
+    # notification quotes the flag itself.
+    assert 'flag changed' in logged[0]['changes']
+    assert 'CM1{corrected}' not in str(logged[0])
+    assert 'CM1{corrected}' not in db.notifications.find_one({'user': 'alice'})['text']
+
+
+def test_a_corrected_flag_is_the_one_that_now_scores(
+        admin_client, bob_client, db, bob, flagged_crackme, monkeypatch):
+    from review import routes
+
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
+    _edit(admin_client, flagged_crackme, flag='CM1{corrected}', official_difficulty='6')
+    path = f"/crackme/{flagged_crackme['hexid']}/solve"
+
+    stale = bob_client.post(path, data={'flag': FLAG}, follow_redirects=True)
+    corrected = bob_client.post(path, data={'flag': 'CM1{corrected}'},
+                                follow_redirects=True)
+
+    assert b'Wrong flag' in stale.data
+    assert b'Correct!' in corrected.data
+    assert db.solve.find_one({'user_hexid': _hexid(bob)})['points'] == 600
+
+
+def test_admin_turns_auto_validation_off_without_erasing_earned_points(
+        admin_client, db, bob, flagged_crackme, monkeypatch):
+    from review import routes
+
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
+    db.solve.insert_one({
+        'user_hexid': _hexid(bob), 'crackme_hexid': flagged_crackme['hexid'],
+        'points': 300, 'difficulty': 3,
+    })
+
+    _edit(admin_client, flagged_crackme, remove_flag='on')
+
+    assert db.crackme.find_one({'_id': flagged_crackme['_id']})['flag'] is None
+    assert db.solve.count_documents({}) == 1
+
+
+def test_admin_edit_rejects_a_malformed_flag_or_difficulty(
+        admin_client, db, flagged_crackme, monkeypatch):
+    from review import routes
+
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
+
+    bad_flag = _edit(admin_client, flagged_crackme, flag='nope')
+    bad_difficulty = _edit(admin_client, flagged_crackme, official_difficulty='9')
+
+    assert b'Invalid flag format' in bad_flag.data
+    assert b'Invalid official difficulty' in bad_difficulty.data
+    stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
+    assert stored['flag'] == FLAG
+    assert stored['official_difficulty'] == 3
+
+
+def test_admin_replaces_the_private_source_archive(
+        admin_client, db, flagged_crackme, monkeypatch, tmp_path):
+    from review import routes
+
+    _, _, source = _review_dirs(monkeypatch, tmp_path)
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
+
+    _edit(admin_client, flagged_crackme,
+          source_file=(_zip_bytes(), 'rebuilt-source.zip'))
+
+    stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
+    assert stored['source_original_filename'] == 'rebuilt-source.zip'
+    assert (source / flagged_crackme['hexid']).exists()
+
+
+def test_admin_edit_page_shows_the_flag_and_difficulty_fields(
+        admin_client, db, flagged_crackme):
+    response = admin_client.get(
+        f"/review/editcrackme?crackme_uuid={flagged_crackme['hexid']}"
+    )
+
+    assert response.status_code == 200
+    assert FLAG.encode() in response.data
+    assert b'Official difficulty' in response.data
+    assert b'Private source archive' in response.data
+
+
+def test_non_admin_reviewers_cannot_reach_the_editor(reviewer_client, flagged_crackme):
+    response = reviewer_client.get(
+        f"/review/editcrackme?crackme_uuid={flagged_crackme['hexid']}"
+    )
+
+    assert response.status_code == 403
