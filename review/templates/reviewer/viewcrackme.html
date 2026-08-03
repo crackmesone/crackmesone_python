@@ -27,6 +27,9 @@
         <h3>
             <p><strong>"{{ crackme.name }}"</strong> by <a href="https://crackmes.one/user/{{crackme.author}}">{{ crackme.author }}</a></p>
         </h3>
+        {% if message %}
+        <div class="toast">{{ message }}</div>
+        {% endif %}
         <div class="columns panel-background">
             <div class="column col-12">
                 <h3>
@@ -46,6 +49,36 @@
                 </h3>
 
                 <a href="{{ url_for('reviewer.downloadreview', uuid=crackme.crackme_uuid, type='crackme') }}">Download</a>
+                <div class="divider"></div>
+
+                <h3>
+                    <p>Auto-validation</p>
+                </h3>
+                {% if crackme.auto_validation %}
+                <p>
+                    The author opted in: solvers will be able to submit a flag on this crackme and earn points for it.
+                </p>
+                {% if crackme.has_source_archive %}
+                <p>
+                    <a href="{{ url_for('reviewer.downloadreview', uuid=crackme.crackme_uuid, type='source') }}">Download source archive</a>
+                    &mdash; reviewers only, never published.
+                </p>
+                {% else %}
+                <p><strong>No source archive was uploaded.</strong> Reject unless you can verify the flag another way.</p>
+                {% endif %}
+                <p>
+                    Author's flag: <code>{{ crackme.flag }}</code>
+                </p>
+                <p>
+                    Build the crackme from its source and check that this really is the flag it prints. If it isn't, the
+                    crackme is unsolvable for points &mdash;
+                    {% if is_admin %}fix the flag on the
+                    <a href="{{ url_for('reviewer.editcrackme', crackme_uuid=crackme.crackme_uuid) }}">edit page</a> or
+                    reject it.{% else %}reject it, or ask an admin to fix the flag on the edit page.{% endif %}
+                </p>
+                {% else %}
+                <p>The author did not opt into auto-validation. This crackme accepts no flag submissions and awards no points.</p>
+                {% endif %}
                 <div class="divider"></div>
 
                 <h3>
@@ -115,6 +148,22 @@
                 <form action="{{ url_for('reviewer.approvecrackme') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{crackme.crackme_uuid}}">
+
+                    <div class="form-group" style="max-width: 420px;">
+                        <label class="form-label" for="official_difficulty">Official difficulty</label>
+                        <select class="form-select" id="official_difficulty" name="official_difficulty">
+                            <option value="">-- Not set (no fixed difficulty) --</option>
+                            {% for level in range(1, 7) %}
+                            <option value="{{ level }}" {% if crackme.official_difficulty == level %}selected{% endif %}>{{ level }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="form-input-hint">
+                            What a solve of this crackme is worth (difficulty &times; 100 points), fixed from now on.
+                            The author suggested {{ "%.0f"|format(crackme.difficulty or 0) }}.
+                            {% if not crackme.auto_validation %}Only matters if the crackme ever starts awarding points.{% endif %}
+                        </p>
+                    </div>
+
                     <button type="submit" class="btn active float-left">Accept</button>
                 </form>
             </div>
