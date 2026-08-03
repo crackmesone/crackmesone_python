@@ -4,7 +4,7 @@ Crackme controller - Crackme viewing and uploading.
 
 import os
 from html import escape as html_escape
-from flask import Blueprint, render_template, request, redirect, flash, session, abort
+from flask import Blueprint, render_template, request, redirect, flash, jsonify, session, abort
 from werkzeug.utils import secure_filename
 import bleach
 from app.models.crackme import (
@@ -187,6 +187,47 @@ def upload_crackme_get():
     return render_template('crackme/create.html', label_groups=get_label_groups())
 
 
+def _upload_rejected(message):
+    """Reject an upload without throwing away what the user typed.
+
+    An AJAX submission gets the message as JSON and the browser keeps the page
+    (and the files the user picked) untouched; a plain form post falls back to
+    re-rendering the form with the submitted values filled back in. Either way a
+    single missing field no longer costs someone the whole form.
+    """
+    if _wants_json():
+        return jsonify({'ok': False, 'error': message}), 400
+
+    flash(message, FLASH_ERROR)
+    return render_template('crackme/create.html',
+                           label_groups=get_label_groups(),
+                           form=_submitted_form_values())
+
+
+def _wants_json():
+    """True when the upload form posted in the background rather than navigating."""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+
+def _submitted_form_values():
+    """The submitted values, shaped for re-rendering the upload form.
+
+    File inputs are deliberately absent: browsers won't let a server refill them,
+    which is exactly why the form posts over fetch when it can.
+    """
+    return {
+        'name': request.form.get('name', ''),
+        'info': request.form.get('info', ''),
+        'lang': request.form.get('lang', ''),
+        'arch': request.form.get('arch', ''),
+        'platform': request.form.get('platform', ''),
+        'difficulty': request.form.get('difficulty', ''),
+        'labels': normalize_labels(request.form.getlist('labels')),
+        'auto_validation': bool(request.form.get('auto_validation')),
+        'flag': request.form.get('flag', ''),
+    }
+
+
 @crackme_bp.route('/upload/crackme', methods=['POST'])
 @login_required
 @limit("10 per day", key_func=lambda: session.get('name'))
@@ -198,8 +239,7 @@ def upload_crackme_post():
     required = ['name', 'info', 'lang', 'difficulty', 'platform', 'arch']
     is_valid, missing = validate_required(request.form, required)
     if not is_valid:
-        flash(f'Field missing: {missing}', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected(f'Field missing: {missing}')
 
     name = bleach.clean(request.form.get('name', ''))
     info = bleach.clean(request.form.get('info', ''))
@@ -217,46 +257,38 @@ def upload_crackme_post():
         if diff_int < 1 or diff_int > 6:
             raise ValueError()
     except (ValueError, TypeError):
-        flash('Wrong difficulty', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('Wrong difficulty')
 
     # Validate reCAPTCHA
     if not verify_recaptcha(request):
-        flash('reCAPTCHA invalid!', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('reCAPTCHA invalid!')
 
     # Check for file
     if 'file' not in request.files:
-        flash('Field missing: file', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('Field missing: file')
 
     file = request.files['file']
     if file.filename == '':
-        flash('Field missing: file', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('Field missing: file')
 
     # Read file data
     file_data = file.read()
 
     # Check file size
     if len(file_data) > MAX_FILE_SIZE:
-        flash('This file is too large!', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('This file is too large!')
 
     # Check for unsupported archive formats (RAR, tar, etc.)
     if is_unsupported_archive(file_data):
-        flash('RAR and tar archives are not supported. Please upload a ZIP file for multiple files, or upload single files directly.', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('RAR and tar archives are not supported. Please upload a ZIP file for multiple files, or upload single files directly.')
 
     # Check for password protection
     if is_archive_password_protected(file_data):
-        flash('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('Password-protected archives are not allowed. Do NOT add a password yourself - the server handles this automatically.')
 
     # Check for single-file archives
     if is_single_file_archive(file_data):
-        flash('Archives containing only one file are not allowed. Please upload the file directly without wrapping it in an archive.', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('Archives containing only one file are not allowed. Please upload the file directly without wrapping it in an archive.')
 
     # Auto-validation opt-in: the flag users will submit, plus the private source
     # archive a reviewer needs to confirm that flag is actually the right one.
@@ -266,24 +298,19 @@ def upload_crackme_post():
     if request.form.get('auto_validation'):
         flag = normalize_flag(request.form.get('flag', ''))
         if not is_valid_flag_format(flag):
-            flash(f'Invalid flag format. {FLAG_FORMAT_HINT}', FLASH_ERROR)
-            return render_template('crackme/create.html', label_groups=get_label_groups())
+            return _upload_rejected(f'Invalid flag format. {FLAG_FORMAT_HINT}')
 
         source = request.files.get('source')
         if source is None or source.filename == '':
-            flash('Auto-validation needs a source archive so reviewers can verify the flag.', FLASH_ERROR)
-            return render_template('crackme/create.html', label_groups=get_label_groups())
+            return _upload_rejected('Auto-validation needs a source archive so reviewers can verify the flag.')
 
         source_data = source.read()
         if len(source_data) > MAX_FILE_SIZE:
-            flash('The source archive is too large!', FLASH_ERROR)
-            return render_template('crackme/create.html', label_groups=get_label_groups())
+            return _upload_rejected('The source archive is too large!')
         if is_unsupported_archive(source_data):
-            flash('RAR and tar source archives are not supported. Please upload a ZIP file.', FLASH_ERROR)
-            return render_template('crackme/create.html', label_groups=get_label_groups())
+            return _upload_rejected('RAR and tar source archives are not supported. Please upload a ZIP file.')
         if is_archive_password_protected(source_data):
-            flash('Password-protected source archives are not allowed - reviewers need to be able to open it.', FLASH_ERROR)
-            return render_template('crackme/create.html', label_groups=get_label_groups())
+            return _upload_rejected('Password-protected source archives are not allowed - reviewers need to be able to open it.')
 
         source_filename = secure_filename(source.filename) or "source"
 
@@ -293,8 +320,7 @@ def upload_crackme_post():
     # Check for duplicate pending submission
     try:
         crackme_by_user_and_name(username, name, visible=False)
-        flash('You already have a pending crackme with this name. Please wait for review or choose a different name.', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('You already have a pending crackme with this name. Please wait for review or choose a different name.')
     except ErrNoResult:
         pass  # No duplicate, continue
 
@@ -323,8 +349,7 @@ def upload_crackme_post():
             f.write(file_data)
     except Exception as e:
         print(f"File write error: {e}")
-        flash('Failed to save file. Please try again.', FLASH_ERROR)
-        return render_template('crackme/create.html', label_groups=get_label_groups())
+        return _upload_rejected('Failed to save file. Please try again.')
 
     if source_data is not None:
         try:
@@ -334,8 +359,7 @@ def upload_crackme_post():
         except Exception as e:
             print(f"Source file write error: {e}")
             os.remove(safe_path)
-            flash('Failed to save the source archive. Please try again.', FLASH_ERROR)
-            return render_template('crackme/create.html', label_groups=get_label_groups())
+            return _upload_rejected('Failed to save the source archive. Please try again.')
 
     def _cleanup_files():
         for path in (safe_path, source_path if source_data is not None else None):
@@ -383,10 +407,27 @@ def upload_crackme_post():
     except Exception as e:
         print(f"Discord notification error: {e}")
 
+    # Post/redirect/get: the confirmation lives at its own URL, so the browser
+    # (and the background submit above, which just follows the redirect) can't
+    # re-post the upload by refreshing.
+    session['submitted_crackme'] = crackme['name']
+    if _wants_json():
+        return jsonify({'ok': True, 'redirect': '/upload/crackme/submitted'})
+    return redirect('/upload/crackme/submitted')
+
+
+@crackme_bp.route('/upload/crackme/submitted', methods=['GET'])
+@login_required
+def upload_crackme_submitted():
+    """Confirm a crackme upload that just went through."""
+    name = session.pop('submitted_crackme', None)
+    if not name:
+        return redirect('/upload/crackme')
+
     return render_template('submission/success.html',
                            submission_type='Crackme',
-                           name=crackme['name'],
-                           username=username)
+                           name=name,
+                           username=session.get('name'))
 
 
 @crackme_bp.route('/crackme/<hexid>/solve', methods=['POST'])

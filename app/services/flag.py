@@ -14,10 +14,10 @@ crackme page renders a fixed set of fields and the flag is not among them (see
 import hmac
 import re
 
-# Standardised flag format, per issue #127: a CM1 prefix and a brace-delimited
+# Standardised flag format, per issue #127: a CMO prefix and a brace-delimited
 # body, so a flag is always a single unambiguous token that authors can embed in
 # a binary and users can copy-paste.
-FLAG_PREFIX = 'CM1'
+FLAG_PREFIX = 'CMO'
 FLAG_BODY_MAX = 56
 # Printable ASCII (0x21-0x7e) minus the braces, which keeps the closing brace
 # unambiguous. Keeping a flag a single whitespace-free ASCII token means neither
@@ -40,7 +40,7 @@ def normalize_flag(flag):
 
 
 def is_valid_flag_format(flag):
-    """Return True if the flag matches the standardised CM1{...} format."""
+    """Return True if the flag matches the standardised CMO{...} format."""
     return bool(FLAG_PATTERN.match(flag or ''))
 
 

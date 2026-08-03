@@ -8,7 +8,7 @@ import pytest
 from app.services.flag import flags_match, is_valid_flag_format, normalize_flag
 from app.services.points import points_for_solve, solve_difficulty
 
-FLAG = 'CM1{a_perfectly_good_flag}'
+FLAG = 'CMO{a_perfectly_good_flag}'
 
 
 def _hexid(user):
@@ -43,8 +43,8 @@ def flagged_crackme(db, sample_crackme):
 # ---------------------------------------------------------------- flag format
 
 @pytest.mark.parametrize('flag', [
-    'CM1{ok}',
-    'CM1{' + 'x' * 56 + '}',
+    'CMO{ok}',
+    'CMO{' + 'x' * 56 + '}',
 ])
 def test_valid_flags_are_accepted(flag):
     assert is_valid_flag_format(flag)
@@ -54,13 +54,13 @@ def test_valid_flags_are_accepted(flag):
     '',
     'ok',
     'CTF{ok}',
-    'CM1{}',
-    'CM1{nested{braces}}',
-    'CM1{has space}',
-    'CM1{' + 'x' * 57 + '}',        # longer than the body limit
-    'prefix CM1{ok}',
-    'CM1{\u00fcnicode}',            # ASCII only, so a flag's bytes stay bounded
-    'CM1{tab\tinside}',
+    'CMO{}',
+    'CMO{nested{braces}}',
+    'CMO{has space}',
+    'CMO{' + 'x' * 57 + '}',        # longer than the body limit
+    'prefix CMO{ok}',
+    'CMO{\u00fcnicode}',            # ASCII only, so a flag's bytes stay bounded
+    'CMO{tab\tinside}',
 ])
 def test_invalid_flags_are_rejected(flag):
     assert not is_valid_flag_format(flag)
@@ -72,7 +72,7 @@ def test_surrounding_whitespace_is_not_a_wrong_answer():
 
 def test_flags_match_only_the_exact_flag():
     assert flags_match(FLAG, FLAG)
-    assert not flags_match(FLAG, 'CM1{wrong}')
+    assert not flags_match(FLAG, 'CMO{wrong}')
     assert not flags_match(FLAG, FLAG.upper())
     assert not flags_match(None, FLAG)
     assert not flags_match(FLAG, '')
@@ -112,7 +112,8 @@ def _upload(client, monkeypatch, tmp_path, **extra):
     }
     data.update(extra)
     return client.post('/upload/crackme', data=data,
-                       content_type='multipart/form-data')
+                       content_type='multipart/form-data',
+                       follow_redirects=True)
 
 
 def test_opting_into_auto_validation_stores_flag_hash_and_private_source(
@@ -122,6 +123,7 @@ def test_opting_into_auto_validation_stores_flag_hash_and_private_source(
                        source=(_zip_bytes(), 'source.zip'))
 
     assert response.status_code == 200
+    assert b'has been submitted' in response.data or b'Flagged Challenge' in response.data
     crackme = db.crackme.find_one({'name': 'Flagged Challenge'})
     assert crackme['flag'] == FLAG
     assert crackme['source_original_filename'] == 'source.zip'
@@ -169,7 +171,7 @@ def test_correct_flag_records_a_solve_and_awards_points(
 
 def test_wrong_flag_records_nothing(bob_client, db, bob, flagged_crackme):
     response = bob_client.post(f"/crackme/{flagged_crackme['hexid']}/solve",
-                               data={'flag': 'CM1{nope}'},
+                               data={'flag': 'CMO{nope}'},
                                follow_redirects=True)
 
     assert b'Wrong flag' in response.data
@@ -461,7 +463,7 @@ def test_admin_edits_every_crackme_field_including_flag_and_difficulty(
 
     response = _edit(admin_client, flagged_crackme,
                      info='Rewritten description', lang='Rust', arch='ARM',
-                     platform='Windows', flag='CM1{corrected}',
+                     platform='Windows', flag='CMO{corrected}',
                      official_difficulty='6', notify_author='on')
 
     assert response.status_code == 200
@@ -470,13 +472,13 @@ def test_admin_edits_every_crackme_field_including_flag_and_difficulty(
     assert stored['lang'] == 'Rust'
     assert stored['arch'] == 'ARM'
     assert stored['platform'] == 'Windows'
-    assert stored['flag'] == 'CM1{corrected}'
+    assert stored['flag'] == 'CMO{corrected}'
     assert stored['official_difficulty'] == 6
     # The flag change is recorded, but neither the log nor the author's
     # notification quotes the flag itself.
     assert 'flag changed' in logged[0]['changes']
-    assert 'CM1{corrected}' not in str(logged[0])
-    assert 'CM1{corrected}' not in db.notifications.find_one({'user': 'alice'})['text']
+    assert 'CMO{corrected}' not in str(logged[0])
+    assert 'CMO{corrected}' not in db.notifications.find_one({'user': 'alice'})['text']
 
 
 def test_a_corrected_flag_is_the_one_that_now_scores(
@@ -484,11 +486,11 @@ def test_a_corrected_flag_is_the_one_that_now_scores(
     from review import routes
 
     monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
-    _edit(admin_client, flagged_crackme, flag='CM1{corrected}', official_difficulty='6')
+    _edit(admin_client, flagged_crackme, flag='CMO{corrected}', official_difficulty='6')
     path = f"/crackme/{flagged_crackme['hexid']}/solve"
 
     stale = bob_client.post(path, data={'flag': FLAG}, follow_redirects=True)
-    corrected = bob_client.post(path, data={'flag': 'CM1{corrected}'},
+    corrected = bob_client.post(path, data={'flag': 'CMO{corrected}'},
                                 follow_redirects=True)
 
     assert b'Wrong flag' in stale.data
@@ -561,3 +563,97 @@ def test_non_admin_reviewers_cannot_reach_the_editor(reviewer_client, flagged_cr
     )
 
     assert response.status_code == 403
+
+
+# ------------------------------------------------- upload failure recovery
+
+def test_a_rejected_upload_keeps_what_the_user_typed(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+
+    monkeypatch.setattr(crackme_controller, 'UPLOAD_FOLDER', str(tmp_path / 'pending'))
+    response = alice_client.post('/upload/crackme', data={
+        'name': 'Half Filled Challenge',
+        'info': 'A long description nobody wants to retype.',
+        'lang': 'Rust',
+        'difficulty': '5',
+        'platform': 'Windows',
+        'arch': 'ARM',
+        'labels': ['Packer'],
+        'auto_validation': 'on',
+        'flag': 'CMO{typed_but_not_lost}',
+        # ... and no file, so the submission is rejected.
+    }, content_type='multipart/form-data')
+
+    assert response.status_code == 200
+    body = response.data.decode()
+    assert 'Field missing: file' in body
+    assert 'value="Half Filled Challenge"' in body
+    assert 'A long description nobody wants to retype.' in body
+    assert 'value="CMO{typed_but_not_lost}"' in body
+    # Radios and label checkboxes come back ticked too.
+    assert 'value="Rust" checked' in body
+    assert 'value="5" checked' in body
+    assert 'value="Windows" checked' in body
+    assert 'value="ARM" checked' in body
+    assert 'value="Packer" data-label-class="1" checked' in body
+
+
+def test_background_submits_report_errors_as_json(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+
+    monkeypatch.setattr(crackme_controller, 'UPLOAD_FOLDER', str(tmp_path / 'pending'))
+    response = alice_client.post('/upload/crackme', data={
+        'name': 'No File Challenge', 'info': 'info', 'lang': 'C/C++',
+        'difficulty': '3', 'platform': 'Linux', 'arch': 'x86-64',
+    }, content_type='multipart/form-data',
+        headers={'X-Requested-With': 'XMLHttpRequest'})
+
+    assert response.status_code == 400
+    assert response.json == {'ok': False, 'error': 'Field missing: file'}
+
+
+def test_background_submits_get_the_confirmation_url_on_success(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+
+    monkeypatch.setattr(crackme_controller, 'UPLOAD_FOLDER', str(tmp_path / 'pending'))
+    response = alice_client.post('/upload/crackme', data={
+        'name': 'Ajax Challenge', 'info': 'info', 'lang': 'C/C++',
+        'difficulty': '3', 'platform': 'Linux', 'arch': 'x86-64',
+        'file': (BytesIO(b'binary'), 'challenge.bin'),
+    }, content_type='multipart/form-data',
+        headers={'X-Requested-With': 'XMLHttpRequest'})
+
+    assert response.status_code == 200
+    assert response.json == {'ok': True, 'redirect': '/upload/crackme/submitted'}
+    assert db.crackme.find_one({'name': 'Ajax Challenge'}) is not None
+
+    confirmation = alice_client.get('/upload/crackme/submitted')
+    assert b'Ajax Challenge' in confirmation.data
+    # One-shot: refreshing the confirmation doesn't re-announce the submission.
+    assert alice_client.get('/upload/crackme/submitted').status_code == 302
+
+
+def test_auto_validation_is_ticked_by_default_on_a_fresh_form(alice_client, alice):
+    body = alice_client.get('/upload/crackme').data.decode()
+
+    assert 'id="auto_validation" name="auto_validation" checked' in body
+    # Labels sit at the end of the form, after the auto-validation block.
+    assert body.index('Auto-validation') < body.index('Select the anti-analysis')
+
+
+def test_unticking_auto_validation_survives_a_rejected_upload(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+
+    monkeypatch.setattr(crackme_controller, 'UPLOAD_FOLDER', str(tmp_path / 'pending'))
+    response = alice_client.post('/upload/crackme', data={
+        'name': 'No Flag Here', 'info': 'info', 'lang': 'C/C++',
+        'difficulty': '3', 'platform': 'Linux', 'arch': 'x86-64',
+        # auto_validation deliberately absent: the user unticked it.
+    }, content_type='multipart/form-data')
+
+    body = response.data.decode()
+    assert 'id="auto_validation" name="auto_validation" checked' not in body

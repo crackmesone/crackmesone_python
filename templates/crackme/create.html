@@ -23,6 +23,11 @@
     <p>Read the full <a href="/upload/crackmerules">crackme submission rules</a> for detailed guidelines.</p>
 
     <div class="divider"></div>
+    {# ``form`` carries back what the user typed when a submission is rejected, so a
+       missing field never costs them the rest of the form. Defaults double as the
+       first-visit state. #}
+    {% set form = form|default({}) %}
+    <div id="upload-errors" class="toast toast-error" style="display: none;"></div>
     <form id="upload-form" class="form-horizontal" action="/upload/crackme" method="post" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
@@ -30,7 +35,7 @@
                 <label class="form-label" for="name">Crackme name</label>
             </div>
             <div class="col-9 col-sm-12">
-                <input class="form-input" type="text" id="name" name="name" placeholder="Name">
+                <input class="form-input" type="text" id="name" name="name" placeholder="Name" value="{{ form.name|default('') }}">
             </div>
         </div>
         <div class="form-group">
@@ -41,7 +46,7 @@
                 {% set choice_type = 'radio' %}
                 {% set choice_name = 'difficulty' %}
                 {% set choice_options = DIFFICULTY_CHOICES %}
-                {% set choice_selected = '' %}
+                {% set choice_selected = form.difficulty|default('') %}
                 {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
@@ -53,7 +58,7 @@
                 {% set choice_type = 'radio' %}
                 {% set choice_name = 'lang' %}
                 {% set choice_options = LANG_CHOICES %}
-                {% set choice_selected = '' %}
+                {% set choice_selected = form.lang|default('') %}
                 {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
@@ -65,7 +70,7 @@
                 {% set choice_type = 'radio' %}
                 {% set choice_name = 'arch' %}
                 {% set choice_options = ARCH_CHOICES %}
-                {% set choice_selected = '' %}
+                {% set choice_selected = form.arch|default('') %}
                 {% include 'partial/choice_inputs.html' %}
             </div>
         </div>
@@ -77,26 +82,8 @@
                 {% set choice_type = 'radio' %}
                 {% set choice_name = 'platform' %}
                 {% set choice_options = PLATFORM_CHOICES %}
-                {% set choice_selected = '' %}
+                {% set choice_selected = form.platform|default('') %}
                 {% include 'partial/choice_inputs.html' %}
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-3 col-sm-12">
-                <label class="form-label">Labels</label>
-            </div>
-            <div class="col-9 col-sm-12">
-                <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
-                    Select the anti-analysis / obfuscation techniques your crackme uses. Please label every technique
-                    that applies; if none apply, it's fine to leave these empty. Pick a broad category and, where it
-                    applies, the specific technique underneath &mdash; ticking a technique ticks its category
-                    automatically. Reviewers may adjust these later.
-                </p>
-                <div class="choice-box">
-                    {% set label_input_name = 'labels' %}
-                    {% set checked_labels = [] %}
-                    {% include 'partial/labels_checkboxes.html' %}
-                </div>
             </div>
         </div>
         <div class="form-group">
@@ -112,7 +99,7 @@
                 <label class="form-label" for="info">Info</label>
             </div>
             <div class="col-9 col-sm-12">
-                <textarea class="form-input" id="info" name="info" placeholder="Textarea" rows="3"></textarea>
+                <textarea class="form-input" id="info" name="info" placeholder="Textarea" rows="3">{{ form.info|default('') }}</textarea>
             </div>
         </div>
         <div class="form-group">
@@ -121,17 +108,16 @@
             </div>
             <div class="col-9 col-sm-12">
                 <label class="form-checkbox">
-                    <input type="checkbox" id="auto_validation" name="auto_validation">
-                    <i class="form-icon"></i> Let solvers submit a flag and earn points
+                    <input type="checkbox" id="auto_validation" name="auto_validation"{{ '' if form and not form.auto_validation else ' checked' }}>
+                    <i class="form-icon"></i> Optional. This crackme has a unique flag and can be auto-validated.
                 </label>
-                <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
-                    Optional. Give us the flag your crackme prints when it is beaten, and solvers can prove they
-                    cracked it by submitting that flag &mdash; a correct one earns them points. Reviewers can read the
-                    flag you submit here (they need it to check your crackme is solvable); nobody else can, and it is
-                    never shown anywhere on the site.
-                </p>
                 <div id="auto-validation-fields" style="display: none;">
-                    <input class="form-input" type="text" id="flag" name="flag" placeholder="CM1{the_flag_your_crackme_prints}">
+                    <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
+                        Solvers submit the flag your crackme prints when it is beaten, and a correct one earns them
+                        points. Reviewers can read the flag (they need it to check your crackme is solvable); nobody
+                        else can, and it is never shown anywhere on the site.
+                    </p>
+                    <input class="form-input" type="text" id="flag" name="flag" placeholder="CMO{the_flag_your_crackme_prints}" value="{{ form.flag|default('') }}">
                     <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
                         Source archive (zip): your source code, build scripts, and anything else a reviewer needs to
                         rebuild the crackme and confirm the flag is right. <b>Reviewers only</b> &mdash; it is never
@@ -141,11 +127,29 @@
                 </div>
             </div>
         </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">Labels</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
+                    Select the anti-analysis / obfuscation techniques your crackme uses. Please label every technique
+                    that applies; if none apply, it's fine to leave these empty. Pick a broad category and, where it
+                    applies, the specific technique underneath &mdash; ticking a technique ticks its category
+                    automatically. Reviewers may adjust these later.
+                </p>
+                <div class="choice-box">
+                    {% set label_input_name = 'labels' %}
+                    {% set checked_labels = form.labels|default([]) %}
+                    {% include 'partial/labels_checkboxes.html' %}
+                </div>
+            </div>
+        </div>
         {% if RECAPTCHA_SITEKEY %}
         <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
         </br></br></br></br>
         {% endif %}
-        <input type="submit" class="btn active float-right" value="Upload a crackme">
+        <input type="submit" id="upload-submit" class="btn active float-right" value="Upload a crackme">
     </form>
 </div>
 
@@ -161,6 +165,65 @@
     function sync() { fields.style.display = toggle.checked ? 'block' : 'none'; }
     toggle.addEventListener('change', sync);
     sync();
+})();
+
+(function() {
+    // Submit in the background so a rejected upload only costs the user an error
+    // message: the form -- including the files they picked, which no server-side
+    // re-render can restore -- stays exactly as it was, ready to fix and resend.
+    // Without JS the form posts normally and the server re-renders it with the
+    // typed values instead (files excepted).
+    var form = document.getElementById('upload-form');
+    var button = document.getElementById('upload-submit');
+    var errors = document.getElementById('upload-errors');
+    if (!form || !button || !errors || !window.FormData || !window.fetch) return;
+
+    function showError(text) {
+        errors.textContent = text;
+        errors.style.display = 'block';
+        errors.scrollIntoView({ block: 'center' });
+        // A used reCAPTCHA token is spent, so the widget needs a fresh one
+        // before the user can try again.
+        if (window.grecaptcha) { try { window.grecaptcha.reset(); } catch (e) {} }
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        errors.style.display = 'none';
+        button.disabled = true;
+        button.value = 'Uploading...';
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, status: response.status, data: data };
+            }).catch(function() {
+                return { ok: response.ok, status: response.status, data: null };
+            });
+        }).then(function(result) {
+            if (result.ok && result.data && result.data.redirect) {
+                window.location = result.data.redirect;
+                return;
+            }
+            if (result.data && result.data.error) {
+                showError(result.data.error);
+            } else if (result.status === 429) {
+                showError('You have hit the daily upload limit. Please try again later.');
+            } else {
+                showError('Upload failed (error ' + result.status + '). Please try again.');
+            }
+            button.disabled = false;
+            button.value = 'Upload a crackme';
+        }).catch(function() {
+            showError('Upload failed: could not reach the server. Please try again.');
+            button.disabled = false;
+            button.value = 'Upload a crackme';
+        });
+    });
 })();
 </script>
 
