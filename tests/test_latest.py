@@ -65,6 +65,8 @@ def test_latest_overview_shows_first_twenty_of_each_category(client, db, alice, 
     assert 'href="/lasts/1">Show more crackmes' in html
     assert 'href="/latest/solutions/1">Show more solutions' in html
     assert 'href="/latest/solves/1">Show more solves' in html
+    assert html.count('<p class="text-center"><a href=') == 3
+    assert 'href="/rss"' in html
 
 
 def test_latest_category_pages_and_navigation_load(client):

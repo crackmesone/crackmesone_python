@@ -3,22 +3,22 @@
 {% block page_title %}Latest activity{% endblock %}
 {% block content %}
 <div style="max-width: 90%" class="container d-flex-row wrapper">
-    <h2>Latest Crackmes <a href="/rss/crackme"><img src="/static/img/rss.svg" width="16" height="16" alt="RSS" /></a></h2>
+    <h2>Latest Crackmes <a href="/rss"><img src="/static/img/rss.svg" width="16" height="16" alt="Latest activity RSS" /></a></h2>
     {% include 'latest/_crackmes.html' %}
     {% if more_crackmes %}
-    <p class="text-right"><a href="/lasts/1">Show more crackmes</a></p>
+    <p class="text-center"><a href="/lasts/1">Show more crackmes</a></p>
     {% endif %}
 
     <h2>Latest Solutions</h2>
     {% include 'latest/_solutions.html' %}
     {% if more_solutions %}
-    <p class="text-right"><a href="/latest/solutions/1">Show more solutions</a></p>
+    <p class="text-center"><a href="/latest/solutions/1">Show more solutions</a></p>
     {% endif %}
 
     <h2>Latest Solves</h2>
     {% include 'latest/_solves.html' %}
     {% if more_solves %}
-    <p class="text-right"><a href="/latest/solves/1">Show more solves</a></p>
+    <p class="text-center"><a href="/latest/solves/1">Show more solves</a></p>
     {% endif %}
 </div>
 {% include 'partial/footer.html' %}
