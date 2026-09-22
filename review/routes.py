@@ -46,13 +46,15 @@ from review.auth import (
 from app.services.crypto import get_obfuscation_salt
 from app.services.view import is_valid_hexid
 from app.services.labels import get_label_groups, normalize_labels
+from app.services.crackme_fields import (
+    ARCH_CHOICES, LANG_CHOICES, PLATFORM_CHOICES,
+)
 from app.services.flag import (
     FLAG_FORMAT_HINT, is_valid_flag_format, normalize_flag
 )
 from app.services.archive import (
     is_archive_password_protected, is_unsupported_archive
 )
-from app.models.crackme import crackme_set_official_difficulty
 from app.models.label_request import (
     label_requests_pending, count_pending_label_requests, label_request_by_hexid,
     label_request_set_status, STATUS_APPROVED, STATUS_REJECTED,
@@ -1004,7 +1006,8 @@ def _cascade_delete_crackme_data(crackme_id, crackme_hexid):
         'comments': 0,
         'difficulty_ratings': 0,
         'quality_ratings': 0,
-        'solves': 0
+        'solves': 0,
+        'flag_submissions': 0
     }
 
     # Delete solutions
@@ -1038,6 +1041,11 @@ def _cascade_delete_crackme_data(crackme_id, crackme_hexid):
         'crackme_hexid': crackme_hexid
     })
     deleted['solves'] = result.deleted_count
+
+    result = g_crackmesone_db.flag_submission.delete_many({
+        'crackme_hexid': crackme_hexid
+    })
+    deleted['flag_submissions'] = result.deleted_count
 
     return deleted
 
@@ -1109,6 +1117,7 @@ def preview_user_deletion(user_email):
         'notifications': 0,
         'solutions': 0,
         'solves': 0,
+        'flag_submissions': 0,
         'crackmes': 0,
         'crackme_details': [],
         'user_comments': 0,
@@ -1128,6 +1137,9 @@ def preview_user_deletion(user_email):
             "author": username
         })
         preview['solves'] = db.solve.count_documents({
+            "user_hexid": user.get("hexid") or str(user["_id"])
+        })
+        preview['flag_submissions'] = db.flag_submission.count_documents({
             "user_hexid": user.get("hexid") or str(user["_id"])
         })
 
@@ -1225,6 +1237,13 @@ def delete_user_account(user_email, admin_username=None):
             "user_hexid": user.get("hexid") or str(user["_id"])
         })
         deletion_log.append(f"Deleted {result.deleted_count} solves by user")
+
+        result = db.flag_submission.delete_many({
+            "user_hexid": user.get("hexid") or str(user["_id"])
+        })
+        deletion_log.append(
+            f"Deleted {result.deleted_count} flag submissions by user"
+        )
 
         # 2b. Delete user's solutions
         solution_count = 0
@@ -1458,6 +1477,40 @@ def dashboard(current_user):
         crackme_cnt=count_pending_items('crackme'),
         labelreq_cnt=labelreq_cnt,
         acctdel_cnt=acctdel_cnt
+    )
+
+
+@reviewer_bp.route('/flagvalidations')
+@admin_required
+def flagvalidations(current_user):
+    """Show recent flag submissions and validation results to admins."""
+    submissions = list(
+        g_crackmesone_db.flag_submission
+        .find({})
+        .sort('created_at', -1)
+        .limit(250)
+    )
+    crackme_ids = {
+        item.get('crackme_hexid') for item in submissions
+        if item.get('crackme_hexid')
+    }
+    crackme_names = {
+        item['hexid']: item.get('name', 'Unnamed crackme')
+        for item in g_crackmesone_db.crackme.find(
+            {'hexid': {'$in': list(crackme_ids)}},
+            {'hexid': 1, 'name': 1}
+        )
+    }
+    for item in submissions:
+        item['crackme_name'] = crackme_names.get(
+            item.get('crackme_hexid'), 'Deleted crackme'
+        )
+
+    return render_template(
+        'reviewer/flagvalidations.html',
+        user=current_user['username'],
+        is_admin=True,
+        submissions=submissions,
     )
 
 
@@ -1725,22 +1778,80 @@ def approvecrackme(current_user):
             message="Crackme file not found"
         ))
 
-    # The official difficulty is what solves of this crackme are worth. It is
-    # set here, at approval, because issue #127 wants it fixed from then on.
-    official_difficulty = request.form.get('official_difficulty')
-    if official_difficulty:
-        if crackme_set_official_difficulty(crackme_file, official_difficulty):
-            log_reviewer_operation(
-                "set_official_difficulty", current_user['username'],
-                {"crackme_uuid": crackme_uuid, "official_difficulty": official_difficulty},
-                True
-            )
-        else:
+    crackme_obj = g_crackmesone_db.crackme.find_one({
+        'hexid': crackme_uuid.lower(), 'visible': False,
+    })
+    if not crackme_obj:
+        return redirect(url_for(
+            'reviewer.reviewcrackme', message="Pending crackme not found"
+        ))
+
+    info = request.form.get('info', crackme_obj.get('info', '')).strip()
+    lang = request.form.get('lang', crackme_obj.get('lang', ''))
+    arch = request.form.get('arch', crackme_obj.get('arch', ''))
+    platform = request.form.get('platform', crackme_obj.get('platform', ''))
+    if not info:
+        return redirect(url_for(
+            'reviewer.viewcrackme', crackme_uuid=crackme_uuid,
+            message="Description is required"
+        ))
+    valid_classification = (
+        (lang in LANG_CHOICES or lang == crackme_obj.get('lang')) and
+        (arch in ARCH_CHOICES or arch == crackme_obj.get('arch')) and
+        (platform in PLATFORM_CHOICES or platform == crackme_obj.get('platform'))
+    )
+    if not valid_classification:
+        return redirect(url_for(
+            'reviewer.viewcrackme', crackme_uuid=crackme_uuid,
+            message="Invalid language, architecture, or platform"
+        ))
+
+    updates = {
+        'info': info,
+        'lang': lang,
+        'arch': arch,
+        'platform': platform,
+        'labels': (
+            normalize_labels(request.form.getlist('labels'))
+            if request.form.get('labels_submitted') == '1'
+            else crackme_obj.get('labels', [])
+        ),
+    }
+
+    if crackme_obj.get('flag'):
+        flag = normalize_flag(request.form.get('flag', crackme_obj.get('flag', '')))
+        if not is_valid_flag_format(flag):
             return redirect(url_for(
-                'reviewer.viewcrackme',
-                crackme_uuid=crackme_uuid,
-                message="Invalid official difficulty"
+                'reviewer.viewcrackme', crackme_uuid=crackme_uuid,
+                message=f"Invalid flag format. {FLAG_FORMAT_HINT}"
             ))
+        updates['flag'] = flag
+
+    # Reviewers may adjust the author's proposed reward before approval. The
+    # database keeps this as points / 100 in the official difficulty field.
+    official_points = request.form.get('official_points', '').strip()
+    if (crackme_obj.get('flag') and 'official_points' not in request.form
+            and crackme_obj.get('official_difficulty')):
+        official_points = str(round(crackme_obj['official_difficulty'] * 100))
+    if crackme_obj.get('flag') or official_points:
+        try:
+            official_points = int(official_points)
+        except ValueError:
+            official_points = 0
+        if not 100 <= official_points <= 600:
+            return redirect(url_for(
+                'reviewer.viewcrackme', crackme_uuid=crackme_uuid,
+                message="Points must be a whole number from 100 to 600"
+            ))
+        updates['official_difficulty'] = official_points / 100
+
+    g_crackmesone_db.crackme.update_one(
+        {'_id': crackme_obj['_id']}, {'$set': updates}
+    )
+    log_reviewer_operation(
+        "update_pending_crackme", current_user['username'],
+        {"crackme_uuid": crackme_uuid, "fields": sorted(updates)}, True
+    )
 
     success, message = approve_pending_crackme(crackme_file)
 
@@ -2221,17 +2332,17 @@ def _apply_crackme_edit(current_user, crackme_obj, request):
     }
     notify_author = request.form.get('notify_author') == 'on'
 
-    # Official difficulty: what a solve of this crackme is worth. An empty
-    # selection clears it, dropping the crackme back to its community rating.
-    official_difficulty = request.form.get('official_difficulty', '').strip()
-    if official_difficulty:
+    # Official points are stored as points / 100 in official_difficulty. An
+    # empty value clears the override and falls back to the community rating.
+    official_points = request.form.get('official_points', '').strip()
+    if official_points:
         try:
-            official_difficulty = int(official_difficulty)
+            official_points = int(official_points)
         except ValueError:
-            return "Invalid official difficulty", None
-        if not 1 <= official_difficulty <= 6:
-            return "Invalid official difficulty", None
-        updates['official_difficulty'] = official_difficulty
+            return "Points must be a whole number from 100 to 600", None
+        if not 100 <= official_points <= 600:
+            return "Points must be a whole number from 100 to 600", None
+        updates['official_difficulty'] = official_points / 100
     else:
         updates['official_difficulty'] = None
 
@@ -3021,6 +3132,10 @@ def create_site_archive_background(requesting_user):
         set_archive_status('running', step='Exporting crackmes database...')
         crackmes = list(db.crackme.find({}))
         for c in crackmes:
+            # Flags are reviewer-only secrets and are not part of the public
+            # site archive. Omit the key entirely rather than exporting a
+            # placeholder value.
+            c.pop('flag', None)
             c['_id'] = str(c['_id'])
         with open(os.path.join(archive_folder, 'database', 'crackmes.json'), 'w') as f:
             json.dump(crackmes, f, indent=2, default=str)

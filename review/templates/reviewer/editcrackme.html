@@ -81,17 +81,13 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="official_difficulty">Official difficulty</label>
-                        <select class="form-select" id="official_difficulty" name="official_difficulty">
-                            <option value="">-- Not set (falls back to the community rating) --</option>
-                            {% for value, label in DIFFICULTY_CHOICES %}
-                            <option value="{{ value }}" {{ 'selected' if crackme.official_difficulty == value|int else '' }}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
+                        <label class="form-label" for="official_points">Points</label>
+                        <input class="form-input" type="number" id="official_points" name="official_points"
+                               min="100" max="600" step="1"
+                               value="{{ (crackme.official_difficulty * 100)|round|int if crackme.official_difficulty else '' }}">
                         <p class="form-input-hint">
-                            Fixes what a solve of this crackme is worth (difficulty &times; 100 points), independently of
-                            the community rating, which keeps moving as people rate it (currently
-                            {{ "%.1f"|format(crackme.difficulty or 0) }}). Already-earned points are not re-priced.
+                            Whole numbers from 100 to 600. Stored internally as points &divide; 100; already-earned
+                            points are not re-priced.
                         </p>
                     </div>
 

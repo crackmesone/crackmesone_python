@@ -1,6 +1,7 @@
 """Coverage for the remaining reviewer administration and archive workflows."""
 
 import json
+import zipfile
 from datetime import datetime, timezone
 from io import BytesIO
 
@@ -235,6 +236,31 @@ def test_site_archive_background_success_and_failure(
     monkeypatch.setattr('app.services.database.get_db', lambda: None)
     routes.create_site_archive_background('workflow-admin')
     assert routes.get_archive_status()['status'] == 'error'
+
+
+def test_site_archive_omits_crackme_flags(
+        db, sample_crackme, monkeypatch, tmp_path):
+    from review import routes
+
+    secret = 'CMO{must_not_leave_the_site}'
+    db.crackme.update_one(
+        {'_id': sample_crackme['_id']}, {'$set': {'flag': secret}}
+    )
+    archive_dir = _archive_paths(monkeypatch, tmp_path)
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **k: None)
+
+    routes.create_site_archive_background('workflow-admin')
+
+    status = routes.get_archive_status()
+    with zipfile.ZipFile(archive_dir / status['filename']) as archive:
+        crackmes_name = next(
+            name for name in archive.namelist()
+            if name.endswith('/database/crackmes.json')
+        )
+        crackmes = json.loads(archive.read(crackmes_name))
+
+    assert 'flag' not in crackmes[0]
+    assert secret not in json.dumps(crackmes)
 
 
 def test_site_archive_routes_start_poll_download_and_delete(

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Review flag validations</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+</head>
+<body>
+    <header class="navbar hide-xs">
+        <section class="navbar-section">
+            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
+        </section>
+        <section class="navbar-center"><h2>Review flag validations</h2></section>
+        <section class="navbar-section">
+            <a href="/" class="btn btn-link">crackmes.one</a>
+            <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
+        </section>
+    </header>
+
+    <div class="container grid-xl wrapper">
+        <div class="panel-background">
+            {% if submissions %}
+            <table class="table table-striped">
+                <thead>
+                    <tr><th>User</th><th>Crackme</th><th>Submitted flag</th><th>Result</th><th>Submitted</th></tr>
+                </thead>
+                <tbody>
+                {% for submission in submissions %}
+                    <tr>
+                        <td>{{ submission.username }}</td>
+                        <td>
+                            {% if submission.crackme_name != 'Deleted crackme' %}
+                            <a href="{{ url_for('reviewer.viewcrackme', crackme_uuid=submission.crackme_hexid) }}">{{ submission.crackme_name }}</a>
+                            {% else %}
+                            {{ submission.crackme_name }}
+                            {% endif %}
+                        </td>
+                        <td><code>{{ submission.submitted_flag }}</code></td>
+                        <td>{{ submission.result|replace('_', ' ')|title }}</td>
+                        <td>{{ submission.created_at }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No flag submissions have been recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

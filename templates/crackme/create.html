@@ -113,15 +113,15 @@
                 </label>
                 <div id="auto-validation-fields" style="display: none;">
                     <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
-                        Solvers submit the flag your crackme prints when it is beaten, and a correct one earns them
-                        points. Reviewers can read the flag (they need it to check your crackme is solvable); nobody
-                        else can, and it is never shown anywhere on the site.
+                        Players submit the flag to earn points. Only reviewers can see it.
                     </p>
-                    <input class="form-input" type="text" id="flag" name="flag" placeholder="CMO{the_flag_your_crackme_prints}" value="{{ form.flag|default('') }}">
+                    <input class="form-input" type="text" id="flag" name="flag" placeholder="CMO{your_crackmes_flag}" value="{{ form.flag|default('') }}">
+                    <label class="form-label" for="points" style="margin-top: 8px;">Points</label>
+                    <input class="form-input" type="number" id="points" name="points" min="100" max="600" step="1" value="{{ form.points|default('') }}">
+                    <p class="form-input-hint">Defaults to difficulty &times; 100. You may choose any whole number from 100 to 600.</p>
                     <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
-                        Source archive (zip): your source code, build scripts, and anything else a reviewer needs to
-                        rebuild the crackme and confirm the flag is right. <b>Reviewers only</b> &mdash; it is never
-                        published or offered for download on the site.
+                        Upload a ZIP containing source code, build files, a writeup, or anything else needed to verify the flag.
+                        <b>Reviewers only</b> &mdash; it remains private.
                     </p>
                     <input class="form-input upload-btn" type="file" id="source" name="source">
                 </div>
@@ -133,10 +133,9 @@
             </div>
             <div class="col-9 col-sm-12">
                 <p class="text-gray" style="font-size: 0.8rem; margin-bottom: 6px;">
-                    Select the anti-analysis / obfuscation techniques your crackme uses. Please label every technique
-                    that applies; if none apply, it's fine to leave these empty. Pick a broad category and, where it
-                    applies, the specific technique underneath &mdash; ticking a technique ticks its category
-                    automatically. Reviewers may adjust these later.
+                    Select all anti-analysis and obfuscation techniques used. Specific techniques automatically select
+                    their category, and reviewers may adjust labels. Labels on active auto-validated crackmes remain
+                    hidden until scoring ends.
                 </p>
                 <div class="choice-box">
                     {% set label_input_name = 'labels' %}
@@ -162,7 +161,25 @@
     var toggle = document.getElementById('auto_validation');
     var fields = document.getElementById('auto-validation-fields');
     if (!toggle || !fields) return;
-    function sync() { fields.style.display = toggle.checked ? 'block' : 'none'; }
+    var points = document.getElementById('points');
+    var difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
+    var pointsOverridden = !!(points && points.value);
+    function selectedDifficulty() {
+        var selected = document.querySelector('input[name="difficulty"]:checked');
+        return selected ? parseInt(selected.value, 10) : null;
+    }
+    function setDefaultPoints() {
+        var difficulty = selectedDifficulty();
+        if (points && difficulty && !pointsOverridden) points.value = difficulty * 100;
+    }
+    function sync() {
+        fields.style.display = toggle.checked ? 'block' : 'none';
+        if (toggle.checked) setDefaultPoints();
+    }
+    if (points) points.addEventListener('input', function() { pointsOverridden = true; });
+    difficultyInputs.forEach(function(input) {
+        input.addEventListener('change', setDefaultPoints);
+    });
     toggle.addEventListener('change', sync);
     sync();
 })();

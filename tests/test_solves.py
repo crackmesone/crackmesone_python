@@ -87,6 +87,13 @@ def test_official_difficulty_prices_a_solve():
     assert points_for_solve(crackme) == 400
 
 
+def test_fractional_official_difficulty_supports_author_selected_points():
+    crackme = {'official_difficulty': 3.57, 'difficulty': 1.2}
+
+    assert solve_difficulty(crackme) == 3.57
+    assert points_for_solve(crackme) == 357
+
+
 def test_scoring_falls_back_to_the_community_rating_when_unofficial():
     # Crackmes approved before reviewers assigned difficulties have none.
     assert points_for_solve({'difficulty': 2.6}) == 300
@@ -119,7 +126,7 @@ def _upload(client, monkeypatch, tmp_path, **extra):
 def test_opting_into_auto_validation_stores_flag_hash_and_private_source(
         alice_client, db, alice, tmp_path, monkeypatch):
     response = _upload(alice_client, monkeypatch, tmp_path,
-                       auto_validation='on', flag=FLAG,
+                       auto_validation='on', flag=FLAG, points='357',
                        source=(_zip_bytes(), 'source.zip'))
 
     assert response.status_code == 200
@@ -127,7 +134,7 @@ def test_opting_into_auto_validation_stores_flag_hash_and_private_source(
     crackme = db.crackme.find_one({'name': 'Flagged Challenge'})
     assert crackme['flag'] == FLAG
     assert crackme['source_original_filename'] == 'source.zip'
-    assert crackme['official_difficulty'] is None
+    assert crackme['official_difficulty'] == 3.57
     # The source archive lands outside static/, where nothing serves it.
     assert (tmp_path / 'source' / crackme['hexid']).exists()
 
@@ -153,10 +160,60 @@ def test_auto_validation_requires_a_well_formed_flag_and_a_source_archive(
     assert db.crackme.count_documents({}) == 0
 
 
+def test_auto_validation_requires_the_verification_file_to_be_a_zip(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    response = _upload(
+        alice_client, monkeypatch, tmp_path,
+        auto_validation='on', flag=FLAG,
+        source=(BytesIO(b'# plain text writeup'), 'writeup.txt'),
+    )
+
+    assert b'must be a valid ZIP archive' in response.data
+    assert db.crackme.count_documents({}) == 0
+
+
+@pytest.mark.parametrize('points', ['99', '601', '250.5', 'many'])
+def test_auto_validation_rejects_invalid_points(
+        alice_client, db, alice, tmp_path, monkeypatch, points):
+    response = _upload(
+        alice_client, monkeypatch, tmp_path,
+        auto_validation='on', flag=FLAG, points=points,
+        source=(_zip_bytes(), 'source.zip'),
+    )
+
+    assert b'Points must be a whole number from 100 to 600' in response.data
+    assert db.crackme.count_documents({}) == 0
+
+
+def test_auto_validation_points_default_to_selected_difficulty(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    response = _upload(
+        alice_client, monkeypatch, tmp_path,
+        difficulty='4', auto_validation='on', flag=FLAG,
+        source=(_zip_bytes(), 'source.zip'),
+    )
+
+    assert response.status_code == 200
+    assert db.crackme.find_one({'name': 'Flagged Challenge'})[
+        'official_difficulty'
+    ] == 4.0
+
+
 # ---------------------------------------------------------------- solve flow
 
 def test_correct_flag_records_a_solve_and_awards_points(
-        bob_client, db, bob, flagged_crackme):
+        bob_client, db, bob, flagged_crackme, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+    audit_notifications = []
+    solve_notifications = []
+    monkeypatch.setattr(
+        crackme_controller, 'notify_flag_submission',
+        lambda *args: audit_notifications.append(args),
+    )
+    monkeypatch.setattr(
+        crackme_controller, 'notify_flag_solved',
+        lambda *args: solve_notifications.append(args),
+    )
     response = bob_client.post(f"/crackme/{flagged_crackme['hexid']}/solve",
                                data={'flag': f'  {FLAG} '},
                                follow_redirects=True)
@@ -167,15 +224,63 @@ def test_correct_flag_records_a_solve_and_awards_points(
     assert solve['points'] == 300
     assert solve['difficulty'] == 3
     assert db.notifications.count_documents({'user': 'bob'}) == 1
+    submission = db.flag_submission.find_one({})
+    assert submission['user_hexid'] == _hexid(bob)
+    assert submission['username'] == 'bob'
+    assert submission['crackme_hexid'] == flagged_crackme['hexid']
+    assert submission['submitted_flag'] == FLAG
+    assert submission['result'] == 'correct'
+    assert audit_notifications == [(
+        'bob', flagged_crackme['name'], flagged_crackme['hexid'], FLAG, 'correct'
+    )]
+    assert solve_notifications == [(
+        'bob', flagged_crackme['name'], flagged_crackme['hexid'], 300
+    )]
 
 
-def test_wrong_flag_records_nothing(bob_client, db, bob, flagged_crackme):
+def test_solve_snapshots_fractional_difficulty(
+        bob_client, db, bob, flagged_crackme):
+    db.crackme.update_one(
+        {'_id': flagged_crackme['_id']},
+        {'$set': {'official_difficulty': 3.57}},
+    )
+
+    bob_client.post(
+        f"/crackme/{flagged_crackme['hexid']}/solve", data={'flag': FLAG}
+    )
+
+    solve = db.solve.find_one({'user_hexid': _hexid(bob)})
+    assert solve['points'] == 357
+    assert solve['difficulty'] == 3.57
+
+
+def test_wrong_flag_records_nothing(
+        bob_client, db, bob, flagged_crackme, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+    audit_notifications = []
+    solve_notifications = []
+    monkeypatch.setattr(
+        crackme_controller, 'notify_flag_submission',
+        lambda *args: audit_notifications.append(args),
+    )
+    monkeypatch.setattr(
+        crackme_controller, 'notify_flag_solved',
+        lambda *args: solve_notifications.append(args),
+    )
     response = bob_client.post(f"/crackme/{flagged_crackme['hexid']}/solve",
                                data={'flag': 'CMO{nope}'},
                                follow_redirects=True)
 
     assert b'Wrong flag' in response.data
     assert db.solve.count_documents({}) == 0
+    submission = db.flag_submission.find_one({})
+    assert submission['submitted_flag'] == 'CMO{nope}'
+    assert submission['result'] == 'incorrect'
+    assert audit_notifications == [(
+        'bob', flagged_crackme['name'], flagged_crackme['hexid'],
+        'CMO{nope}', 'incorrect'
+    )]
+    assert solve_notifications == []
 
 
 def test_resubmitting_a_correct_flag_does_not_award_twice(
@@ -186,6 +291,9 @@ def test_resubmitting_a_correct_flag_does_not_award_twice(
 
     assert b'already solved' in again.data
     assert db.solve.count_documents({'user_hexid': _hexid(bob)}) == 1
+    assert [entry['result'] for entry in db.flag_submission.find({})] == [
+        'correct', 'already_solved'
+    ]
 
 
 def test_author_cannot_solve_their_own_crackme(
@@ -195,6 +303,7 @@ def test_author_cannot_solve_their_own_crackme(
 
     assert b"your own crackme" in response.data
     assert db.solve.count_documents({}) == 0
+    assert db.flag_submission.find_one({})['result'] == 'own_crackme'
 
 
 def test_crackme_without_auto_validation_accepts_no_flags(
@@ -204,6 +313,20 @@ def test_crackme_without_auto_validation_accepts_no_flags(
 
     assert b'does not accept flag submissions' in response.data
     assert db.solve.count_documents({}) == 0
+    assert db.flag_submission.find_one({})['result'] == 'not_enabled'
+
+
+def test_malformed_flag_submission_is_logged_with_the_submitted_value(
+        bob_client, db, bob, flagged_crackme):
+    response = bob_client.post(f"/crackme/{flagged_crackme['hexid']}/solve",
+                               data={'flag': 'not a flag'},
+                               follow_redirects=True)
+
+    assert b'not a valid flag' in response.data
+    submission = db.flag_submission.find_one({})
+    assert submission['result'] == 'invalid_format'
+    assert submission['user_hexid'] == _hexid(bob)
+    assert submission['submitted_flag'] == 'not a flag'
 
 
 def test_anonymous_visitors_cannot_submit_flags(client, db, flagged_crackme):
@@ -223,13 +346,92 @@ def test_crackme_page_shows_the_flag_form_and_then_the_solved_state(
 
     before = bob_client.get(path)
     assert b'Submit flag' in before.data
-    assert b'300 points' in before.data
+    assert b'Solves:<br> 0' in before.data
+    assert b'Attempts:<br> 0' in before.data
+    assert b'Solves (0)' in before.data
+    assert b'Points:<br> 300' in before.data
+    assert b'Difficulty:<br>' not in before.data
+    assert b'This crackme is auto-validated' not in before.data
+    assert b'Comments (' not in before.data
+    assert b'Writeups (' not in before.data
+    assert b'Post a comment' not in before.data
+    assert b'Submit a writeup' not in before.data
+    assert b'<b>Labels</b>' not in before.data
+    assert b'Request a label change' not in before.data
+    assert b'id="rate-diff"' not in before.data
+    assert b"openModal('rate-diff')" not in before.data
+    assert b"openModal('rate-qual')" not in before.data
 
+    bob_client.post(f'{path}/solve', data={'flag': 'CMO{wrong}'})
     bob_client.post(f'{path}/solve', data={'flag': FLAG})
     after = bob_client.get(path)
 
     assert b'Solved!' in after.data
     assert b'Submit flag' not in after.data
+    assert b'Solves:<br> 1' in after.data
+    assert b'Attempts:<br> 2' in after.data
+    assert b'Solves (1)' in after.data
+    assert b'>bob</a>' in after.data
+    assert b"openModal('rate-qual')" in after.data
+
+
+def test_auto_validated_crackme_rejects_comments_and_writeups_in_backend(
+        bob_client, db, flagged_crackme):
+    hexid = flagged_crackme['hexid']
+
+    comment = bob_client.post(
+        f'/comment/{hexid}', data={'comment': 'Backend bypass attempt'},
+        follow_redirects=True
+    )
+    writeup_form = bob_client.get(
+        f'/upload/solution/{hexid}', follow_redirects=True
+    )
+    writeup_post = bob_client.post(
+        f'/upload/solution/{hexid}',
+        data={'info': 'Bypass', 'content': 'A' * 300},
+        follow_redirects=True
+    )
+
+    assert b'Comments are disabled for auto-validated crackmes' in comment.data
+    assert b'Writeups are disabled for auto-validated crackmes' in writeup_form.data
+    assert b'Writeups are disabled for auto-validated crackmes' in writeup_post.data
+    assert db.comment.count_documents({}) == 0
+    assert db.solution.count_documents({}) == 0
+
+
+def test_auto_validated_crackme_rejects_difficulty_ratings_in_backend(
+        bob_client, db, flagged_crackme):
+    response = bob_client.post(
+        f"/crackme/rate-diff/{flagged_crackme['hexid']}",
+        data={'difficulty': '6'},
+        follow_redirects=True
+    )
+
+    assert b'Difficulty ratings are disabled for auto-validated crackmes' in response.data
+    assert db.rating_difficulty.count_documents({}) == 0
+
+
+def test_auto_validated_crackme_allows_quality_rating_only_after_solve(
+        bob_client, db, bob, flagged_crackme):
+    path = f"/crackme/rate-qual/{flagged_crackme['hexid']}"
+
+    before = bob_client.post(
+        path, data={'quality': '6'}, follow_redirects=True
+    )
+    assert b'Solve this crackme before rating it' in before.data
+    assert db.rating_quality.count_documents({}) == 0
+
+    bob_client.post(
+        f"/crackme/{flagged_crackme['hexid']}/solve", data={'flag': FLAG}
+    )
+    after = bob_client.post(
+        path, data={'quality': '6'}, follow_redirects=True
+    )
+
+    assert b'Rated!' in after.data
+    assert db.rating_quality.find_one({
+        'author': 'bob', 'crackmehexid': flagged_crackme['hexid']
+    })['rating'] == 6
 
 
 def test_crackme_page_has_no_flag_section_without_auto_validation(
@@ -237,6 +439,7 @@ def test_crackme_page_has_no_flag_section_without_auto_validation(
     response = bob_client.get(f"/crackme/{sample_crackme['hexid']}")
 
     assert b'Submit flag' not in response.data
+    assert b'<b>Labels</b>' in response.data
 
 
 def test_profile_shows_score_and_solved_crackmes(
@@ -277,6 +480,24 @@ def _review_dirs(monkeypatch, tmp_path):
     return pending, approved, source
 
 
+def _approval_data(crackme, **overrides):
+    data = {
+        'uuid': crackme['hexid'],
+        'csrf_token': 'test-csrf-token',
+        'info': crackme['info'],
+        'lang': crackme['lang'],
+        'arch': crackme['arch'],
+        'platform': crackme['platform'],
+        'flag': crackme.get('flag') or '',
+        'official_points': str(round(
+            (crackme.get('official_difficulty') or 3) * 100
+        )),
+        'labels': crackme.get('labels', []),
+    }
+    data.update(overrides)
+    return data
+
+
 def test_reviewer_downloads_the_private_source_archive(
         reviewer_client, db, flagged_crackme, monkeypatch, tmp_path):
     _, _, source = _review_dirs(monkeypatch, tmp_path)
@@ -303,15 +524,45 @@ def test_approval_records_the_official_difficulty(
     monkeypatch.setattr(routes, 'notify_crackme_approved', lambda *a: None)
     monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
 
-    response = reviewer_client.post('/review/approvecrackme', data={
-        'uuid': flagged_crackme['hexid'], 'official_difficulty': '5',
-        'csrf_token': 'test-csrf-token',
-    })
+    response = reviewer_client.post(
+        '/review/approvecrackme',
+        data=_approval_data(
+            flagged_crackme, official_points='357', info='Reviewer corrected',
+            lang='Rust', arch='ARM', platform='Windows',
+            flag='CMO{reviewer_corrected}',
+        ),
+    )
 
     assert response.status_code == 302
     stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
     assert stored['visible'] is True
-    assert stored['official_difficulty'] == 5
+    assert stored['official_difficulty'] == 3.57
+    assert stored['info'] == 'Reviewer corrected'
+    assert stored['lang'] == 'Rust'
+    assert stored['arch'] == 'ARM'
+    assert stored['platform'] == 'Windows'
+    assert stored['flag'] == 'CMO{reviewer_corrected}'
+
+
+@pytest.mark.parametrize('points', ['99', '601', '250.5', 'many'])
+def test_review_approval_rejects_invalid_points(
+        reviewer_client, db, flagged_crackme, monkeypatch, tmp_path, points):
+    from review import routes
+
+    pending, _, _ = _review_dirs(monkeypatch, tmp_path)
+    db.crackme.update_one({'_id': flagged_crackme['_id']},
+                          {'$set': {'visible': False}})
+    (pending / 'crackme' / flagged_crackme['hexid']).write_bytes(b'binary')
+    monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
+
+    response = reviewer_client.post(
+        '/review/approvecrackme',
+        data=_approval_data(flagged_crackme, official_points=points),
+        follow_redirects=True,
+    )
+
+    assert b'Points must be a whole number from 100 to 600' in response.data
+    assert db.crackme.find_one({'_id': flagged_crackme['_id']})['visible'] is False
 
 
 def test_rejecting_a_crackme_removes_its_private_source(
@@ -347,11 +598,18 @@ def test_deleting_a_crackme_takes_its_solves_and_source_with_it(
         'crackme_hexid': flagged_crackme['hexid'],
         'points': 300,
     })
+    db.flag_submission.insert_one({
+        'user_hexid': _hexid(bob),
+        'username': 'bob',
+        'crackme_hexid': flagged_crackme['hexid'],
+        'result': 'correct',
+    })
 
     message = routes.delete_approved_crackme(flagged_crackme['hexid'])
 
     assert '1 solves' in message
     assert db.solve.count_documents({}) == 0
+    assert db.flag_submission.count_documents({}) == 0
     assert archive.exists() is False
 
 
@@ -364,27 +622,50 @@ def test_deleting_a_user_removes_their_solves(db, bob, flagged_crackme, monkeypa
         'crackme_hexid': flagged_crackme['hexid'],
         'points': 300,
     })
+    db.flag_submission.insert_one({
+        'user_hexid': _hexid(bob),
+        'username': 'bob',
+        'crackme_hexid': flagged_crackme['hexid'],
+        'result': 'incorrect',
+    })
 
     preview, error = routes.preview_user_deletion(bob['email'])
     assert error is None
     assert preview['solves'] == 1
+    assert preview['flag_submissions'] == 1
 
     routes.delete_user_account(bob['email'])
 
     assert db.solve.count_documents({}) == 0
+    assert db.flag_submission.count_documents({}) == 0
 
 
 def test_review_page_offers_the_flag_tools_for_an_opted_in_crackme(
         reviewer_client, db, flagged_crackme):
+    db.flag_submission.insert_one({
+        'username': 'bob',
+        'crackme_hexid': flagged_crackme['hexid'],
+        'submitted_flag': 'CMO{reviewed_attempt}',
+        'result': 'incorrect',
+    })
     response = reviewer_client.get(
         f"/review/viewcrackme?crackme_uuid={flagged_crackme['hexid']}"
     )
 
     assert response.status_code == 200
-    assert b'Download source archive' in response.data
-    assert b'Official difficulty' in response.data
+    assert b'Download private verification ZIP' in response.data
+    assert b'name="official_points"' in response.data
+    assert b'min="100" max="600" step="1"' in response.data
     # Reviewers need to see the flag to confirm the crackme is really solvable.
     assert FLAG.encode() in response.data
+    assert b'Recent flag submissions' not in response.data
+    assert b'CMO{reviewed_attempt}' not in response.data
+    assert b'id="change-status"' in response.data
+    assert b'id="discard-changes"' in response.data
+    assert b'name="lang"' in response.data
+    assert b'name="arch"' in response.data
+    assert b'name="platform"' in response.data
+    assert b'name="info"' in response.data
 
 
 def test_review_page_says_so_when_a_crackme_is_not_auto_validated(
@@ -394,7 +675,45 @@ def test_review_page_says_so_when_a_crackme_is_not_auto_validated(
     )
 
     assert response.status_code == 200
-    assert b'did not opt into auto-validation' in response.data
+    assert b'did not enable auto-validation' in response.data
+
+
+def test_regular_reviewer_cannot_see_flag_validation_history(
+        reviewer_client, db, flagged_crackme):
+    db.flag_submission.insert_one({
+        'username': 'bob',
+        'crackme_hexid': flagged_crackme['hexid'],
+        'submitted_flag': 'CMO{dashboard_attempt}',
+        'result': 'incorrect',
+    })
+
+    response = reviewer_client.get('/review/dashboard')
+
+    assert response.status_code == 200
+    assert b'Review flag validations' not in response.data
+    assert b'CMO{dashboard_attempt}' not in response.data
+    assert reviewer_client.get('/review/flagvalidations').status_code == 403
+
+
+def test_admin_opens_flag_validations_from_dashboard(
+        admin_client, db, flagged_crackme):
+    db.flag_submission.insert_one({
+        'username': 'bob',
+        'crackme_hexid': flagged_crackme['hexid'],
+        'submitted_flag': 'CMO{admin_review_attempt}',
+        'result': 'incorrect',
+    })
+
+    dashboard = admin_client.get('/review/dashboard')
+    page = admin_client.get('/review/flagvalidations')
+
+    assert dashboard.status_code == 200
+    assert b'Review flag validations' in dashboard.data
+    assert b'CMO{admin_review_attempt}' not in dashboard.data
+    assert page.status_code == 200
+    assert flagged_crackme['name'].encode() in page.data
+    assert b'CMO{admin_review_attempt}' in page.data
+    assert b'Incorrect' in page.data
 
 
 def test_public_pages_never_render_the_flag(client, bob_client, db, flagged_crackme):
@@ -446,7 +765,7 @@ def _edit(client, crackme, **overrides):
         'arch': crackme.get('arch', ''),
         'platform': crackme.get('platform', ''),
         'flag': crackme.get('flag') or '',
-        'official_difficulty': str(crackme.get('official_difficulty') or ''),
+        'official_points': str(round((crackme.get('official_difficulty') or 0) * 100) or ''),
     }
     data.update(overrides)
     return client.post('/review/editcrackme', data=data,
@@ -464,7 +783,7 @@ def test_admin_edits_every_crackme_field_including_flag_and_difficulty(
     response = _edit(admin_client, flagged_crackme,
                      info='Rewritten description', lang='Rust', arch='ARM',
                      platform='Windows', flag='CMO{corrected}',
-                     official_difficulty='6', notify_author='on')
+                     official_points='600', notify_author='on')
 
     assert response.status_code == 200
     stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
@@ -486,7 +805,7 @@ def test_a_corrected_flag_is_the_one_that_now_scores(
     from review import routes
 
     monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
-    _edit(admin_client, flagged_crackme, flag='CMO{corrected}', official_difficulty='6')
+    _edit(admin_client, flagged_crackme, flag='CMO{corrected}', official_points='600')
     path = f"/crackme/{flagged_crackme['hexid']}/solve"
 
     stale = bob_client.post(path, data={'flag': FLAG}, follow_redirects=True)
@@ -521,10 +840,10 @@ def test_admin_edit_rejects_a_malformed_flag_or_difficulty(
     monkeypatch.setattr(routes, 'log_reviewer_operation', lambda *a, **kw: None)
 
     bad_flag = _edit(admin_client, flagged_crackme, flag='nope')
-    bad_difficulty = _edit(admin_client, flagged_crackme, official_difficulty='9')
+    bad_difficulty = _edit(admin_client, flagged_crackme, official_points='601')
 
     assert b'Invalid flag format' in bad_flag.data
-    assert b'Invalid official difficulty' in bad_difficulty.data
+    assert b'Points must be a whole number from 100 to 600' in bad_difficulty.data
     stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
     assert stored['flag'] == FLAG
     assert stored['official_difficulty'] == 3
@@ -553,7 +872,8 @@ def test_admin_edit_page_shows_the_flag_and_difficulty_fields(
 
     assert response.status_code == 200
     assert FLAG.encode() in response.data
-    assert b'Official difficulty' in response.data
+    assert b'name="official_points"' in response.data
+    assert b'min="100" max="600" step="1"' in response.data
     assert b'Private source archive' in response.data
 
 
@@ -640,8 +960,9 @@ def test_auto_validation_is_ticked_by_default_on_a_fresh_form(alice_client, alic
     body = alice_client.get('/upload/crackme').data.decode()
 
     assert 'id="auto_validation" name="auto_validation" checked' in body
+    assert 'id="points" name="points" min="100" max="600" step="1"' in body
     # Labels sit at the end of the form, after the auto-validation block.
-    assert body.index('Auto-validation') < body.index('Select the anti-analysis')
+    assert body.index('Auto-validation') < body.index('Select all anti-analysis')
 
 
 def test_unticking_auto_validation_survives_a_rejected_upload(

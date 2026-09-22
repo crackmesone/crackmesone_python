@@ -29,14 +29,14 @@ def solve_difficulty(crackme):
     """
     official = crackme.get('official_difficulty')
     if official:
-        return _clamp(int(official))
+        return _clamp(float(official))
 
     return _clamp(round(crackme.get('difficulty') or 0))
 
 
 def points_for_solve(crackme):
     """Return the points awarded for solving ``crackme``."""
-    return solve_difficulty(crackme) * POINTS_PER_DIFFICULTY
+    return round(solve_difficulty(crackme) * POINTS_PER_DIFFICULTY)
 
 
 def _clamp(difficulty):

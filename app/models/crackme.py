@@ -307,7 +307,8 @@ def crackme_by_user_and_name(username, name, visible=True):
 
 
 def crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename,
-                           labels=None, flag=None, source_original_filename=None):
+                           labels=None, flag=None, source_original_filename=None,
+                           official_difficulty=None):
     """Prepare a crackme object without inserting it.
 
     Args:
@@ -345,8 +346,9 @@ def crackme_create_prepare(name, info, username, lang, arch, platform, size, ori
         'labels': labels or [],
         'flag': flag,
         'source_original_filename': source_original_filename,
-        # Assigned by a reviewer when approving or editing; see app.services.points.
-        'official_difficulty': None,
+        # For auto-validation, the author chooses an integer point value and we
+        # store points / 100 here so the existing scoring field stays canonical.
+        'official_difficulty': official_difficulty,
     }
 
 
@@ -461,7 +463,7 @@ def crackme_set_official_difficulty(hexid, difficulty):
 
     Args:
         hexid: The hex ID of the crackme
-        difficulty: Difficulty level 1-6
+        difficulty: Difficulty value 1-6, with up to two decimal places
 
     Returns:
         True if the crackme was updated, False if it was not found or the
@@ -471,11 +473,16 @@ def crackme_set_official_difficulty(hexid, difficulty):
         raise ErrUnavailable("Database is unavailable")
 
     try:
-        difficulty = int(difficulty)
+        difficulty = float(difficulty)
     except (TypeError, ValueError):
         return False
 
     if difficulty < 1 or difficulty > 6:
+        return False
+
+    # Point values are whole numbers, so stored difficulty has at most two
+    # decimal places (points / 100).
+    if abs(round(difficulty * 100) - difficulty * 100) > 1e-9:
         return False
 
     result = get_collection('crackme').update_one(

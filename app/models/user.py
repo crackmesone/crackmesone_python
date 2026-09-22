@@ -109,6 +109,27 @@ def all_users_visible():
     return list(collection.find({'visible': True}))
 
 
+def users_by_hexids(hexids):
+    """Return visible users keyed by immutable hexid."""
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    hexids = list(hexids)
+    if not hexids:
+        return {}
+    return {
+        user.get('hexid') or str(user['_id']): user
+        for user in get_collection('user').find({
+            '$or': [
+                {'hexid': {'$in': hexids}},
+                {'_id': {'$in': [ObjectId(value) for value in hexids
+                                  if ObjectId.is_valid(value)]}},
+            ],
+            'visible': True,
+        })
+    }
+
+
 def user_create(name, email, password):
     """Create a new user.
 

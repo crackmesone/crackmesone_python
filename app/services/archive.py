@@ -169,6 +169,11 @@ def is_single_file_archive(file_data: bytes) -> bool:
     return file_count == 1
 
 
+def is_zip_archive(file_data: bytes) -> bool:
+    """Return whether ``file_data`` is a readable ZIP archive."""
+    return get_archive_file_count(file_data) is not None
+
+
 def is_archive_password_protected(file_data: bytes) -> bool:
     """Check if an archive file is password-protected.
 

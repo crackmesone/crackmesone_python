@@ -21,16 +21,25 @@ from app.models.label_request import (
     label_request_create, pending_label_requests_by_user_and_crackme
 )
 from app.models.solve import (
-    solve_by_user_and_crackme, solve_create, count_solves_by_crackme
+    solve_by_user_and_crackme, solve_create, count_solves_by_crackme,
+    solves_by_crackme
 )
-from app.models.user import user_by_name
+from app.models.flag_submission import (
+    flag_submission_create, count_flag_submissions_by_crackme
+)
+from app.models.user import user_by_name, users_by_hexids
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
-from app.services.limiter import limit
+from app.services.limiter import configured_limit, limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, FLASH_NOTICE, validate_required
 from app.services.labels import get_label_groups, get_dataset_url, normalize_labels
-from app.services.archive import is_archive_password_protected, is_single_file_archive, is_unsupported_archive
-from app.services.discord import notify_new_crackme
+from app.services.archive import (
+    is_archive_password_protected, is_single_file_archive,
+    is_unsupported_archive, is_zip_archive,
+)
+from app.services.discord import (
+    notify_flag_solved, notify_flag_submission, notify_new_crackme
+)
 from app.services.flag import (
     FLAG_FORMAT_HINT, flags_match, is_valid_flag_format, normalize_flag
 )
@@ -72,10 +81,25 @@ def crackme_view(hexid):
     # queries; everything else renders exactly as before.
     auto_validation = crackme_is_auto_validated(crackme)
     nbsolves = 0
+    nbattempts = 0
+    solves = []
     user_solve = None
     if auto_validation:
         try:
             nbsolves = count_solves_by_crackme(hexid)
+            nbattempts = count_flag_submissions_by_crackme(hexid)
+            solve_records = solves_by_crackme(hexid)
+            solvers = users_by_hexids(
+                solve['user_hexid'] for solve in solve_records
+            )
+            solves = [
+                {
+                    'solve': solve,
+                    'username': solvers.get(solve['user_hexid'], {})
+                                       .get('name', 'Deleted user'),
+                }
+                for solve in solve_records
+            ]
             viewer_hexid = _user_hexid(usersess) if usersess else None
             if viewer_hexid:
                 user_solve = solve_by_user_and_crackme(viewer_hexid, hexid)
@@ -114,6 +138,8 @@ def crackme_view(hexid):
                            labels_dataset_url=get_dataset_url(),
                            auto_validation=auto_validation,
                            nbsolves=nbsolves,
+                           nbattempts=nbattempts,
+                           solves=solves,
                            user_solve=user_solve,
                            solve_points=points_for_solve(crackme) if auto_validation else 0,
                            flag_format_hint=FLAG_FORMAT_HINT,
@@ -225,6 +251,7 @@ def _submitted_form_values():
         'labels': normalize_labels(request.form.getlist('labels')),
         'auto_validation': bool(request.form.get('auto_validation')),
         'flag': request.form.get('flag', ''),
+        'points': request.form.get('points', ''),
     }
 
 
@@ -295,10 +322,20 @@ def upload_crackme_post():
     flag = None
     source_data = None
     source_filename = None
+    official_difficulty = None
     if request.form.get('auto_validation'):
         flag = normalize_flag(request.form.get('flag', ''))
         if not is_valid_flag_format(flag):
             return _upload_rejected(f'Invalid flag format. {FLAG_FORMAT_HINT}')
+
+        points_value = request.form.get('points') or str(diff_int * 100)
+        try:
+            points = int(points_value)
+        except (TypeError, ValueError):
+            return _upload_rejected('Points must be a whole number from 100 to 600.')
+        if points < 100 or points > 600:
+            return _upload_rejected('Points must be a whole number from 100 to 600.')
+        official_difficulty = points / 100
 
         source = request.files.get('source')
         if source is None or source.filename == '':
@@ -309,6 +346,8 @@ def upload_crackme_post():
             return _upload_rejected('The source archive is too large!')
         if is_unsupported_archive(source_data):
             return _upload_rejected('RAR and tar source archives are not supported. Please upload a ZIP file.')
+        if not is_zip_archive(source_data):
+            return _upload_rejected('The reviewer verification file must be a valid ZIP archive.')
         if is_archive_password_protected(source_data):
             return _upload_rejected('Password-protected source archives are not allowed - reviewers need to be able to open it.')
 
@@ -331,7 +370,8 @@ def upload_crackme_post():
     try:
         crackme = crackme_create_prepare(name, info, username, lang, arch, platform, size, original_filename,
                                          labels=labels, flag=flag,
-                                         source_original_filename=source_filename)
+                                         source_original_filename=source_filename,
+                                         official_difficulty=official_difficulty)
     except Exception as e:
         print(f"Error preparing crackme: {e}")
         abort(500)
@@ -434,10 +474,28 @@ def upload_crackme_submitted():
 @login_required
 # Guessing a flag is meant to be impossible, but a slow attempt rate makes that
 # true even for a badly chosen flag.
-@limit("20 per hour", key_func=lambda: session.get('name'))
+@limit(configured_limit('FlagSubmissions'), key_func=lambda: session.get('name'))
 def submit_flag(hexid):
     """Validate a submitted flag and, if correct, record the solve."""
     username = session.get('name')
+    flag = normalize_flag(request.form.get('flag', ''))
+
+    def log_result(result, user_hexid=None):
+        """Persist the submitted flag and its validation outcome."""
+        try:
+            flag_submission_create(
+                user_hexid, username, hexid, flag, result
+            )
+        except Exception as e:
+            # Audit logging must not turn a validation response into a 500.
+            print(f"Error logging flag submission: {e}")
+        try:
+            notify_flag_submission(
+                username, crackme.get('name', ''), hexid, flag, result
+            )
+        except Exception as e:
+            # Discord must never affect validation or its database audit trail.
+            print(f"Discord flag-audit notification error: {e}")
 
     try:
         crackme = crackme_by_hexid(hexid)
@@ -448,34 +506,39 @@ def submit_flag(hexid):
         abort(500)
 
     if not crackme_is_auto_validated(crackme):
+        log_result('not_enabled')
         flash('This crackme does not accept flag submissions.', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
     # Authors already know their own flag; awarding them points for it would
     # make the scoreboard meaningless.
     if crackme.get('author') == username:
+        log_result('own_crackme')
         flash("You can't submit a flag for your own crackme.", FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
     user_hexid = _user_hexid(username)
     if not user_hexid:
+        log_result('account_unavailable')
         flash('Could not verify your account. Please log in again.', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
     try:
         if solve_by_user_and_crackme(user_hexid, hexid):
+            log_result('already_solved', user_hexid)
             flash('You have already solved this crackme.', FLASH_NOTICE)
             return redirect(f'/crackme/{hexid}')
     except Exception as e:
         print(f"Error checking existing solve: {e}")
         abort(500)
 
-    flag = normalize_flag(request.form.get('flag', ''))
     if not is_valid_flag_format(flag):
+        log_result('invalid_format', user_hexid)
         flash(f'That is not a valid flag. {FLAG_FORMAT_HINT}', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
     if not flags_match(crackme.get('flag'), flag):
+        log_result('incorrect', user_hexid)
         flash('Wrong flag. Keep trying!', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
@@ -485,6 +548,15 @@ def submit_flag(hexid):
     except Exception as e:
         print(f"Error recording solve: {e}")
         abort(500)
+
+    log_result('correct', user_hexid)
+
+    try:
+        notify_flag_solved(
+            username, crackme.get('name', ''), hexid, points
+        )
+    except Exception as e:
+        print(f"Discord solve notification error: {e}")
 
     try:
         notification_add(

@@ -61,7 +61,7 @@ def solve_create(user_hexid, crackme_hexid, points, difficulty):
         'crackme_hexid': crackme_hexid,
         'created_at': datetime.now(timezone.utc),
         'points': int(points),
-        'difficulty': int(difficulty),
+        'difficulty': float(difficulty),
     }
     collection.insert_one(solve)
     return solve
@@ -100,4 +100,16 @@ def count_solves_by_crackme(crackme_hexid):
 
     return get_collection('solve').count_documents(
         {'crackme_hexid': crackme_hexid}
+    )
+
+
+def solves_by_crackme(crackme_hexid):
+    """Return a crackme's solves, oldest first."""
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    return list(
+        get_collection('solve')
+        .find({'crackme_hexid': crackme_hexid})
+        .sort('created_at', 1)
     )

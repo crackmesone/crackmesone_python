@@ -9,7 +9,9 @@ from flask import Blueprint, request, redirect, flash, session, render_template
 import bleach
 from app.models.comment import comment_create, comment_by_id, comment_set_spoiler, get_thread_participants
 from app.models.solution import get_solution_authors
-from app.models.crackme import crackme_by_hexid, crackme_increment_comments
+from app.models.crackme import (
+    crackme_by_hexid, crackme_increment_comments, crackme_is_auto_validated
+)
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
@@ -50,6 +52,23 @@ comment_bp = Blueprint('comment', __name__)
 def leave_comment(hexid):
     """Post a comment on a crackme."""
     username = session.get('name')
+
+    try:
+        crackme = crackme_by_hexid(hexid)
+    except ErrNoResult:
+        flash('Crackme not found.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}')
+    except Exception as e:
+        print(f"Error getting crackme: {e}")
+        flash('Comment creation failed. Please try again later.', FLASH_ERROR)
+        return redirect(f'/crackme/{hexid}')
+
+    if crackme_is_auto_validated(crackme):
+        flash(
+            'Comments are disabled for auto-validated crackmes.',
+            FLASH_ERROR
+        )
+        return redirect(f'/crackme/{hexid}')
 
     # Validate required fields
     is_valid, missing = validate_required(request.form, ['comment'])
@@ -92,7 +111,6 @@ def leave_comment(hexid):
 
     # Send notification to crackme author and handle @mentions
     try:
-        crackme = crackme_by_hexid(hexid)
         crackme_author = crackme.get('author')
         crackme_name = crackme['name']
 
