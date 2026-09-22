@@ -62,10 +62,12 @@ def test_latest_overview_shows_first_twenty_of_each_category(client, db, alice, 
     assert 'Crackme 00' not in html
     assert 'Writeup 00' not in html
     assert html.count('>bob</a>') == 40
-    assert 'href="/lasts/1">Show more crackmes' in html
-    assert 'href="/latest/solutions/1">Show more solutions' in html
-    assert 'href="/latest/solves/1">Show more solves' in html
-    assert html.count('<p class="text-center"><a href=') == 3
+    assert 'href="/lasts/1" class="btn active">Show more crackmes' in html
+    assert ('href="/latest/solutions/1" class="btn active">Show more solutions'
+            in html)
+    assert 'href="/latest/solves/1" class="btn active">Show more solves' in html
+    assert html.count('<div class="pagination-controls">') == 3
+    assert html.count('class="btn active">Show more') == 3
     assert 'href="/rss"' in html
 
 

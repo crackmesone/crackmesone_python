@@ -6,19 +6,25 @@
     <h2>Latest Crackmes <a href="/rss"><img src="/static/img/rss.svg" width="16" height="16" alt="Latest activity RSS" /></a></h2>
     {% include 'latest/_crackmes.html' %}
     {% if more_crackmes %}
-    <p class="text-center"><a href="/lasts/1">Show more crackmes</a></p>
+    <div class="pagination-controls">
+        <a href="/lasts/1" class="btn active">Show more crackmes</a>
+    </div>
     {% endif %}
 
     <h2>Latest Solutions</h2>
     {% include 'latest/_solutions.html' %}
     {% if more_solutions %}
-    <p class="text-center"><a href="/latest/solutions/1">Show more solutions</a></p>
+    <div class="pagination-controls">
+        <a href="/latest/solutions/1" class="btn active">Show more solutions</a>
+    </div>
     {% endif %}
 
     <h2>Latest Solves</h2>
     {% include 'latest/_solves.html' %}
     {% if more_solves %}
-    <p class="text-center"><a href="/latest/solves/1">Show more solves</a></p>
+    <div class="pagination-controls">
+        <a href="/latest/solves/1" class="btn active">Show more solves</a>
+    </div>
     {% endif %}
 </div>
 {% include 'partial/footer.html' %}
