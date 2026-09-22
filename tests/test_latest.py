@@ -68,7 +68,8 @@ def test_latest_overview_shows_first_twenty_of_each_category(client, db, alice, 
     assert 'href="/latest/solves/1" class="btn active">Show more solves' in html
     assert html.count('<div class="pagination-controls">') == 3
     assert html.count('class="btn active">Show more') == 3
-    assert 'href="/rss"' in html
+    assert html.count('href="/rss"') == 3
+    assert html.count('src="/static/img/rss.svg"') == 3
 
 
 def test_latest_category_pages_and_navigation_load(client):

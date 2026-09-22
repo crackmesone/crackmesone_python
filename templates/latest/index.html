@@ -11,7 +11,7 @@
     </div>
     {% endif %}
 
-    <h2>Latest Solutions</h2>
+    <h2>Latest Solutions <a href="/rss"><img src="/static/img/rss.svg" width="16" height="16" alt="Latest activity RSS" /></a></h2>
     {% include 'latest/_solutions.html' %}
     {% if more_solutions %}
     <div class="pagination-controls">
@@ -19,7 +19,7 @@
     </div>
     {% endif %}
 
-    <h2>Latest Solves</h2>
+    <h2>Latest Solves <a href="/rss"><img src="/static/img/rss.svg" width="16" height="16" alt="Latest activity RSS" /></a></h2>
     {% include 'latest/_solves.html' %}
     {% if more_solves %}
     <div class="pagination-controls">
