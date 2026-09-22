@@ -41,9 +41,11 @@ def test_login_database_failure_is_generic(client):
 def test_registration_rejects_duplicate_email_and_username(client, alice):
     duplicate_email = client.post('/register', data={
         'name': 'different', 'email': 'alice@example.test', 'password': 'password123',
+        'password_verify': 'password123',
     })
     duplicate_name = client.post('/register', data={
         'name': 'alice', 'email': 'different@example.test', 'password': 'password123',
+        'password_verify': 'password123',
     })
     assert b'Account already exists' in duplicate_email.data
     assert b'Account already exists' in duplicate_name.data
@@ -56,11 +58,11 @@ def test_registration_cross_field_conflicts(client, db):
     })
     username_is_email = client.post('/register', data={
         'name': 'existing-email@example.test', 'email': 'new@example.test',
-        'password': 'password123',
+        'password': 'password123', 'password_verify': 'password123',
     })
     email_is_username = client.post('/register', data={
         'name': 'new-user', 'email': 'existing@example.test',
-        'password': 'password123',
+        'password': 'password123', 'password_verify': 'password123',
     })
     assert b'username is not available' in username_is_email.data
     assert b'email is not available' in email_is_username.data
@@ -69,17 +71,22 @@ def test_registration_cross_field_conflicts(client, db):
 def test_registration_rejects_invalid_chars_and_recaptcha(client):
     invalid = client.post('/register', data={
         'name': 'bad name', 'email': 'valid@example.test', 'password': 'password123',
+        'password_verify': 'password123',
     })
     with patch('app.controllers.register.verify_recaptcha', return_value=False):
         captcha = client.post('/register', data={
             'name': 'valid', 'email': 'valid@example.test', 'password': 'password123',
+            'password_verify': 'password123',
         })
     assert b'Non allowed chars' in invalid.data
     assert b'reCAPTCHA invalid' in captcha.data
 
 
 def test_registration_hash_and_create_failures(client):
-    data = {'name': 'newuser', 'email': 'new@example.test', 'password': 'password123'}
+    data = {
+        'name': 'newuser', 'email': 'new@example.test',
+        'password': 'password123', 'password_verify': 'password123',
+    }
     with patch('app.controllers.register.hash_string', side_effect=RuntimeError):
         hashing = client.post('/register', data=data)
     with patch('app.controllers.register.user_create', side_effect=RuntimeError):

@@ -52,11 +52,17 @@ def register_post():
     name = request.form.get('name', '')
     email = request.form.get('email', '').lower()
     password = request.form.get('password', '')
+    password_verify = request.form.get('password_verify', '')
 
     # Validate required fields
-    if not name or not email or not password:
-        missing = 'name' if not name else ('email' if not email else 'password')
+    if not name or not email or not password or not password_verify:
+        missing = ('name' if not name else 'email' if not email else
+                   'password' if not password else 'password_verify')
         flash(f'Field missing: {missing}', FLASH_ERROR)
+        return render_template('register/register.html', name=name, email=email)
+
+    if password != password_verify:
+        flash('Passwords do not match', FLASH_ERROR)
         return render_template('register/register.html', name=name, email=email)
 
     # Validate reCAPTCHA
