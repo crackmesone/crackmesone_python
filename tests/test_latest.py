@@ -74,7 +74,9 @@ def test_latest_overview_shows_first_twenty_of_each_category(client, db, alice, 
 
 def test_latest_category_pages_and_navigation_load(client):
     for path in ('/latest/solutions/1', '/latest/solves/1', '/lasts/1'):
-        assert client.get(path).status_code == 200
+        response = client.get(path)
+        assert response.status_code == 200
+        assert 'href="/rss"' in response.get_data(as_text=True)
 
     menu = client.get('/latest').get_data(as_text=True)
     assert 'href="/latest" class="btn btn-link">Latest</a>' in menu
