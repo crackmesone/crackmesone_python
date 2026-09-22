@@ -192,6 +192,79 @@ def notify_new_solution(username: str, crackme_name: str) -> bool:
     return send_private_notification(embed=embed)
 
 
+def notify_flag_solved(username: str, crackme_name: str,
+                       crackme_hexid: str, points: int) -> bool:
+    """Announce a successful auto-validated solve in the public channel."""
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+    base_url = get_base_url()
+    embed = {
+        "title": "Crackme Solved",
+        "description": "A player submitted the correct flag",
+        "color": 65280,
+        "fields": [
+            {
+                "name": "Challenge",
+                "value": f"[{crackme_name}]({base_url}/crackme/{crackme_hexid})",
+                "inline": True,
+            },
+            {
+                "name": "Player",
+                "value": f"[{username}]({base_url}/user/{username})",
+                "inline": True,
+            },
+            {"name": "Points", "value": str(points), "inline": True},
+        ],
+        "footer": {"text": "CrackMes.One"},
+        "timestamp": timestamp,
+    }
+    if not is_enabled():
+        return True
+    return send_to_webhook(get_public_webhook(), embed=embed)
+
+
+def notify_flag_submission(username: str, crackme_name: str,
+                           crackme_hexid: str, submitted_flag: str,
+                           result: str) -> bool:
+    """Send every flag attempt, including its value, to the audit channel."""
+    timestamp = (
+        datetime.datetime.utcnow()
+        .replace(tzinfo=timezone.utc)
+        .isoformat(timespec='milliseconds')
+        .replace('+00:00', 'Z')
+    )
+    base_url = get_base_url()
+    # Discord limits an embed field to 1,024 characters. The database remains
+    # the canonical, untruncated audit record.
+    displayed_flag = submitted_flag[:1021] + "..." if len(submitted_flag) > 1024 else submitted_flag
+    embed = {
+        "title": "Flag Submitted",
+        "description": "Auto-validation attempt recorded",
+        "color": 65280 if result == 'correct' else 16744448,
+        "fields": [
+            {
+                "name": "Challenge",
+                "value": f"[{crackme_name}]({base_url}/crackme/{crackme_hexid})",
+                "inline": True,
+            },
+            {
+                "name": "User",
+                "value": f"[{username}]({base_url}/user/{username})",
+                "inline": True,
+            },
+            {"name": "Result", "value": result, "inline": True},
+            {"name": "Submitted flag", "value": displayed_flag or "(empty)", "inline": False},
+        ],
+        "footer": {"text": "CrackMes.One Internal Audit"},
+        "timestamp": timestamp,
+    }
+    return send_private_notification(embed=embed)
+
+
 def send_moderation_notification(embed: dict) -> bool:
     """Send a notification to the moderation Discord channel.
 

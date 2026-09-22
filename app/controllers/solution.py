@@ -9,10 +9,10 @@ cleartext in the database and obfuscated at the serving boundary (see the
 
 import os
 from html import escape as html_escape
-from flask import Blueprint, render_template, request, redirect, flash, session, abort, current_app, Response
+from flask import Blueprint, render_template, request, redirect, flash, session, abort, current_app, Response, jsonify
 from werkzeug.utils import secure_filename
 import bleach
-from app.models.crackme import crackme_by_hexid
+from app.models.crackme import crackme_by_hexid, crackme_is_auto_validated
 from app.models.solution import solution_create, solution_exists, solution_by_hexid
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
@@ -68,10 +68,30 @@ def _send_notifications_and_render_success(username, crackme):
     except Exception as e:
         print(f"Notification error: {e}")
 
+    if _wants_json():
+        session['submitted_writeup'] = crackme['name']
+        return jsonify({
+            'ok': True,
+            'redirect': '/upload/solution/submitted',
+        })
+
     return render_template('submission/success.html',
                            submission_type='Writeup',
                            name=crackme['name'],
                            username=username)
+
+
+def _wants_json():
+    """True when the editor submitted in the background."""
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+
+def _submission_rejected(message, redirect_url):
+    """Reject without navigating away from a background-submitted editor."""
+    if _wants_json():
+        return jsonify({'ok': False, 'error': message}), 400
+    flash(message, FLASH_ERROR)
+    return redirect(redirect_url)
 
 
 def _validate_attachment(file):
@@ -110,6 +130,12 @@ def _validate_attachment(file):
 def upload_solution_get(hexidcrackme):
     """Display the solution submission form (markdown editor + optional attachment)."""
     crackme = _get_crackme_or_abort(hexidcrackme)
+    if crackme_is_auto_validated(crackme):
+        flash(
+            'Writeups are disabled for auto-validated crackmes.',
+            FLASH_ERROR
+        )
+        return redirect(f'/crackme/{hexidcrackme}')
     return render_template('solution/editor.html',
                            hexidcrackme=hexidcrackme,
                            username=crackme.get('author', ''),
@@ -135,30 +161,42 @@ def upload_solution_post(hexidcrackme):
     username = session.get('name')
     redirect_url = f'/upload/solution/{hexidcrackme}'
 
+    if crackme_is_auto_validated(crackme):
+        return _submission_rejected(
+            'Writeups are disabled for auto-validated crackmes.',
+            f'/crackme/{hexidcrackme}',
+        )
+
     # Check if user already submitted a solution
     if solution_exists(username, crackme['_id']):
-        flash("You've already submitted a solution to this crackme", FLASH_ERROR)
-        return redirect(redirect_url)
+        return _submission_rejected(
+            "You've already submitted a solution to this crackme", redirect_url
+        )
 
     if not verify_recaptcha(request):
-        flash('reCAPTCHA invalid!', FLASH_ERROR)
-        return redirect(redirect_url)
+        return _submission_rejected('reCAPTCHA invalid!', redirect_url)
 
     # Summary
     info = bleach.clean(request.form.get('info', ''))
     if len(info) > MAX_INFO_LENGTH:
-        flash(f'Info field exceeds maximum length of {MAX_INFO_LENGTH} characters.', FLASH_ERROR)
-        return redirect(redirect_url)
+        return _submission_rejected(
+            f'Info field exceeds maximum length of {MAX_INFO_LENGTH} characters.',
+            redirect_url,
+        )
 
     # Inline markdown content (optional)
     content = request.form.get('content', '').strip()
     if content:
         if len(content) < MIN_CONTENT_LENGTH:
-            flash(f'Your writeup is too short. Please write at least {MIN_CONTENT_LENGTH} characters.', FLASH_ERROR)
-            return redirect(redirect_url)
+            return _submission_rejected(
+                f'Your writeup is too short. Please write at least {MIN_CONTENT_LENGTH} characters.',
+                redirect_url,
+            )
         if len(content) > MAX_CONTENT_LENGTH:
-            flash(f'Your writeup exceeds the maximum length of {MAX_CONTENT_LENGTH:,} characters.', FLASH_ERROR)
-            return redirect(redirect_url)
+            return _submission_rejected(
+                f'Your writeup exceeds the maximum length of {MAX_CONTENT_LENGTH:,} characters.',
+                redirect_url,
+            )
     else:
         content = None
 
@@ -170,14 +208,15 @@ def upload_solution_post(hexidcrackme):
     if has_file:
         data, error = _validate_attachment(file)
         if error:
-            flash(error, FLASH_ERROR)
-            return redirect(redirect_url)
+            return _submission_rejected(error, redirect_url)
         original_filename = secure_filename(file.filename) or "unnamed"
 
     # A solution must have a writeup body: markdown content, an attachment, or both.
     if content is None and not has_file:
-        flash('Please write a markdown writeup or attach a file (or both).', FLASH_ERROR)
-        return redirect(redirect_url)
+        return _submission_rejected(
+            'Please write a markdown writeup or attach a file (or both).',
+            redirect_url,
+        )
 
     try:
         solution = solution_create(info, username, crackme, content=content, original_filename=original_filename)
@@ -198,10 +237,25 @@ def upload_solution_post(hexidcrackme):
                 get_collection('solution').delete_one({'hexid': solution['hexid']})
             except Exception as cleanup_error:
                 print(f"Failed to roll back solution record: {cleanup_error}")
-            flash('An error occurred on the server. Please try again later.', FLASH_ERROR)
-            return redirect(redirect_url)
+            return _submission_rejected(
+                'An error occurred on the server. Please try again later.',
+                redirect_url,
+            )
 
     return _send_notifications_and_render_success(username, crackme)
+
+
+@solution_bp.route('/upload/solution/submitted', methods=['GET'])
+@login_required
+def upload_solution_submitted():
+    """Confirm a writeup submitted by the background editor."""
+    name = session.pop('submitted_writeup', None)
+    if not name:
+        return redirect('/')
+    return render_template(
+        'submission/success.html', submission_type='Writeup',
+        name=name, username=session.get('name'),
+    )
 
 
 @solution_bp.route('/solution/<hexid>', methods=['GET'])

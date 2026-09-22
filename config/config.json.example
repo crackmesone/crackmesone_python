@@ -18,7 +18,10 @@
     },
     "RateLimiter": {
         "Enabled": true,
-        "StorageUri": "memory://"
+        "StorageUri": "memory://",
+        "Limits": {
+            "FlagSubmissions": "5 per minute; 20 per hour"
+        }
     },
     "Discord": {
         "Enabled": false,

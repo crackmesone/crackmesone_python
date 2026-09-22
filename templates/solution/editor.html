@@ -16,6 +16,8 @@
 
     <div class="divider"></div>
 
+    <div id="upload-errors" class="toast toast-error" style="display: none;"></div>
+
     <form class="form-horizontal" method="post" id="editor-form" enctype="multipart/form-data">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
@@ -76,7 +78,7 @@ print('Hello, World!')
         {% if RECAPTCHA_SITEKEY %}
         <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}" style="margin-bottom: 1rem;"></div>
         {% endif %}
-        <button type="submit" class="btn active float-right" style="{% if RECAPTCHA_SITEKEY %}margin-top: 4.5rem;{% endif %}">Submit Writeup</button>
+        <button type="submit" id="upload-submit" class="btn active float-right" style="{% if RECAPTCHA_SITEKEY %}margin-top: 4.5rem;{% endif %}">Submit Writeup</button>
     </form>
 </div>
 
@@ -95,6 +97,7 @@ print('Hello, World!')
     var charCount = document.getElementById('char-count');
     var submitBtn = document.querySelector('button[type="submit"]');
     var form = document.getElementById('editor-form');
+    var errors = document.getElementById('upload-errors');
     var previewVisible = false;
 
     var minLen = {{ min_content_length }};
@@ -148,13 +151,55 @@ print('Hello, World!')
     });
 
     form.addEventListener('submit', function(e) {
+        e.preventDefault();
         var hasContent = contentEl.value.trim().length > 0;
         var hasFile = fileEl.files && fileEl.files.length > 0;
         if (!hasContent && !hasFile) {
-            e.preventDefault();
-            alert('Please write a markdown writeup or attach a file (or both).');
+            showError('Please write a markdown writeup or attach a file (or both).');
+            return;
         }
+
+        errors.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        fetch(form.action || window.location.href, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        }).then(function(response) {
+            return response.json().then(function(data) {
+                return { ok: response.ok, status: response.status, data: data };
+            }).catch(function() {
+                return { ok: response.ok, status: response.status, data: null };
+            });
+        }).then(function(result) {
+            if (result.ok && result.data && result.data.redirect) {
+                window.location = result.data.redirect;
+                return;
+            }
+            if (result.data && result.data.error) {
+                showError(result.data.error);
+            } else if (result.status === 429) {
+                showError('You have hit the daily writeup limit. Please try again later.');
+            } else {
+                showError('Submission failed (error ' + result.status + '). Please try again.');
+            }
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Writeup';
+        }).catch(function() {
+            showError('Submission failed: could not reach the server. Please try again.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Writeup';
+        });
     });
+
+    function showError(text) {
+        errors.textContent = text;
+        errors.style.display = 'block';
+        errors.scrollIntoView({ block: 'center' });
+        if (window.grecaptcha) { try { window.grecaptcha.reset(); } catch (e) {} }
+    }
 
     updateCharCount();
 })();

@@ -49,6 +49,42 @@ def test_authenticated_user_can_open_writeup_editor(alice_client, sample_crackme
     assert b'Writeup (Markdown)' in response.data
     assert str(MIN_CONTENT_LENGTH).encode() in response.data
     assert f'{MAX_CONTENT_LENGTH:,}'.encode() in response.data
+    assert b"'X-Requested-With': 'XMLHttpRequest'" in response.data
+    assert b'id="upload-errors"' in response.data
+
+
+def test_background_writeup_failure_keeps_editor_state(
+        alice_client, db, sample_crackme):
+    response = alice_client.post(
+        f"/upload/solution/{sample_crackme['hexid']}",
+        data={'info': 'Still here', 'content': 'too short'},
+        content_type='multipart/form-data',
+        headers={'X-Requested-With': 'XMLHttpRequest'},
+    )
+
+    assert response.status_code == 400
+    assert response.json['ok'] is False
+    assert 'too short' in response.json['error']
+    assert db.solution.count_documents({}) == 0
+
+
+def test_background_writeup_success_uses_one_shot_confirmation(
+        alice_client, db, sample_crackme):
+    response = alice_client.post(
+        f"/upload/solution/{sample_crackme['hexid']}",
+        data={'info': 'Solved', 'content': _markdown()},
+        content_type='multipart/form-data',
+        headers={'X-Requested-With': 'XMLHttpRequest'},
+    )
+
+    assert response.status_code == 200
+    assert response.json == {
+        'ok': True, 'redirect': '/upload/solution/submitted'
+    }
+    confirmation = alice_client.get('/upload/solution/submitted')
+    assert b'Writeup' in confirmation.data
+    assert sample_crackme['name'].encode() in confirmation.data
+    assert alice_client.get('/upload/solution/submitted').status_code == 302
 
 
 def test_legacy_editor_url_redirects_to_primary_editor(alice_client, sample_crackme):

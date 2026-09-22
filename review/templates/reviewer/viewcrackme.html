@@ -1,22 +1,16 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>View crackme</title>
+    <title>Review crackme</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-exp.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/spectre-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
 </head>
-
 <body>
     <header class="navbar hide-xs">
-        <section class="navbar-section">
-            <h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2>
-        </section>
-        <section class="navbar-center">
-            <h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2>
-        </section>
+        <section class="navbar-section"><h2><a href="{{ url_for('reviewer.dashboard') }}" class="title-navbar">Dashboard</a></h2></section>
+        <section class="navbar-center"><h2>Welcome, {{ user }}!{% if is_admin %} (Admin){% endif %}</h2></section>
         <section class="navbar-section">
             <a href="/" class="btn btn-link">crackmes.one</a>
             <a href="{{ url_for('reviewer.logout') }}" class="btn btn-link">Logout</a>
@@ -24,60 +18,92 @@
     </header>
 
     <div class="container grid-lg wrapper">
-        <h3>
-            <p><strong>"{{ crackme.name }}"</strong> by <a href="https://crackmes.one/user/{{crackme.author}}">{{ crackme.author }}</a></p>
-        </h3>
+        <h3><strong>"{{ crackme.name }}"</strong> by <a href="/user/{{ crackme.author }}">{{ crackme.author }}</a></h3>
+        {% if message %}<div class="toast">{{ message }}</div>{% endif %}
+        <div id="change-status" class="toast toast-warning" style="display:none; margin-bottom:12px;">You have unsaved review changes.</div>
+
         <div class="columns panel-background">
             <div class="column col-12">
-                <h3>
-                    <p>Crackme info</p>
-                </h3>
-                <p><span style="white-space: pre-line"> Language: {{ crackme.lang }}</span></p>
-                <p><span style="white-space: pre-line"> Arch: {{ crackme.arch }}</span></p>
-                <p><span style="white-space: pre-line"> Platform: {{ crackme.platform }}</span></p>
-                <div class="divider"></div>
-                <h3>
-                    <p>Description</p>
-                </h3>
-                <p><span style="white-space: pre-line">{{ crackme.info }}</span></p>
-                <div class="divider"></div>
-                <h3>
-                    <p>Download</p>
-                </h3>
-
-                <a href="{{ url_for('reviewer.downloadreview', uuid=crackme.crackme_uuid, type='crackme') }}">Download</a>
-                <div class="divider"></div>
-
-                <h3>
-                    <p>Labels</p>
-                </h3>
-                <p>Author-suggested / current labels. Adjust and save before accepting.</p>
-                <form action="{{ url_for('reviewer.setlabels') }}" method="POST">
+                <form id="review-edit-form" action="{{ url_for('reviewer.approvecrackme') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="uuid" value="{{ crackme.crackme_uuid }}">
-                    <input type="hidden" name="redirect_to" value="view">
+
+                    <h3>Crackme info</h3>
+                    <div class="columns">
+                        <div class="column col-3 col-sm-12 form-group">
+                            <label class="form-label" for="lang">Language</label>
+                            <select class="form-select" id="lang" name="lang">
+                                {% if crackme.lang not in LANG_CHOICES %}<option value="{{ crackme.lang }}" selected>{{ crackme.lang }} (legacy)</option>{% endif %}
+                                {% for choice in LANG_CHOICES %}<option value="{{ choice }}"{{ ' selected' if crackme.lang == choice else '' }}>{{ choice }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="column col-3 col-sm-12 form-group">
+                            <label class="form-label" for="arch">Architecture</label>
+                            <select class="form-select" id="arch" name="arch">
+                                {% if crackme.arch not in ARCH_CHOICES %}<option value="{{ crackme.arch }}" selected>{{ crackme.arch }} (legacy)</option>{% endif %}
+                                {% for choice in ARCH_CHOICES %}<option value="{{ choice }}"{{ ' selected' if crackme.arch == choice else '' }}>{{ choice }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="column col-3 col-sm-12 form-group">
+                            <label class="form-label" for="platform">Platform</label>
+                            <select class="form-select" id="platform" name="platform">
+                                {% if crackme.platform not in PLATFORM_CHOICES %}<option value="{{ crackme.platform }}" selected>{{ crackme.platform }} (legacy)</option>{% endif %}
+                                {% for choice in PLATFORM_CHOICES %}<option value="{{ choice }}"{{ ' selected' if crackme.platform == choice else '' }}>{{ choice }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="column col-3 col-sm-12 form-group">
+                            <label class="form-label" for="official_points">Points</label>
+                            <input class="form-input" type="number" id="official_points" name="official_points" min="100" max="600" step="1"
+                                   value="{{ (crackme.official_difficulty * 100)|round|int if crackme.official_difficulty else '' }}"
+                                   {% if crackme.auto_validation %}required{% else %}disabled{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="info">Description</label>
+                        <textarea class="form-input" id="info" name="info" rows="6" required>{{ crackme.info }}</textarea>
+                    </div>
+
+                    <div class="divider"></div>
+                    <h3>Download</h3>
+                    <p><a href="{{ url_for('reviewer.downloadreview', uuid=crackme.crackme_uuid, type='crackme') }}">Download crackme</a></p>
+
+                    <div class="divider"></div>
+                    <h3>Auto-validation</h3>
+                    {% if crackme.auto_validation %}
+                    <p>This crackme will accept a flag and award the point value shown above.</p>
+                    {% if crackme.has_source_archive %}
+                    <p><a href="{{ url_for('reviewer.downloadreview', uuid=crackme.crackme_uuid, type='source') }}">Download private verification ZIP</a></p>
+                    {% else %}
+                    <p><strong>No verification ZIP was uploaded.</strong></p>
+                    {% endif %}
+                    <div class="form-group">
+                        <label class="form-label" for="flag">Flag</label>
+                        <input class="form-input" type="text" id="flag" name="flag" value="{{ crackme.flag }}" required>
+                    </div>
+                    {% else %}
+                    <p>The author did not enable auto-validation.</p>
+                    {% endif %}
+
+                    <div class="divider"></div>
+                    <h3>Labels</h3>
+                    <p>Adjust the author-suggested labels before approval.</p>
+                    <input type="hidden" name="labels_submitted" value="1">
                     <div class="form-group" id="view-labels">
                         {% set label_input_name = 'labels' %}
                         {% set checked_labels = crackme.labels %}
                         {% include 'partial/labels_checkboxes.html' %}
                     </div>
-                    <button type="submit" class="btn">Save labels</button>
                 </form>
-                <script src="{{ url_for('static', filename='js/label_checkboxes.js') }}"></script>
-                <script>LabelCheckboxes.init(document.getElementById('view-labels'));</script>
+
                 <div class="divider"></div>
-
-                <h3>
-                    <p>Review</p>
-                </h3>
-
-                <form action="{{ url_for('reviewer.rejectcrackme') }}" method="POST">
+                <h3>Review</h3>
+                <form id="reject-form" action="{{ url_for('reviewer.rejectcrackme') }}" method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="uuid" value="{{crackme.crackme_uuid}}">
-
+                    <input type="hidden" name="uuid" value="{{ crackme.crackme_uuid }}">
                     <div class="form-group">
                         <label class="form-label">Reject reason</label>
-                        <select class="form-select" id="preset_reason_crackme" onchange="updateRejectReason('crackme')">
+                        <select class="form-select" id="preset_reason_crackme" onchange="updateRejectReason()">
                             <option value="">-- Select a reason or type custom --</option>
                             <option value="This is commercial software or a game cheat, not an educational crackme">Commercial software / game cheat</option>
                             <option value="File is corrupted or doesn't execute properly">File corrupted / doesn't run</option>
@@ -86,38 +112,41 @@
                             <option value="Password-protected archive - do NOT add a password, the server handles this automatically">Password-protected archive</option>
                             <option value="Duplicate submission - you already have a crackme with this name pending or approved">Duplicate submission</option>
                             <option value="File too large or archive contains unnecessary files">File size / unnecessary files</option>
-                            <option value="custom">Other (type custom reason below)</option>
+                            <option value="custom">Other</option>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <input class="form-input" type="text" id="reject_reason_crackme" name="reject_reason" placeholder="Custom reason (or selected reason appears here)">
-                    </div>
-
-                    <div style="margin-top: 15px;">
-                        <button type="submit" class="btn active float-right">Reject</button>
-                    </div>
+                    <div class="form-group"><input class="form-input" type="text" id="reject_reason_crackme" name="reject_reason" placeholder="Custom reason"></div>
                 </form>
 
-                <script>
-                function updateRejectReason(type) {
-                    var select = document.getElementById('preset_reason_' + type);
-                    var input = document.getElementById('reject_reason_' + type);
-                    if (select.value && select.value !== 'custom') {
-                        input.value = select.value;
-                    } else if (select.value === 'custom') {
-                        input.value = '';
-                        input.focus();
-                    }
-                }
-                </script>
-
-                <form action="{{ url_for('reviewer.approvecrackme') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="uuid" value="{{crackme.crackme_uuid}}">
-                    <button type="submit" class="btn active float-left">Accept</button>
-                </form>
+                <div style="display:flex; gap:8px; align-items:center; margin-top:15px;">
+                    <button type="submit" form="review-edit-form" class="btn active">Approve</button>
+                    <button type="button" id="discard-changes" class="btn" disabled>Discard changes</button>
+                    <button type="submit" form="reject-form" class="btn btn-error">Reject</button>
+                </div>
             </div>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='js/label_checkboxes.js') }}"></script>
+    <script>
+    LabelCheckboxes.init(document.getElementById('view-labels'));
+    (function() {
+        var form = document.getElementById('review-edit-form');
+        var status = document.getElementById('change-status');
+        var discard = document.getElementById('discard-changes');
+        function setDirty() { status.style.display = 'block'; discard.disabled = false; }
+        function setClean() { status.style.display = 'none'; discard.disabled = true; }
+        form.addEventListener('input', setDirty);
+        form.addEventListener('change', setDirty);
+        discard.addEventListener('click', function() { form.reset(); setTimeout(setClean, 0); });
+    })();
+
+    function updateRejectReason() {
+        var select = document.getElementById('preset_reason_crackme');
+        var input = document.getElementById('reject_reason_crackme');
+        if (select.value && select.value !== 'custom') input.value = select.value;
+        else if (select.value === 'custom') { input.value = ''; input.focus(); }
+    }
+    </script>
 </body>
+</html>

@@ -23,6 +23,16 @@ def test_limiter_decorator_helpers_with_and_without_instance(monkeypatch):
     assert service.exempt(function) is function
 
 
+def test_flag_submission_limit_has_default_and_config_override(monkeypatch):
+    from app.services import limiter as service
+
+    monkeypatch.setattr(service, 'limiter_config', {})
+    assert service.configured_limit('FlagSubmissions') == '5 per minute; 20 per hour'
+    monkeypatch.setattr(service, 'limiter_config', {
+        'Limits': {'FlagSubmissions': '2 per minute; 8 per hour'}
+    })
+    assert service.configured_limit('FlagSubmissions') == '2 per minute; 8 per hour'
+
 def test_recaptcha_configuration_accessors(app):
     from app.services import recaptcha
 

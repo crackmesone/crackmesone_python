@@ -159,14 +159,18 @@
             {{ platform }}</p>
         </div>
         <div class="column col-3">
+            {% if auto_validation %}
+            <p>Points:<br> {{ solve_points }}</p>
+            {% else %}
             <p>Difficulty:<br> {{ difficulty }}
             {% if AuthLevel == "auth" %}
             <a href="#" onclick="openModal('rate-diff'); return false;">Rate!</a></p>
             {% endif %}
+            {% endif %}
         </div>
         <div class="column col-3">
             <p>Quality:<br> {{ quality }}
-            {% if AuthLevel == "auth" %}
+            {% if AuthLevel == "auth" and (not auto_validation or user_solve) %}
             <a href="#" onclick="openModal('rate-qual'); return false;">Rate!</a></p>
             {% endif %}
         </div>
@@ -181,12 +185,19 @@
             <p>Size:<br> {{ size|FILESIZE }}</p>
         </div>
         <div class="column col-3">
+            {% if auto_validation %}
+            <p>Solves:<br> {{ nbsolves }}</p>
+            {% else %}
             <p>Writeups:<br> {{ nbsolutions }}</p>
+            {% endif %}
         </div>
         <div class="column col-3">
+            {% if auto_validation %}
+            <p>Attempts:<br> {{ nbattempts }}</p>
+            {% else %}
             <p>Comments:<br> {{ nbcomments }}</p>
+            {% endif %}
         </div>
-
         <div class="column col-12">
             <div class="divider"></div>
         </div>
@@ -197,6 +208,31 @@
             <div class="divider"></div>
         </div>
 
+        {% if auto_validation %}
+        <div class="column col-12">
+            <p><b>Flag</b></p>
+            {% if user_solve %}
+            <p class="text-success">
+                <b>Solved!</b> You cracked this on {{ user_solve.created_at|PRETTYTIME }} for {{ user_solve.points }} points.
+            </p>
+            {% elif usersess == username %}
+            <p class="text-gray">This is your crackme &mdash; you can't submit its flag.</p>
+            {% elif AuthLevel == "auth" %}
+            <form action="/crackme/{{ hexid }}/solve" method="post" class="form-horizontal">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="input-group" style="max-width: 480px;">
+                    <input class="form-input" type="text" name="flag" placeholder="{{ flag_format_hint }}" autocomplete="off">
+                    <input type="submit" class="btn active input-group-btn" value="Submit flag">
+                </div>
+            </form>
+            {% else %}
+            <p><a href="/login">Log in</a> to submit the flag.</p>
+            {% endif %}
+            <div class="divider"></div>
+        </div>
+        {% endif %}
+
+        {% if not auto_validation %}
         <div class="column col-12">
             <p>
                 <b>Labels</b>
@@ -229,18 +265,53 @@
             </div>
             <div class="divider"></div>
         </div>
+        {% endif %}
 
         <div class="column col-4" style="margin-bottom:20px;">
             <ul class="tab tab-block" style="border-bottom: .05rem solid transparent;">
+                {% if auto_validation %}
+                <li class="tab-item active">
+                    <a>Solves ({{ nbsolves }})</a>
+                </li>
+                {% else %}
                 <li class="tab-item">
                     <a onclick="changeTab1('solutions', 'comments')">Comments ({{ nbcomments }})</a>
                 </li>
                 <li class="tab-item">
                     <a onclick="changeTab1('comments', 'solutions')">Writeups ({{ nbsolutions }})</a>
                 </li>
+                {% endif %}
             </ul>
         </div>
 
+        {% if auto_validation %}
+        <div class="column col-12" id="solves">
+            {% if solves %}
+            <table class="table table-striped">
+                <thead>
+                    <tr><th>Solver</th><th>Solved</th><th>Points</th></tr>
+                </thead>
+                <tbody>
+                {% for item in solves %}
+                    <tr>
+                        <td>
+                            {% if item.username != 'Deleted user' %}
+                            <a href="/user/{{ item.username }}">{{ item.username }}</a>
+                            {% else %}
+                            {{ item.username }}
+                            {% endif %}
+                        </td>
+                        <td>{{ item.solve.created_at|PRETTYTIME }}</td>
+                        <td>{{ item.solve.points }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No one has solved this crackme yet.</p>
+            {% endif %}
+        </div>
+        {% else %}
         <div class="column col-12" id="comments" style="display:none">
             {% if AuthLevel == "auth" %}
             <a href="#" onclick="openModal('modal-comment'); return false;" class="btn active float-right" style="margin-top:-65px;">Post a comment</a>
@@ -279,8 +350,10 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
     </div>
 
+    {% if not auto_validation %}
     <div class="modal" id="modal-comment">
         <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
         <div class="modal-container">
@@ -311,7 +384,9 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
+    {% if not auto_validation %}
     <div class="modal" id="rate-diff">
         <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
         <div class="modal-container">
@@ -338,8 +413,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 
+{% if not auto_validation or user_solve %}
 <div class="modal" id="rate-qual">
     <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
     <div class="modal-container">
@@ -366,9 +443,10 @@
         </div>
     </div>
 </div>
+{% endif %}
 </div>
 
-{% if AuthLevel == "auth" %}
+{% if AuthLevel == "auth" and not auto_validation %}
 <div class="modal modal-lg" id="modal-labels">
     <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
     <div class="modal-container">

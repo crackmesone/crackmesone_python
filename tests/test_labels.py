@@ -203,7 +203,7 @@ def test_upload_stores_sublabel_labels(alice_client, db, monkeypatch):
         "labels": ["Packer", "UPX", "not-real"],
         "file": (buf, "sample.zip"),
     }, content_type="multipart/form-data")
-    assert resp.status_code == 200
+    assert resp.status_code == 302
     stored = db.crackme.find_one({"name": "Labeled CM"})
     assert stored is not None
     assert stored["labels"] == ["Packer", "UPX"]  # invalid dropped, ordered
@@ -228,7 +228,7 @@ def test_upload_allows_no_labels(alice_client, db, monkeypatch):
         # no labels
         "file": (buf, "sample.zip"),
     }, content_type="multipart/form-data")
-    assert resp.status_code == 200
+    assert resp.status_code == 302
     stored = db.crackme.find_one({"name": "No Label CM"})
     assert stored is not None
     assert stored["labels"] == []

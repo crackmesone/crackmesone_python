@@ -9,6 +9,14 @@ def test_public_pages_load(client):
         assert client.get(path).status_code == 200, path
 
 
+def test_faq_explains_flag_submission_and_scoring(client):
+    body = client.get('/faq').get_data(as_text=True)
+
+    assert 'How do I submit a flag?' in body
+    assert 'How do auto-validation and points work?' in body
+    assert 'displayed point value, from 100 to' in body
+
+
 def test_unknown_route_is_404(client):
     assert client.get('/not-a-real-route').status_code == 404
 

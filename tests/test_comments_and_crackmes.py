@@ -75,7 +75,8 @@ def test_crackme_upload_creates_pending_record_file_and_ratings(
         'file': (BytesIO(b'not-an-archive-binary'), '../../challenge.bin'),
     }, content_type='multipart/form-data')
 
-    assert response.status_code == 200
+    assert response.status_code == 302
+    assert response.headers['Location'] == '/upload/crackme/submitted'
     crackme = db.crackme.find_one({'name': 'Uploaded Challenge'})
     assert crackme['visible'] is False
     assert crackme['original_filename'] == 'challenge.bin'

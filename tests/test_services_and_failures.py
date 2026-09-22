@@ -62,6 +62,35 @@ def test_pending_discord_notifications_use_private_channel(app):
     discord.init_discord(app, {'Enabled': False})
 
 
+def test_flag_discord_notifications_use_public_and_audit_channels(app):
+    from app.services import discord
+
+    discord.init_discord(app, {
+        'Enabled': True,
+        'WebhookPublic': 'https://discord.test/public',
+        'WebhookPrivate': 'https://discord.test/private',
+    })
+    with patch.object(discord, 'send_to_webhook', return_value=True) as send:
+        assert discord.notify_flag_solved('bob', 'Challenge', 'abc', 300) is True
+        assert send.call_args.args[0].endswith('/public')
+        public_embed = send.call_args.kwargs['embed']
+        assert public_embed['title'] == 'Crackme Solved'
+        assert public_embed['fields'][0]['value'] == '[Challenge](http://localhost/crackme/abc)'
+        assert public_embed['fields'][1]['value'] == '[bob](http://localhost/user/bob)'
+
+    with patch.object(discord, 'send_private_notification', return_value=True) as send:
+        assert discord.notify_flag_submission(
+            'bob', 'Challenge', 'abc', 'CMO{attempt}', 'incorrect'
+        ) is True
+        audit_embed = send.call_args.kwargs['embed']
+        assert audit_embed['title'] == 'Flag Submitted'
+        assert audit_embed['fields'][0]['value'] == '[Challenge](http://localhost/crackme/abc)'
+        assert audit_embed['fields'][1]['value'] == '[bob](http://localhost/user/bob)'
+        assert audit_embed['fields'][2]['value'] == 'incorrect'
+        assert audit_embed['fields'][3]['value'] == 'CMO{attempt}'
+    discord.init_discord(app, {'Enabled': False})
+
+
 @pytest.mark.parametrize('error,expected', [
     (None, None),
     (RuntimeError('no documents'), 'ErrNoResult'),

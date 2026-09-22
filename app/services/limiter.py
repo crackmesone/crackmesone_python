@@ -15,6 +15,7 @@ The following rate limits are applied to protect against spam and abuse:
 | POST /upload/crackme    | 10 per day     | Username    | Prevent submission spam          |
 | POST /upload/solution   | 20 per day     | Username    | Prevent submission spam          |
 | POST /comment           | 30 per hour    | Username    | Prevent comment spam             |
+| POST /crackme/../solve  | 5/min, 20/hr   | Username    | Prevent flag brute-forcing       |
 +-------------------------+----------------+-------------+----------------------------------+
 
 Configuration
@@ -40,6 +41,10 @@ from flask_limiter.util import get_remote_address
 limiter = None
 limiter_config = {}
 
+DEFAULT_LIMITS = {
+    'FlagSubmissions': '5 per minute; 20 per hour',
+}
+
 
 def init_limiter(app, config):
     """Initialize rate limiter with configuration.
@@ -51,7 +56,13 @@ def init_limiter(app, config):
             - StorageUri: str - Storage backend URI (default: memory://)
     """
     global limiter, limiter_config
-    limiter_config = config
+    # Abuse protection is on by default. Deployments and tests can explicitly
+    # disable it, select another storage backend, or override named limits.
+    limiter_config = {
+        'Enabled': True,
+        'StorageUri': 'memory://',
+        **(config or {}),
+    }
 
     if not is_enabled():
         # Create a no-op limiter that doesn't actually limit
@@ -81,6 +92,11 @@ def is_enabled():
 def get_limiter():
     """Get the limiter instance."""
     return limiter
+
+
+def configured_limit(name):
+    """Return a named route limit, falling back to its built-in default."""
+    return limiter_config.get('Limits', {}).get(name, DEFAULT_LIMITS[name])
 
 
 def limit(*args, **kwargs):

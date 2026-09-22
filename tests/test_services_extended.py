@@ -29,8 +29,10 @@ def test_archive_counts_real_files_but_ignores_metadata():
     })
 
     assert archive.get_archive_file_count(data) == 2
+    assert archive.is_zip_archive(data) is True
     assert archive.is_single_file_archive(data) is False
     assert archive.get_archive_file_count(b'not a zip') is None
+    assert archive.is_zip_archive(b'not a zip') is False
 
 
 def test_single_file_zip_is_detected():

@@ -46,6 +46,8 @@ static/crackme/*
 static/solution/*
 !static/crackme/.gitkeep
 !static/solution/.gitkeep
+# Private source archives for auto-validated crackmes (reviewers only)
+private/
 config/config.json
 users.json
 .env

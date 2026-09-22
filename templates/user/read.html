@@ -4,10 +4,13 @@
 {% block head %}{% endblock %}
 {% block content %}
 <script language="javascript" type="text/javascript">
-    function changeTab1(id1, id2, id3) {
-        document.getElementById(id3).style.display = 'none';
-        document.getElementById(id2).style.display = 'none';
-        document.getElementById(id1).style.display = 'block';
+    var PROFILE_TABS = ['crackmes', 'solutions', 'comments', 'solves'];
+
+    function changeTab1(shown) {
+        PROFILE_TABS.forEach(function(tab) {
+            var el = document.getElementById(tab);
+            if (el) el.style.display = (tab === shown) ? 'block' : 'none';
+        });
     }
 
     function revealSpoiler(id) {
@@ -37,19 +40,25 @@
 <div class="container grid-lg wrapper">
     <h3><a href="">{{ username }}</a>'s profile</h3>
     <div class="columns col-12 ">
-        <div class="column col-4">
+        <div class="column col-3">
+            <div class="column col-12 panel-background">
+                <p title="Points earned by submitting correct flags. The point system is still being tuned and may change.">Score: </p>
+                <h2 class="text-center"> {{ Score }}</h2><br>
+            </div>
+        </div>
+        <div class="column col-3">
             <div class="column col-12 panel-background">
                 <p>Number of crackmes: </p>
                 <h2 class="text-center"> {{ NbCrackmes }}</h2><br>
             </div>
         </div>
-        <div class="column col-4">
+        <div class="column col-3">
             <div class="column col-12 panel-background">
                 <p>Number of writeups: </p>
                 <h2 class="text-center"> {{ NbSolutions }}</h2><br>
             </div>
         </div>
-        <div class="column col-4">
+        <div class="column col-3">
             <div class="column col-12 panel-background">
                 <p>Comments: </p>
                 <h2 class="text-center"> {{ NbComments }}</h2><br>
@@ -57,16 +66,19 @@
         </div>
     </div><br>
     <div class="container grid-lg wrapper">
-        <div class="column col-4" style="margin-bottom:20px;">
+        <div class="column col-5" style="margin-bottom:20px;">
             <ul class="tab tab-block" style="border-bottom: .05rem solid transparent;">
                 <li class="tab-item">
-                    <a onclick="changeTab1('crackmes', 'comments', 'solutions')">Crackmes</a>
+                    <a onclick="changeTab1('crackmes')">Crackmes</a>
                 </li>
                 <li class="tab-item">
-                    <a onclick="changeTab1('solutions', 'comments', 'crackmes')">Writeups</a>
+                    <a onclick="changeTab1('solutions')">Writeups</a>
                 </li>
                 <li class="tab-item">
-                    <a onclick="changeTab1('comments', 'solutions', 'crackmes')">Comments</a>
+                    <a onclick="changeTab1('comments')">Comments</a>
+                </li>
+                <li class="tab-item">
+                    <a onclick="changeTab1('solves')">Solves</a>
                 </li>
             </ul>
         </div>
@@ -133,6 +145,36 @@
                             <td>
                                 <a href="/solution/{{ sol.solution.hexid }}">View</a>
                             </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="columns col-12" id="solves" style="display: none">
+            <h3>Solves</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr style="text-align: center;">
+                            <th style="width: 50%;">Crackme</th>
+                            <th style="width: 15%;">Difficulty</th>
+                            <th style="width: 15%;">Points</th>
+                            <th style="width: 20%;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="content-list">
+                        {% for entry in solves %}
+                        <tr class="text-center">
+                            <td><a href="/crackme/{{ entry.crackmehexid }}">{{ entry.crackmename }}</a></td>
+                            <td>{{ entry.solve.difficulty }}</td>
+                            <td>{{ entry.solve.points }}</td>
+                            <td>{{ entry.solve.created_at|PRETTYTIME }}</td>
+                        </tr>
+                        {% else %}
+                        <tr class="text-center">
+                            <td colspan="4" class="text-gray">No flags submitted yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
