@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Latest solutions{% endblock %}
+{% block page_title %}Latest solutions{% endblock %}
+{% block content %}
+<div style="max-width: 90%" class="container d-flex-row wrapper">
+    <h2>Latest Solutions</h2>
+    {% include 'latest/_solutions.html' %}
+    <div class="pagination-controls">
+        {% if page > 1 %}<a href="/latest/solutions/{{ page - 1 }}" class="btn active">Previous</a>{% else %}<button class="btn" disabled>Previous</button>{% endif %}
+        <span class="pagination-info">Page {{ page }}</span>
+        {% if has_more %}<a href="/latest/solutions/{{ page + 1 }}" class="btn active">Next</a>{% else %}<button class="btn" disabled>Next</button>{% endif %}
+    </div>
+</div>
+{% include 'partial/footer.html' %}
+{% endblock %}

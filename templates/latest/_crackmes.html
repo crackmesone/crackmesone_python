@@ -1,0 +1,30 @@
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr class="text-center">
+                <th>Name</th>
+                <th>Author</th>
+                <th>Language</th>
+                <th>Arch</th>
+                <th>Difficulty</th>
+                <th>Platform</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for crackme in crackmes %}
+            <tr class="text-center">
+                <td><a href="/crackme/{{ crackme.hexid }}">{{ crackme.name }}</a></td>
+                <td><a href="/user/{{ crackme.author }}">{{ crackme.author }}</a></td>
+                <td>{{ crackme.lang }}</td>
+                <td>{{ crackme.arch }}</td>
+                <td>{{ "%.1f"|format(crackme.difficulty) }}</td>
+                <td>{{ crackme.platform }}</td>
+                <td>{{ crackme.created_at|PRETTYTIME }}</td>
+            </tr>
+            {% else %}
+            <tr class="text-center"><td colspan="7" class="text-gray">No crackmes yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

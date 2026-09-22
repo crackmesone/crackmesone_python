@@ -1,0 +1,26 @@
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr class="text-center">
+                <th>Crackme</th>
+                <th>Author</th>
+                <th>Summary</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for solution in solutions %}
+            <tr class="text-center">
+                <td><a href="/crackme/{{ solution.crackmehexid }}">{{ solution.crackmename }}</a></td>
+                <td><a href="/user/{{ solution.author }}">{{ solution.author }}</a></td>
+                <td><span style="white-space: pre-line">{{ solution.info }}</span></td>
+                <td>{{ solution.created_at|PRETTYTIME }}</td>
+                <td><a href="/solution/{{ solution.hexid }}">View</a></td>
+            </tr>
+            {% else %}
+            <tr class="text-center"><td colspan="5" class="text-gray">No writeups yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

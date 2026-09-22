@@ -215,7 +215,7 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
     return results, has_more
 
 
-def last_crackmes(page=1):
+def last_crackmes(page=1, per_page=50):
     """Get latest crackmes with pagination.
 
     Returns (results, has_more) where has_more indicates if there are more pages.
@@ -224,17 +224,17 @@ def last_crackmes(page=1):
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('crackme')
-    skip = (page - 1) * 50
+    skip = (page - 1) * per_page
 
     # Fetch one extra to check if there are more results
     results = list(collection.find({'visible': True})
                    .sort('created_at', DESCENDING)
                    .skip(skip)
-                   .limit(51))
+                   .limit(per_page + 1))
 
-    has_more = len(results) > 50
+    has_more = len(results) > per_page
     if has_more:
-        results = results[:50]
+        results = results[:per_page]
 
     return results, has_more
 

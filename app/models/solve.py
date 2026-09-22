@@ -11,6 +11,7 @@ when someone renamed themselves would be worse than no score at all.
 from datetime import datetime, timezone
 
 from bson import ObjectId
+from pymongo import DESCENDING
 
 from app.models.errors import ErrUnavailable
 from app.services.database import get_collection, check_connection
@@ -76,6 +77,29 @@ def solves_by_user(user_hexid):
     solves.sort(key=lambda s: s.get('created_at') or s['_id'].generation_time,
                 reverse=True)
     return solves
+
+
+def latest_solves(page=1, per_page=50):
+    """Get solves newest first with pagination."""
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    skip = (page - 1) * per_page
+    results = list(
+        get_collection('solve')
+        .find({})
+        .sort('created_at', DESCENDING)
+        .skip(skip)
+        .limit(per_page + 1)
+    )
+    has_more = len(results) > per_page
+    results = results[:per_page]
+
+    for solve in results:
+        if 'created_at' not in solve:
+            solve['created_at'] = solve['_id'].generation_time
+
+    return results, has_more
 
 
 def user_score(user_hexid):

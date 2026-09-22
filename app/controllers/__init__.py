@@ -23,6 +23,7 @@ def register_blueprints(app):
     from app.controllers.account_deletion import account_deletion_bp
     from app.controllers.static import static_bp
     from app.controllers.error import error_bp
+    from app.controllers.latest import latest_bp
 
     app.register_blueprint(index_bp)
     app.register_blueprint(login_bp)
@@ -42,3 +43,4 @@ def register_blueprints(app):
     app.register_blueprint(account_deletion_bp)
     app.register_blueprint(static_bp)
     app.register_blueprint(error_bp)
+    app.register_blueprint(latest_bp)

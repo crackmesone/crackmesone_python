@@ -72,6 +72,29 @@ def solutions_by_user(username):
     return solutions
 
 
+def latest_solutions(page=1, per_page=50):
+    """Get approved solutions newest first with pagination."""
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    skip = (page - 1) * per_page
+    results = list(
+        get_collection('solution')
+        .find({'visible': True})
+        .sort('created_at', DESCENDING)
+        .skip(skip)
+        .limit(per_page + 1)
+    )
+    has_more = len(results) > per_page
+    results = results[:per_page]
+
+    for solution in results:
+        if 'created_at' not in solution:
+            solution['created_at'] = solution['_id'].generation_time
+
+    return results, has_more
+
+
 def solution_exists(username, crackme_id):
     """Check if a user has already submitted a solution for a crackme.
 

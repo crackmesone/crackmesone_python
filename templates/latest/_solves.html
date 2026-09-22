@@ -1,0 +1,32 @@
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr class="text-center">
+                <th>Crackme</th>
+                <th>Solver</th>
+                <th>Difficulty</th>
+                <th>Points</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in solves %}
+            <tr class="text-center">
+                <td><a href="/crackme/{{ entry.solve.crackme_hexid }}">{{ entry.crackmename }}</a></td>
+                <td>
+                    {% if entry.username == 'Deleted user' %}
+                    {{ entry.username }}
+                    {% else %}
+                    <a href="/user/{{ entry.username }}">{{ entry.username }}</a>
+                    {% endif %}
+                </td>
+                <td>{{ entry.solve.difficulty }}</td>
+                <td>{{ entry.solve.points }}</td>
+                <td>{{ entry.solve.created_at|PRETTYTIME }}</td>
+            </tr>
+            {% else %}
+            <tr class="text-center"><td colspan="5" class="text-gray">No solves yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
