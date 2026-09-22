@@ -66,6 +66,7 @@ def test_registration_creates_a_user(client, db):
         'name': 'charlie',
         'email': 'CHARLIE@example.test',
         'password': 'charlie-password',
+        'password_verify': 'charlie-password',
     })
 
     assert response.status_code == 302
@@ -73,6 +74,27 @@ def test_registration_creates_a_user(client, db):
     user = db.user.find_one({'name': 'charlie'})
     assert user['email'] == 'charlie@example.test'
     assert match_string(user['password'], 'charlie-password') is True
+
+
+def test_registration_requires_matching_password_confirmation(client, db):
+    registration = {
+        'name': 'charlie',
+        'email': 'charlie@example.test',
+        'password': 'charlie-password',
+    }
+
+    missing = client.post('/register', data=registration)
+    assert missing.status_code == 200
+    assert b'Field missing: password_verify' in missing.data
+    assert db.user.find_one({'name': 'charlie'}) is None
+
+    mismatch = client.post('/register', data={
+        **registration,
+        'password_verify': 'different-password',
+    })
+    assert mismatch.status_code == 200
+    assert b'Passwords do not match' in mismatch.data
+    assert db.user.find_one({'name': 'charlie'}) is None
 
 
 def test_logout_clears_only_main_auth(alice_client):
