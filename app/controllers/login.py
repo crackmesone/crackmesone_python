@@ -90,9 +90,13 @@ def login_post():
             flash('Login successful!', FLASH_SUCCESS)
 
             # Retrieve and clear the redirect from session
-            # Only allow relative URLs to prevent redirecting to external sites
+            # Only allow relative URLs to prevent redirecting to external sites.
+            # '//evil.com' and '\\evil.com' also start with '/', and browsers
+            # happily resolve them as other hosts. wonderful spec behavior.
             redirect_url = session.pop('login_redirect', '/')
-            if not redirect_url.startswith('/'):
+            if (not redirect_url.startswith('/')
+                    or redirect_url.startswith('//')
+                    or '\\' in redirect_url):
                 redirect_url = '/'
             return redirect(redirect_url)
         else:
