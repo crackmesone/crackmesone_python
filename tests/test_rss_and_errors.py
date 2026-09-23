@@ -55,6 +55,24 @@ def test_rss_feed_includes_crackmes_solutions_and_solves(
     assert len(ElementTree.fromstring(response.data).findall('./channel/item')) == 3
 
 
+def test_rss_feed_strips_characters_xml_forbids(client, db, sample_crackme):
+    db.crackme.update_one({'_id': sample_crackme['_id']}, {'$set': {
+        'name': 'bad\x0bname',
+        'info': 'vertical\ftab\bin\tdescription',
+    }})
+
+    response = client.get('/rss')
+
+    assert response.status_code == 200
+    assert b'\x0b' not in response.data
+    assert b'\x0c' not in response.data
+    assert b'\x08' not in response.data
+    # the whole feed must still parse as XML
+    root = ElementTree.fromstring(response.data)
+    assert b'badname' in response.data
+    assert root.find('./channel/title').text == 'Latest activity - crackmes.one'
+
+
 def test_old_crackme_rss_url_is_kept_as_an_alias(client):
     assert client.get('/rss/crackme').status_code == 200
 
