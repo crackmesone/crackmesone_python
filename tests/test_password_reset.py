@@ -53,6 +53,34 @@ def test_valid_reset_token_changes_password_and_is_single_use(client, db, alice)
     assert client.get(f'/reset-password/{token}').status_code == 302
 
 
+def test_password_reset_invalidates_existing_sessions(app, db, alice):
+    """Stolen cookies should stop working after a successful reset."""
+    victim = app.test_client()
+    with victim.session_transaction() as session:
+        session['name'] = alice['name']
+        session['email'] = alice['email']
+        session['session_version'] = alice.get('session_version', 0)
+
+    assert victim.get('/change-password').status_code == 200
+
+    token = create_reset_token('alice@example.test')
+    attacker = app.test_client()
+    with patch('app.controllers.password_reset.notify_password_reset_complete'):
+        reset = attacker.post(f'/reset-password/{token}', data={
+            'new_password': 'replacement-password',
+            'new_password_verify': 'replacement-password',
+        })
+    assert reset.status_code == 302
+    assert db.user.find_one({'name': 'alice'})['session_version'] == 1
+
+    denied = victim.get('/change-password')
+    assert denied.status_code == 302
+    assert denied.location == '/'
+    with victim.session_transaction() as session:
+        assert 'name' not in session
+        assert 'session_version' not in session
+
+
 def test_expired_reset_token_is_rejected(client, db, alice):
     db.password_reset_tokens.insert_one({
         'email': 'alice@example.test',

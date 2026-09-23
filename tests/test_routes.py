@@ -46,6 +46,7 @@ def test_login_with_valid_synthetic_user(client, alice):
     with client.session_transaction() as session:
         assert session['name'] == 'alice'
         assert session['email'] == 'alice@example.test'
+        assert session['session_version'] == 0
 
 
 def test_login_with_wrong_password_does_not_authenticate(client, alice):

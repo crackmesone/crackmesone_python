@@ -114,6 +114,7 @@ def _authenticate(client, user):
     with client.session_transaction() as session:
         session['name'] = user['name']
         session['email'] = user['email']
+        session['session_version'] = user.get('session_version', 0)
     return client
 
 

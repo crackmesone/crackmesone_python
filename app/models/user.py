@@ -153,6 +153,7 @@ def user_create(name, email, password):
         'name': name,
         'email': email,
         'password': password,
+        'session_version': 0,
         'visible': True,
         'deleted': False
     }
@@ -161,11 +162,18 @@ def user_create(name, email, password):
 
 
 def update_user_password(username, hashed_password):
-    """Update user password.
+    """Update user password and bump session_version.
+
+    Bumping session_version invalidates every existing signed cookie session
+    for this user. Callers that want to keep the current browser logged in
+    must refresh session['session_version'] after this returns.
 
     Args:
         username: The username
         hashed_password: The new hashed password
+
+    Returns:
+        The new session_version value
 
     Raises:
         ValueError: If username or password is empty
@@ -178,13 +186,20 @@ def update_user_password(username, hashed_password):
 
     collection = get_collection('user')
 
-    result = collection.update_one(
+    # yes, $inc on a missing field starts at 0 then becomes 1. old accounts work.
+    result = collection.find_one_and_update(
         {'name': username},
-        {'$set': {'password': hashed_password}}
+        {
+            '$set': {'password': hashed_password},
+            '$inc': {'session_version': 1},
+        },
+        return_document=True,
     )
 
-    if result.matched_count == 0:
+    if result is None:
         raise ErrNoResult("No user found with the provided username")
+
+    return result.get('session_version', 1)
 
 
 def user_get_unread_notifications(username):

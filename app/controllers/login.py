@@ -19,6 +19,7 @@ def clear_main_auth():
     """Clear main site auth session keys only."""
     session.pop('name', None)
     session.pop('email', None)
+    session.pop('session_version', None)
     session.pop('login_attempt', None)
 
 
@@ -87,6 +88,7 @@ def login_post():
             clear_main_auth()
             session['email'] = user['email']
             session['name'] = user['name']
+            session['session_version'] = user.get('session_version', 0)
             flash('Login successful!', FLASH_SUCCESS)
 
             # Retrieve and clear the redirect from session
