@@ -6,7 +6,7 @@ from app.services.passhash import match_string
 def test_public_pages_load(client):
     for path in ('/', '/faq', '/upload/crackmerules', '/upload/writeuprules',
                  '/login', '/register', '/search', '/latest', '/lasts/1',
-                 '/latest/solutions/1', '/latest/solves/1'):
+                 '/latest/solutions/1', '/latest/solves/1', '/scoreboard'):
         assert client.get(path).status_code == 200, path
 
 

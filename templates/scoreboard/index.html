@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Scoreboard{% endblock %}
+{% block page_title %}Scoreboard{% endblock %}
+{% block content %}
+<div class="container grid-lg wrapper">
+    <h2>Scoreboard</h2>
+    {% if scoreboard %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Rank</th>
+                    <th>Player</th>
+                    <th class="text-right" style="width: 25%;">Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in scoreboard %}
+                <tr>
+                    <td>{{ player.rank }}</td>
+                    <td><a href="/user/{{ player.username|urlencode }}">{{ player.username }}</a></td>
+                    <td class="text-right">{{ player.score }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination-controls">
+        {% if page > 1 %}
+        <a href="{% if page == 2 %}/scoreboard{% else %}/scoreboard/{{ page - 1 }}{% endif %}" class="btn active">Previous</a>
+        {% else %}
+        <button class="btn" disabled>Previous</button>
+        {% endif %}
+        <span class="pagination-info">Page {{ page }}</span>
+        {% if has_more %}
+        <a href="/scoreboard/{{ page + 1 }}" class="btn active">Next</a>
+        {% else %}
+        <button class="btn" disabled>Next</button>
+        {% endif %}
+    </div>
+    {% else %}
+    <p>No players have scored points yet.</p>
+    {% endif %}
+</div>
+{% include 'partial/footer.html' %}
+{% endblock %}
