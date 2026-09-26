@@ -204,14 +204,9 @@ def test_auto_validation_points_default_to_selected_difficulty(
 def test_correct_flag_records_a_solve_and_awards_points(
         bob_client, db, bob, flagged_crackme, monkeypatch):
     from app.controllers import crackme as crackme_controller
-    audit_notifications = []
     solve_notifications = []
     monkeypatch.setattr(
-        crackme_controller, 'notify_flag_submission',
-        lambda *args: audit_notifications.append(args),
-    )
-    monkeypatch.setattr(
-        crackme_controller, 'notify_flag_solved',
+        crackme_controller, 'notify_first_blood',
         lambda *args: solve_notifications.append(args),
     )
     response = bob_client.post(f"/crackme/{flagged_crackme['hexid']}/solve",
@@ -223,19 +218,49 @@ def test_correct_flag_records_a_solve_and_awards_points(
     assert solve['crackme_hexid'] == flagged_crackme['hexid']
     assert solve['points'] == 300
     assert solve['difficulty'] == 3
-    assert db.notifications.count_documents({'user': 'bob'}) == 1
+    assert db.notifications.count_documents({'user': 'bob'}) == 0
+    author_notification = db.notifications.find_one({'user': 'alice'})
+    assert author_notification['seen'] is False
+    assert 'was solved for the first time by bob' in author_notification['text']
     submission = db.flag_submission.find_one({})
     assert submission['user_hexid'] == _hexid(bob)
     assert submission['username'] == 'bob'
     assert submission['crackme_hexid'] == flagged_crackme['hexid']
     assert submission['submitted_flag'] == FLAG
     assert submission['result'] == 'correct'
-    assert audit_notifications == [(
-        'bob', flagged_crackme['name'], flagged_crackme['hexid'], FLAG, 'correct'
-    )]
     assert solve_notifications == [(
         'bob', flagged_crackme['name'], flagged_crackme['hexid'], 300
     )]
+
+
+def test_only_first_solver_gets_public_announcement(
+        app, bob_client, db, bob, flagged_crackme, monkeypatch):
+    from app.controllers import crackme as crackme_controller
+
+    announcements = []
+    monkeypatch.setattr(
+        crackme_controller, 'notify_first_blood',
+        lambda *args: announcements.append(args),
+    )
+    path = f"/crackme/{flagged_crackme['hexid']}/solve"
+    bob_client.post(path, data={'flag': FLAG})
+
+    db.user.insert_one({'name': 'charlie', 'email': 'charlie@example.test'})
+    charlie_client = app.test_client()
+    with charlie_client.session_transaction() as session:
+        session['name'] = 'charlie'
+        session['email'] = 'charlie@example.test'
+    charlie_client.post(path, data={'flag': FLAG})
+    bob_client.post(path, data={'flag': FLAG})
+
+    assert db.solve.count_documents({'crackme_hexid': flagged_crackme['hexid']}) == 2
+    assert len(announcements) == 1
+    assert announcements[0][0] == 'bob'
+    assert db.notifications.count_documents({'user': 'alice'}) == 1
+    assert db.user.find_one({'name': 'alice'})['unread_notifications'] == 1
+    assert db.crackme.find_one({'hexid': flagged_crackme['hexid']})[
+        'first_blood_notified'
+    ] is True
 
 
 def test_solve_snapshots_fractional_difficulty(
@@ -257,14 +282,9 @@ def test_solve_snapshots_fractional_difficulty(
 def test_wrong_flag_records_nothing(
         bob_client, db, bob, flagged_crackme, monkeypatch):
     from app.controllers import crackme as crackme_controller
-    audit_notifications = []
     solve_notifications = []
     monkeypatch.setattr(
-        crackme_controller, 'notify_flag_submission',
-        lambda *args: audit_notifications.append(args),
-    )
-    monkeypatch.setattr(
-        crackme_controller, 'notify_flag_solved',
+        crackme_controller, 'notify_first_blood',
         lambda *args: solve_notifications.append(args),
     )
     response = bob_client.post(f"/crackme/{flagged_crackme['hexid']}/solve",
@@ -276,10 +296,6 @@ def test_wrong_flag_records_nothing(
     submission = db.flag_submission.find_one({})
     assert submission['submitted_flag'] == 'CMO{nope}'
     assert submission['result'] == 'incorrect'
-    assert audit_notifications == [(
-        'bob', flagged_crackme['name'], flagged_crackme['hexid'],
-        'CMO{nope}', 'incorrect'
-    )]
     assert solve_notifications == []
 
 

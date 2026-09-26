@@ -22,6 +22,7 @@ from app.models.label_request import (
 )
 from app.models.solve import (
     solve_by_user_and_crackme, solve_create, count_solves_by_crackme,
+    claim_first_blood_notification,
     solves_by_crackme
 )
 from app.models.flag_submission import (
@@ -38,7 +39,7 @@ from app.services.archive import (
     is_unsupported_archive, is_zip_archive,
 )
 from app.services.discord import (
-    notify_flag_solved, notify_flag_submission, notify_new_crackme
+    notify_first_blood, notify_new_crackme
 )
 from app.services.flag import (
     FLAG_FORMAT_HINT, flags_match, is_valid_flag_format, normalize_flag
@@ -489,13 +490,6 @@ def submit_flag(hexid):
         except Exception as e:
             # Audit logging must not turn a validation response into a 500.
             print(f"Error logging flag submission: {e}")
-        try:
-            notify_flag_submission(
-                username, crackme.get('name', ''), hexid, flag, result
-            )
-        except Exception as e:
-            # Discord must never affect validation or its database audit trail.
-            print(f"Discord flag-audit notification error: {e}")
 
     try:
         crackme = crackme_by_hexid(hexid)
@@ -544,7 +538,7 @@ def submit_flag(hexid):
 
     points = points_for_solve(crackme)
     try:
-        solve_create(user_hexid, hexid, points, solve_difficulty(crackme))
+        solve = solve_create(user_hexid, hexid, points, solve_difficulty(crackme))
     except Exception as e:
         print(f"Error recording solve: {e}")
         abort(500)
@@ -552,19 +546,25 @@ def submit_flag(hexid):
     log_result('correct', user_hexid)
 
     try:
-        notify_flag_solved(
-            username, crackme.get('name', ''), hexid, points
-        )
+        first_blood = claim_first_blood_notification(hexid, solve['hexid'])
     except Exception as e:
-        print(f"Discord solve notification error: {e}")
+        print(f"First-blood claim error: {e}")
+        first_blood = False
 
-    try:
-        notification_add(
-            username,
-            f"Correct flag for '<a href=\"/crackme/{hexid}\">{html_escape(crackme.get('name', ''))}</a>' - {points} points earned!"
-        )
-    except Exception as e:
-        print(f"Notification error: {e}")
+    if first_blood:
+        try:
+            notification_add(
+                crackme['author'],
+                f"Your crackme '<a href=\"/crackme/{hexid}\">{html_escape(crackme.get('name', ''))}</a>' "
+                f"was solved for the first time by {html_escape(username)}!"
+            )
+        except Exception as e:
+            print(f"First-blood author notification error: {e}")
+
+        try:
+            notify_first_blood(username, crackme.get('name', ''), hexid, points)
+        except Exception as e:
+            print(f"Discord first-blood notification error: {e}")
 
     flash(f'Correct! You earned {points} points.', FLASH_SUCCESS)
     return redirect(f'/crackme/{hexid}')

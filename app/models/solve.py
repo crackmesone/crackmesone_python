@@ -189,6 +189,23 @@ def count_solves_by_crackme(crackme_hexid):
     )
 
 
+def claim_first_blood_notification(crackme_hexid, solve_hexid):
+    """Claim the announcement once, and only for the earliest recorded solve."""
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    first = get_collection('solve').find_one(
+        {'crackme_hexid': crackme_hexid}, sort=[('_id', 1)]
+    )
+    if not first or first['hexid'] != solve_hexid:
+        return False
+
+    return get_collection('crackme').find_one_and_update(
+        {'hexid': crackme_hexid, 'first_blood_notified': {'$ne': True}},
+        {'$set': {'first_blood_notified': True}},
+    ) is not None
+
+
 def solves_by_crackme(crackme_hexid):
     """Return a crackme's solves, oldest first."""
     if not check_connection():
