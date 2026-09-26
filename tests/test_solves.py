@@ -219,6 +219,9 @@ def test_correct_flag_records_a_solve_and_awards_points(
     assert solve['points'] == 300
     assert solve['difficulty'] == 3
     assert db.notifications.count_documents({'user': 'bob'}) == 0
+    author_notification = db.notifications.find_one({'user': 'alice'})
+    assert author_notification['seen'] is False
+    assert 'was solved for the first time by bob' in author_notification['text']
     submission = db.flag_submission.find_one({})
     assert submission['user_hexid'] == _hexid(bob)
     assert submission['username'] == 'bob'
@@ -253,6 +256,8 @@ def test_only_first_solver_gets_public_announcement(
     assert db.solve.count_documents({'crackme_hexid': flagged_crackme['hexid']}) == 2
     assert len(announcements) == 1
     assert announcements[0][0] == 'bob'
+    assert db.notifications.count_documents({'user': 'alice'}) == 1
+    assert db.user.find_one({'name': 'alice'})['unread_notifications'] == 1
     assert db.crackme.find_one({'hexid': flagged_crackme['hexid']})[
         'first_blood_notified'
     ] is True

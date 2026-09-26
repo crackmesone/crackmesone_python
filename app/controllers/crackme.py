@@ -546,10 +546,25 @@ def submit_flag(hexid):
     log_result('correct', user_hexid)
 
     try:
-        if claim_first_blood_notification(hexid, solve['hexid']):
-            notify_first_blood(username, crackme.get('name', ''), hexid, points)
+        first_blood = claim_first_blood_notification(hexid, solve['hexid'])
     except Exception as e:
-        print(f"Discord first-blood notification error: {e}")
+        print(f"First-blood claim error: {e}")
+        first_blood = False
+
+    if first_blood:
+        try:
+            notification_add(
+                crackme['author'],
+                f"Your crackme '<a href=\"/crackme/{hexid}\">{html_escape(crackme.get('name', ''))}</a>' "
+                f"was solved for the first time by {html_escape(username)}!"
+            )
+        except Exception as e:
+            print(f"First-blood author notification error: {e}")
+
+        try:
+            notify_first_blood(username, crackme.get('name', ''), hexid, points)
+        except Exception as e:
+            print(f"Discord first-blood notification error: {e}")
 
     flash(f'Correct! You earned {points} points.', FLASH_SUCCESS)
     return redirect(f'/crackme/{hexid}')
