@@ -316,8 +316,8 @@ def crackme_create_prepare(name, info, username, lang, arch, platform, size, ori
             Its presence is what marks a crackme as auto-validated -- there is
             no separate flag to keep in sync. Stored in cleartext for reviewers;
             never rendered on the public site.
-        source_original_filename: Filename of the private source archive that
-            accompanies an auto-validated submission (reviewers only).
+        source_original_filename: Filename of an optional private archive
+            available to reviewers, independent of auto-validation.
     """
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")

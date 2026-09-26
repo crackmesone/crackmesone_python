@@ -51,7 +51,7 @@ crackme_bp = Blueprint('crackme', __name__)
 
 # Upload folder for crackmes
 UPLOAD_FOLDER = 'tmp/crackme'
-# Source archives for auto-validated crackmes. Never served: this directory sits
+# Optional source archives. Never served: this directory sits
 # outside static/ so the only way to read one is the reviewer download route.
 SOURCE_UPLOAD_FOLDER = 'private/crackme_source'
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
@@ -318,8 +318,7 @@ def upload_crackme_post():
     if is_single_file_archive(file_data):
         return _upload_rejected('Archives containing only one file are not allowed. Please upload the file directly without wrapping it in an archive.')
 
-    # Auto-validation opt-in: the flag users will submit, plus the private source
-    # archive a reviewer needs to confirm that flag is actually the right one.
+    # Auto-validation and the private reviewer archive are independent choices.
     flag = None
     source_data = None
     source_filename = None
@@ -338,10 +337,8 @@ def upload_crackme_post():
             return _upload_rejected('Points must be a whole number from 100 to 600.')
         official_difficulty = points / 100
 
-        source = request.files.get('source')
-        if source is None or source.filename == '':
-            return _upload_rejected('Auto-validation needs a source archive so reviewers can verify the flag.')
-
+    source = request.files.get('source')
+    if source is not None and source.filename:
         source_data = source.read()
         if len(source_data) > MAX_FILE_SIZE:
             return _upload_rejected('The source archive is too large!')

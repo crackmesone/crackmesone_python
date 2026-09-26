@@ -147,7 +147,7 @@ def test_upload_without_opting_in_stores_no_flag(
     assert db.crackme.find_one({'name': 'Flagged Challenge'})['flag'] is None
 
 
-def test_auto_validation_requires_a_well_formed_flag_and_a_source_archive(
+def test_auto_validation_requires_a_well_formed_flag_but_no_source_archive(
         alice_client, db, alice, tmp_path, monkeypatch):
     bad_flag = _upload(alice_client, monkeypatch, tmp_path,
                        auto_validation='on', flag='not-a-flag',
@@ -156,8 +156,22 @@ def test_auto_validation_requires_a_well_formed_flag_and_a_source_archive(
                         auto_validation='on', flag=FLAG)
 
     assert b'Invalid flag format' in bad_flag.data
-    assert b'needs a source archive' in no_source.data
-    assert db.crackme.count_documents({}) == 0
+    assert no_source.status_code == 200
+    stored = db.crackme.find_one({'name': 'Flagged Challenge'})
+    assert stored['flag'] == FLAG
+    assert stored['source_original_filename'] is None
+
+
+def test_source_archive_without_auto_validation(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    response = _upload(alice_client, monkeypatch, tmp_path,
+                       source=(_zip_bytes(), 'source.zip'))
+
+    assert response.status_code == 200
+    stored = db.crackme.find_one({'name': 'Flagged Challenge'})
+    assert stored['flag'] is None
+    assert stored['source_original_filename'] == 'source.zip'
+    assert (tmp_path / 'source' / stored['hexid']).exists()
 
 
 def test_auto_validation_requires_the_verification_file_to_be_a_zip(
@@ -972,10 +986,10 @@ def test_background_submits_get_the_confirmation_url_on_success(
     assert alice_client.get('/upload/crackme/submitted').status_code == 302
 
 
-def test_auto_validation_is_ticked_by_default_on_a_fresh_form(alice_client, alice):
+def test_auto_validation_is_unticked_by_default_on_a_fresh_form(alice_client, alice):
     body = alice_client.get('/upload/crackme').data.decode()
 
-    assert 'id="auto_validation" name="auto_validation" checked' in body
+    assert 'id="auto_validation" name="auto_validation" checked' not in body
     assert 'id="points" name="points" min="100" max="600" step="1"' in body
     # Labels sit at the end of the form, after the auto-validation block.
     assert body.index('Auto-validation') < body.index('Select all anti-analysis')
