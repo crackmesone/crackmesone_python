@@ -100,6 +100,7 @@
             </div>
             <div class="col-9 col-sm-12">
                 <textarea class="form-input" id="info" name="info" placeholder="Textarea" rows="3">{{ form.info|default('') }}</textarea>
+                <p class="form-input-hint">For a keygenme, name the required username here (for example, CrackMes1) so the accepted key is unique.</p>
             </div>
         </div>
         <div class="form-group">
@@ -108,8 +109,8 @@
             </div>
             <div class="col-9 col-sm-12">
                 <label class="form-checkbox">
-                    <input type="checkbox" id="auto_validation" name="auto_validation"{{ '' if form and not form.auto_validation else ' checked' }}>
-                    <i class="form-icon"></i> Optional. This crackme has a unique flag and can be auto-validated.
+                    <input type="checkbox" id="auto_validation" name="auto_validation"{{ ' checked' if form.auto_validation|default(false) else '' }}>
+                    <i class="form-icon"></i> Optional. Let solvers submit a unique flag for points.
                 </label>
                 <div id="auto-validation-fields" style="display: none;">
                     <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
@@ -119,12 +120,18 @@
                     <label class="form-label" for="points" style="margin-top: 8px;">Points</label>
                     <input class="form-input" type="number" id="points" name="points" min="100" max="600" step="1" value="{{ form.points|default('') }}">
                     <p class="form-input-hint">Defaults to difficulty &times; 100. You may choose any whole number from 100 to 600.</p>
-                    <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
-                        Upload a ZIP containing source code, build files, a writeup, or anything else needed to verify the flag.
-                        <b>Reviewers only</b> &mdash; it remains private.
-                    </p>
-                    <input class="form-input upload-btn" type="file" id="source" name="source">
                 </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label" for="source">Source archive (optional)</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <p class="text-gray" style="font-size: 0.8rem; margin: 6px 0;">
+                    You may upload a ZIP with source code or build notes for reviewers. This is private and independent of auto-validation.
+                </p>
+                <input class="form-input upload-btn" type="file" id="source" name="source">
             </div>
         </div>
         <div class="form-group">
@@ -156,8 +163,7 @@
 <script>LabelCheckboxes.init(document.getElementById('upload-form'));</script>
 <script>
 (function() {
-    // The flag and source inputs only mean anything once auto-validation is
-    // ticked, so keep them out of the way until then.
+    // Show flag and points only when auto-validation is selected.
     var toggle = document.getElementById('auto_validation');
     var fields = document.getElementById('auto-validation-fields');
     if (!toggle || !fields) return;
