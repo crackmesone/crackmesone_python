@@ -60,7 +60,8 @@ def change_password_post():
         return 'Could not hash new password', 500
 
     try:
-        update_user_password(username, hashed_new_password)
+        # keep *this* browser logged in; other sessions die with the bump
+        session['session_version'] = update_user_password(username, hashed_new_password)
     except Exception as e:
         print(f"Error updating user password: {e}")
         return 'Could not update password', 500

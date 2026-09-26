@@ -1079,7 +1079,10 @@ def reset_user_password(user_email):
 
     result = g_crackmesone_db.user.update_one(
         {"email": {"$regex": f"^{escaped}$", "$options": "i"}},
-        {"$set": {"password": hashed.decode('utf-8')}}
+        {
+            "$set": {"password": hashed.decode('utf-8')},
+            "$inc": {"session_version": 1},
+        },
     )
 
     if result.modified_count != 1:

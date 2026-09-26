@@ -149,7 +149,9 @@ def test_user_visibility_counts_password_and_notification_helpers(app, db, alice
     user_decrement_unread_notifications('alice', 20)
     assert user_get_unread_notifications('alice') == 0
     update_user_password('alice', 'new-hash')
-    assert db.user.find_one({'name': 'alice'})['password'] == 'new-hash'
+    alice_after = db.user.find_one({'name': 'alice'})
+    assert alice_after['password'] == 'new-hash'
+    assert alice_after['session_version'] == 1
 
 
 def test_expired_password_reset_cleanup(app, db):
