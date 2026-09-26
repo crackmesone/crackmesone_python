@@ -24,6 +24,18 @@ def test_login_does_not_redirect_to_external_referrer(client, alice):
     assert response.location == '/'
 
 
+@pytest.mark.parametrize('referrer', [
+    'http://localhost//evil.example',
+    'http://localhost/\\evil.example',
+])
+def test_login_does_not_redirect_to_protocol_relative_referrer(client, alice, referrer):
+    client.get('/login', headers={'Referer': referrer})
+    response = client.post('/login', data={
+        'name': 'alice', 'password': 'alice-password',
+    })
+    assert response.location == '/'
+
+
 def test_login_missing_and_invalid_name(client):
     missing = client.post('/login', data={'name': '', 'password': ''})
     invalid = client.post('/login', data={'name': '<script>', 'password': 'x'})
