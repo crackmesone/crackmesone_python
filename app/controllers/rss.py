@@ -1,5 +1,7 @@
 """RSS controller for the site's latest activity."""
 
+import re
+
 from datetime import datetime, timezone
 
 from flask import Blueprint, Response, current_app
@@ -130,11 +132,16 @@ def rss_activity():
     return Response(rss_content, mimetype='application/rss+xml; charset=utf-8')
 
 
+# XML 1.0 simply forbids these. escaping doesn't make them legal, and one
+# \x0b in a crackme name makes every parser reject the whole feed.
+_XML_FORBIDDEN = re.compile('[\x00-\x08\x0b\x0c\x0e-\x1f]')
+
+
 def escape_xml(text):
-    """Escape special XML characters."""
+    """Escape special XML characters, dropping characters XML 1.0 forbids."""
     if text is None:
         return ''
-    return (str(text)
+    return _XML_FORBIDDEN.sub('', str(text)
             .replace('&', '&amp;')
             .replace('<', '&lt;')
             .replace('>', '&gt;')
