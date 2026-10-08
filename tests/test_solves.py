@@ -118,6 +118,8 @@ def _upload(client, monkeypatch, tmp_path, **extra):
         'file': (BytesIO(b'challenge-binary'), 'challenge.bin'),
     }
     data.update(extra)
+    if data.get('auto_validation') and 'observed_flag' not in data:
+        data['observed_flag'] = data.get('flag', '')
     return client.post('/upload/crackme', data=data,
                        content_type='multipart/form-data',
                        follow_redirects=True)
@@ -160,6 +162,16 @@ def test_auto_validation_requires_a_well_formed_flag_but_no_source_archive(
     stored = db.crackme.find_one({'name': 'Flagged Challenge'})
     assert stored['flag'] == FLAG
     assert stored['source_original_filename'] is None
+
+
+def test_upload_rejects_a_file_flag_that_disagrees_with_the_submitted_flag(
+        alice_client, db, alice, tmp_path, monkeypatch):
+    response = _upload(alice_client, monkeypatch, tmp_path,
+                       auto_validation='on', flag=FLAG,
+                       observed_flag='CTF{wrong_format}')
+
+    assert b'flag observed from the uploaded file must match' in response.data
+    assert db.crackme.count_documents({'name': 'Flagged Challenge'}) == 0
 
 
 def test_source_archive_without_auto_validation(
@@ -519,12 +531,15 @@ def _approval_data(crackme, **overrides):
         'arch': crackme['arch'],
         'platform': crackme['platform'],
         'flag': crackme.get('flag') or '',
+        'observed_flag': crackme.get('flag') or '',
         'official_points': str(round(
             (crackme.get('official_difficulty') or 3) * 100
         )),
         'labels': crackme.get('labels', []),
     }
     data.update(overrides)
+    if 'flag' in overrides and 'observed_flag' not in overrides:
+        data['observed_flag'] = overrides['flag']
     return data
 
 
@@ -572,6 +587,24 @@ def test_approval_records_the_official_difficulty(
     assert stored['arch'] == 'ARM'
     assert stored['platform'] == 'Windows'
     assert stored['flag'] == 'CMO{reviewer_corrected}'
+
+
+def test_approval_rejects_a_mismatched_observed_file_flag(
+        reviewer_client, db, flagged_crackme, monkeypatch, tmp_path):
+    from review import routes
+
+    pending, _, _ = _review_dirs(monkeypatch, tmp_path)
+    db.crackme.update_one({'_id': flagged_crackme['_id']},
+                          {'$set': {'visible': False}})
+    (pending / 'crackme' / flagged_crackme['hexid']).write_bytes(b'binary')
+    response = reviewer_client.post(
+        '/review/approvecrackme',
+        data=_approval_data(flagged_crackme, observed_flag='CTF{different}'),
+        follow_redirects=True,
+    )
+
+    assert b'flag observed from the uploaded file must match' in response.data
+    assert db.crackme.find_one({'_id': flagged_crackme['_id']})['visible'] is False
 
 
 @pytest.mark.parametrize('points', ['99', '601', '250.5', 'many'])
@@ -795,9 +828,12 @@ def _edit(client, crackme, **overrides):
         'arch': crackme.get('arch', ''),
         'platform': crackme.get('platform', ''),
         'flag': crackme.get('flag') or '',
+        'observed_flag': crackme.get('flag') or '',
         'official_points': str(round((crackme.get('official_difficulty') or 0) * 100) or ''),
     }
     data.update(overrides)
+    if 'flag' in overrides and 'observed_flag' not in overrides:
+        data['observed_flag'] = overrides['flag']
     return client.post('/review/editcrackme', data=data,
                        content_type='multipart/form-data')
 
@@ -877,6 +913,15 @@ def test_admin_edit_rejects_a_malformed_flag_or_difficulty(
     stored = db.crackme.find_one({'_id': flagged_crackme['_id']})
     assert stored['flag'] == FLAG
     assert stored['official_difficulty'] == 3
+
+
+def test_admin_cannot_change_flag_without_matching_file_observation(
+        admin_client, db, flagged_crackme):
+    response = _edit(admin_client, flagged_crackme,
+                     flag='CMO{corrected}', observed_flag='CTF{different}')
+
+    assert b'flag observed from the crackme file must match' in response.data
+    assert db.crackme.find_one({'_id': flagged_crackme['_id']})['flag'] == FLAG
 
 
 def test_admin_replaces_the_private_source_archive(

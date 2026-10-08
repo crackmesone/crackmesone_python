@@ -109,6 +109,9 @@
                         <label class="form-label" for="flag">Flag</label>
                         <input class="form-input" type="text" id="flag" name="flag" value="{{ crackme.flag }}"
                                placeholder="{{ flag_format_hint }}">
+                        <label class="form-label" for="observed_flag">Flag observed from the crackme file</label>
+                        <input class="form-input" type="text" id="observed_flag" name="observed_flag" autocomplete="off" placeholder="CMO{...}">
+                        <p class="form-input-hint">Required when setting or changing a flag, or replacing a flagged file.</p>
                         <p class="form-input-hint">
                             The flag solvers submit for points. Leave empty (or tick below) and this crackme accepts no
                             flag submissions at all. Setting one on a crackme that had none turns auto-validation on.

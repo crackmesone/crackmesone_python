@@ -1825,6 +1825,12 @@ def approvecrackme(current_user):
                 'reviewer.viewcrackme', crackme_uuid=crackme_uuid,
                 message=f"Invalid flag format. {FLAG_FORMAT_HINT}"
             ))
+        observed_flag = normalize_flag(request.form.get('observed_flag', ''))
+        if not is_valid_flag_format(observed_flag) or observed_flag != flag:
+            return redirect(url_for(
+                'reviewer.viewcrackme', crackme_uuid=crackme_uuid,
+                message='The flag observed from the uploaded file must match the stored CMO flag.'
+            ))
         updates['flag'] = flag
 
     # Reviewers may adjust the author's proposed reward before approval. The
@@ -2355,6 +2361,11 @@ def _apply_crackme_edit(current_user, crackme_obj, request):
         if flag and not is_valid_flag_format(flag):
             return f"Invalid flag format. {FLAG_FORMAT_HINT}", None
         updates['flag'] = flag or None
+        replacing_file = bool(request.files.get('file') and request.files['file'].filename)
+        if flag and (flag != crackme_obj.get('flag') or replacing_file):
+            observed_flag = normalize_flag(request.form.get('observed_flag', ''))
+            if not is_valid_flag_format(observed_flag) or observed_flag != flag:
+                return "The flag observed from the crackme file must match the stored CMO flag.", None
 
     # Replacement source archive (reviewer-only, never published)
     source_data = None

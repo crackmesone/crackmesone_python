@@ -81,6 +81,10 @@
                         <label class="form-label" for="flag">Flag</label>
                         <input class="form-input" type="text" id="flag" name="flag" value="{{ crackme.flag }}" required>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="observed_flag">Flag independently observed from the downloaded crackme</label>
+                        <input class="form-input" type="text" id="observed_flag" name="observed_flag" required autocomplete="off" placeholder="CMO{...}">
+                    </div>
                     {% else %}
                     <p>The author did not enable auto-validation.</p>
                     {% endif %}

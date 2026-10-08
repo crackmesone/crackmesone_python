@@ -252,6 +252,7 @@ def _submitted_form_values():
         'labels': normalize_labels(request.form.getlist('labels')),
         'auto_validation': bool(request.form.get('auto_validation')),
         'flag': request.form.get('flag', ''),
+        'observed_flag': request.form.get('observed_flag', ''),
         'points': request.form.get('points', ''),
     }
 
@@ -327,6 +328,11 @@ def upload_crackme_post():
         flag = normalize_flag(request.form.get('flag', ''))
         if not is_valid_flag_format(flag):
             return _upload_rejected(f'Invalid flag format. {FLAG_FORMAT_HINT}')
+        observed_flag = normalize_flag(request.form.get('observed_flag', ''))
+        if not is_valid_flag_format(observed_flag) or observed_flag != flag:
+            return _upload_rejected(
+                'The flag observed from the uploaded file must match the submitted CMO flag.'
+            )
 
         points_value = request.form.get('points') or str(diff_int * 100)
         try:

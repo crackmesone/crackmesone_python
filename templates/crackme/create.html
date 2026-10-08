@@ -117,6 +117,8 @@
                         Players submit the flag to earn points. Only reviewers can see it.
                     </p>
                     <input class="form-input" type="text" id="flag" name="flag" placeholder="CMO{your_crackmes_flag}" value="{{ form.flag|default('') }}">
+                    <label class="form-label" for="observed_flag" style="margin-top: 8px;">Flag observed from the uploaded file</label>
+                    <input class="form-input" type="text" id="observed_flag" name="observed_flag" placeholder="Run or inspect your file and enter its exact output" value="{{ form.observed_flag|default('') }}">
                     <label class="form-label" for="points" style="margin-top: 8px;">Points</label>
                     <input class="form-input" type="number" id="points" name="points" min="100" max="600" step="1" value="{{ form.points|default('') }}">
                     <p class="form-input-hint">Defaults to difficulty &times; 100. You may choose any whole number from 100 to 600.</p>
