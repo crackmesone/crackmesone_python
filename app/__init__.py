@@ -10,7 +10,7 @@ from flask_wtf.csrf import CSRFProtect
 
 from app.services.database import init_db
 from app.services.session import init_session
-from app.services.recaptcha import init_recaptcha
+from app.services.altcha import init_altcha, is_enabled as altcha_enabled, register_altcha
 from app.services.limiter import init_limiter
 from app.services.discord import init_discord
 from app.services.email import configure as configure_email
@@ -52,7 +52,7 @@ def create_app(config_path=None, config=None):
     # Initialize services
     init_db(app, config['Database'])
     init_session(app, config['Session'])
-    init_recaptcha(app, config['Recaptcha'])
+    init_altcha(app, config.get('Altcha', {}))
     init_limiter(app, config.get('RateLimiter', {}))
     init_discord(app, config.get('Discord'))
 
@@ -64,6 +64,7 @@ def create_app(config_path=None, config=None):
     # Register blueprints
     from app.controllers import register_blueprints
     register_blueprints(app)
+    register_altcha(app)
 
     # Register reviewer blueprint (separate authentication system)
     reviewer_config = config.get('Reviewer', {})
@@ -98,7 +99,11 @@ def create_app(config_path=None, config=None):
             'AuthLevel': 'auth' if username else 'anon',
             'usersess': username,
             'unread_notifications': unread_notifs,
-            'RECAPTCHA_SITEKEY': config['Recaptcha'].get('SiteKey', '') if config['Recaptcha'].get('Enabled') else '',
+            'ALTCHA_CRACKME': altcha_enabled('Crackme'),
+            'ALTCHA_WRITEUP': altcha_enabled('Writeup'),
+            'ALTCHA_REGISTER': altcha_enabled('Register'),
+            'ALTCHA_COMMENT': altcha_enabled('Comment'),
+            'ALTCHA_WIDGET_URL': config.get('Altcha', {}).get('WidgetUrl', 'https://cdn.jsdelivr.net/npm/altcha@3.2.1/dist/main/altcha.min.js'),
             'DIFFICULTY_CHOICES': DIFFICULTY_CHOICES,
             'LANG_CHOICES': LANG_CHOICES,
             'ARCH_CHOICES': ARCH_CHOICES,

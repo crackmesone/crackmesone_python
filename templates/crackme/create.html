@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Upload crackme{% endblock %}
 {% block page_title %}Upload crackme{% endblock %}
-{% block head %}{% endblock %}
+{% block head %}
+{% if ALTCHA_CRACKME %}<script type="module" src="{{ ALTCHA_WIDGET_URL }}"></script>{% endif %}
+{% endblock %}
 {% block content %}
 
 <div class="container grid-lg wrapper">
@@ -11,7 +13,7 @@
     <h3>Quick Rules</h3>
     <ol>
         <li>Submit only <b>original educational crackmes</b> - NOT game cheats/mods, NOT commercial software cracks</li>
-        <li>Maximum file size: <b>5 MB</b></li>
+        <li>Maximum file size: <b>10 MB</b></li>
         <li>Must be <b>your original work</b> that you created</li>
         <li><b>No commercial packers/protectors</b> (Themida, VMProtect, etc.)</li>
         <li>You must be able to <b>solve your own crackme</b></li>
@@ -151,8 +153,8 @@
                 </div>
             </div>
         </div>
-        {% if RECAPTCHA_SITEKEY %}
-        <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
+        {% if ALTCHA_CRACKME %}
+        <altcha-widget challenge="{{ url_for('altcha_challenge', scope='Crackme') }}" auto="onload" language="en"></altcha-widget>
         </br></br></br></br>
         {% endif %}
         <input type="submit" id="upload-submit" class="btn active float-right" value="Upload a crackme">
@@ -205,9 +207,10 @@
         errors.textContent = text;
         errors.style.display = 'block';
         errors.scrollIntoView({ block: 'center' });
-        // A used reCAPTCHA token is spent, so the widget needs a fresh one
+        // A submitted ALTCHA proof is single-use, so refresh after any upload error
         // before the user can try again.
-        if (window.grecaptcha) { try { window.grecaptcha.reset(); } catch (e) {} }
+        var widget = form.querySelector('altcha-widget');
+        if (widget && typeof widget.reset === 'function') widget.reset();
     }
 
     form.addEventListener('submit', function(e) {

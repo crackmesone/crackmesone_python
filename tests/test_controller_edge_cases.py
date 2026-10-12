@@ -73,13 +73,13 @@ def test_registration_rejects_invalid_chars_and_recaptcha(client):
         'name': 'bad name', 'email': 'valid@example.test', 'password': 'password123',
         'password_verify': 'password123',
     })
-    with patch('app.controllers.register.verify_recaptcha', return_value=False):
+    with patch('app.controllers.register.verify_altcha', return_value=False):
         captcha = client.post('/register', data={
             'name': 'valid', 'email': 'valid@example.test', 'password': 'password123',
             'password_verify': 'password123',
         })
     assert b'Non allowed chars' in invalid.data
-    assert b'reCAPTCHA invalid' in captcha.data
+    assert b'ALTCHA invalid' in captcha.data
 
 
 def test_registration_hash_and_create_failures(client):
@@ -148,7 +148,7 @@ def test_crackme_view_download_and_lasts(client, db, sample_crackme):
 def test_comment_validation_sanitization_and_recaptcha(
         bob_client, db, sample_crackme, bob):
     missing = bob_client.post(f"/comment/{sample_crackme['hexid']}", data={})
-    with patch('app.controllers.comment.verify_recaptcha', return_value=False):
+    with patch('app.controllers.comment.verify_altcha', return_value=False):
         captcha = bob_client.post(
             f"/comment/{sample_crackme['hexid']}", data={'comment': 'hello'}
         )
@@ -231,7 +231,7 @@ def test_solution_rejects_long_summary_and_recaptcha(alice_client, db, sample_cr
         f"/upload/solution/{sample_crackme['hexid']}",
         data={'info': 'x' * 201, 'content': 'a' * 200},
     )
-    with patch('app.controllers.solution.verify_recaptcha', return_value=False):
+    with patch('app.controllers.solution.verify_altcha', return_value=False):
         captcha = alice_client.post(
             f"/upload/solution/{sample_crackme['hexid']}",
             data={'info': 'Summary', 'content': 'a' * 200},

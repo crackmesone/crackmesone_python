@@ -3,10 +3,12 @@ pymongo==4.6.1
 Flask-WTF==1.2.1
 Flask-Login==0.6.3
 Flask-Limiter==3.5.0
+redis==5.0.8  # Shared rate limits across Gunicorn workers
 bcrypt==4.1.2
 python-dotenv==1.0.0
 bleach==6.1.0
 requests==2.31.0
+altcha==2.3.0  # Self-hosted ALTCHA v2 server-side PoW verification
 Werkzeug==3.0.1
 resend==2.0.0
 rustyzipper==1.0.6

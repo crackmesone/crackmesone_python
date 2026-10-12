@@ -4,7 +4,7 @@ The source code for [crackmes.one](https://crackmes.one), a platform for sharing
 
 ## Requirements
 
-- Python 3.8+
+- Python 3.9+
 - MongoDB 4.0+
 - `zip` command (for creating password-protected archives when approving submissions)
 
@@ -24,7 +24,8 @@ pip install -r requirements.txt
 3. Configure the application:
    - Edit `config/config.json` with your settings
    - Set up MongoDB connection details
-   - Configure reCAPTCHA if needed (set `Enabled: true`)
+   - Generate two independent local ALTCHA signing secrets before setting `Altcha.Enabled: true` (see `ALTCHA_DEPLOYMENT.md`)
+   - For production with multiple Gunicorn workers, configure a shared rate-limit backend such as Redis (the sample `memory://` URI is for development only)
    - Configure Discord webhook for notifications (optional)
    - Set a secure `SecretKey` for sessions
 
@@ -161,9 +162,23 @@ Edit `config/config.json`:
 - **Server.Port**: Port to run on (default: `8081`)
 - **Session.SecretKey**: Secret key for session signing (change in production!)
 - **Session.CookieName**: Session cookie name
-- **Recaptcha.Enabled**: Enable/disable reCAPTCHA
-- **Recaptcha.SiteKey**: Your reCAPTCHA site key
-- **Recaptcha.Secret**: Your reCAPTCHA secret key
+- **Altcha.Enabled**: Master switch for the self-hosted ALTCHA v2 proof-of-work CAPTCHA (default: false).
+- **Altcha.HmacSecret / HmacKeySecret**: Two independent, random, server-only secrets (at least 32 characters each). No Google account, API key or network verification required.
+- **Altcha.Protect**: Independent switches for `Crackme`, `Writeup`, `Register`, `Comment`. Missing entries default to enabled when the master switch is on.
+- **Altcha.Cost / MinCounter / MaxCounter / ExpiresMinutes**: Controls the PBKDF2 work factor and challenge expiry. Keep parameters within the documented limits.
+- **RateLimiter.StorageUri**: Use `redis://127.0.0.1:6379/0` (or a shared backend) with multiple Gunicorn workers. `memory://` is for development only.
+
+#### Self-hosted ALTCHA deployment
+
+1. Generate **two different** secrets locally, e.g. run `python -c 'import secrets; print(secrets.token_hex(32))'` twice. Never commit the secrets. Store them in the private `config/config.json` (or inject them securely during deployment).
+2. Replace the sample blank `Altcha.HmacSecret` and `Altcha.HmacKeySecret`, set `Altcha.Enabled` to `true`, and configure `Altcha.Protect`. The example protects crackme and writeup submissions, not comments or registration.
+3. Ensure the `altcha==2.3.0` Python dependency is installed (`pip install -r requirements.txt` in a virtualenv). Frontend templates use ALTCHA widget v3.2.1 from a **version-pinned jsDelivr static CDN**. The actual single-file module is under `dist/main/altcha.min.js`, **not** `dist/altcha.min.js`. This has no verification API/key, but loading that script does require internet access from visitors. For a strictly self-hosted/no-third-party-request deployment, download that *exact* widget release into `static/vendor/altcha.min.js` and set `Altcha.WidgetUrl` to `/static/vendor/altcha.min.js`. Confirm the upstream license when vendoring.
+4. MongoDB is mandatory for replay protection: each accepted challenge signature is inserted into the `altcha_used` collection using a unique `_id`. A TTL index removes the consumed entries after they expire. A database failure rejects submissions rather than allowing replay. This works across multiple Gunicorn workers.
+5. Use **HTTPS** (or `localhost` during local testing) for the browser's WebCrypto. Test challenge generation (`GET /altcha/challenge/Crackme`), normal upload, missing token, replayed token, expired token and your existing rate limits. Rate-limit storage remains independent of the CAPTCHA replay registry.
+6. Execute `python -m pytest -q` using the project environment before opening a PR. Tests use real locally solved ALTCHA challenges and simulated MongoDB, without external CAPTCHA services. A final manual browser smoke test is still essential.
+
+The widget adds a base64 `altcha` field to each protected form. The server verifies its signature, expiry, per-form secret, and solution; then **atomically consumes it** in MongoDB. JavaScript form handlers reset the widget after failed AJAX submissions so the user can retry without losing the file selection or writeup text. ALTCHA's proof of work raises the cost of automated abuse, but does not replace CSRF protection, moderation or rate limiting.
+
 - **Discord.Enabled**: Enable/disable Discord notifications for new submissions
 - **Discord.WebhookURL**: Your Discord webhook URL (get from Discord channel settings → Integrations → Webhooks)
 - **Reviewer.Enabled**: Enable/disable the reviewer tool (for moderating submissions)
@@ -241,3 +256,7 @@ Please see [SECURITY.md](SECURITY.md) for instructions on reporting security iss
 ## Previous Codebase
 
 The site was originally written in Go. The old codebase is archived at [crackmesone/crackmes.one](https://github.com/crackmesone/crackmes.one).
+
+## ALTCHA rollout
+
+See [`ALTCHA_DEPLOYMENT.md`](ALTCHA_DEPLOYMENT.md) for secure configuration, offline asset hosting, rollout and rollback.

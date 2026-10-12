@@ -14,7 +14,7 @@ from app.models.crackme import (
 )
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
-from app.services.recaptcha import verify as verify_recaptcha
+from app.services.altcha import verify as verify_altcha
 from app.services.limiter import limit
 from app.services.discord import notify_new_comment, notify_spoiler_toggle
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, validate_required
@@ -76,9 +76,9 @@ def leave_comment(hexid):
         flash(f'Field missing: {missing}', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
-    # Validate reCAPTCHA
-    if not verify_recaptcha(request):
-        flash('reCAPTCHA invalid!', FLASH_ERROR)
+    # Validate ALTCHA
+    if not verify_altcha(request, 'Comment'):
+        flash('ALTCHA invalid!', FLASH_ERROR)
         return redirect(f'/crackme/{hexid}')
 
     comment_text = bleach.clean(request.form.get('comment', ''))

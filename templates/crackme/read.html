@@ -2,6 +2,7 @@
 {% block title %}{{ username }}'s {{ name }}{% endblock %}
 {% block page_title %}{{ username }}'s {{ name }}{% endblock %}
 {% block head %}
+{% if ALTCHA_COMMENT %}<script type="module" src="{{ ALTCHA_WIDGET_URL }}"></script>{% endif %}
 <meta property="og:description" content="{{ info }}"/>
 {% endblock %}
 {% block content %}
@@ -376,8 +377,8 @@
                             <i class="form-icon"></i> Mark as spoiler (hides content until clicked)
                         </label>
                         <input type="submit" class="btn active float-right" value="Post a comment">
-                        {% if RECAPTCHA_SITEKEY %}
-                        <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
+                        {% if ALTCHA_COMMENT %}
+                        <altcha-widget challenge="{{ url_for('altcha_challenge', scope='Comment') }}" auto="onload" language="en"></altcha-widget>
                         {% endif %}
                     </form>
                 </div>

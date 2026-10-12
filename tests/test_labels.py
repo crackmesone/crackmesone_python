@@ -186,7 +186,7 @@ def test_upload_form_lists_classes_and_sublabels(alice_client):
 
 def test_upload_stores_sublabel_labels(alice_client, db, monkeypatch):
     import app.controllers.crackme as cc
-    monkeypatch.setattr(cc, "verify_recaptcha", lambda req: True)
+    monkeypatch.setattr(cc, "verify_altcha", lambda req, scope=None: True)
 
     from io import BytesIO
     # A two-file zip passes the archive checks; content is irrelevant here.
@@ -212,7 +212,7 @@ def test_upload_stores_sublabel_labels(alice_client, db, monkeypatch):
 def test_upload_allows_no_labels(alice_client, db, monkeypatch):
     # Labels are not mandatory: a crackme with no matching technique may have none.
     import app.controllers.crackme as cc
-    monkeypatch.setattr(cc, "verify_recaptcha", lambda req: True)
+    monkeypatch.setattr(cc, "verify_altcha", lambda req, scope=None: True)
 
     from io import BytesIO
     import zipfile

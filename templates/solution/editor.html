@@ -2,6 +2,7 @@
 {% block title %}Submit a Writeup{% endblock %}
 {% block page_title %}Submit a Writeup{% endblock %}
 {% block head %}
+{% if ALTCHA_WRITEUP %}<script type="module" src="{{ ALTCHA_WIDGET_URL }}"></script>{% endif %}
 <script src="{{ url_for('static', filename='js/marked-15.0.0.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/dompurify-3.0.6.min.js') }}"></script>
 {% endblock %}
@@ -75,10 +76,10 @@ print('Hello, World!')
                 <span class="text-gray" style="font-size: 0.85em;">Optional supporting files (scripts, keygen, screenshots). No patched PE binaries. Max 10MB.</span>
             </div>
         </div>
-        {% if RECAPTCHA_SITEKEY %}
-        <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}" style="margin-bottom: 1rem;"></div>
+        {% if ALTCHA_WRITEUP %}
+        <altcha-widget challenge="{{ url_for('altcha_challenge', scope='Writeup') }}" auto="onload" language="en"></altcha-widget>
         {% endif %}
-        <button type="submit" id="upload-submit" class="btn active float-right" style="{% if RECAPTCHA_SITEKEY %}margin-top: 4.5rem;{% endif %}">Submit Writeup</button>
+        <button type="submit" id="upload-submit" class="btn active float-right">Submit Writeup</button>
     </form>
 </div>
 
@@ -198,7 +199,8 @@ print('Hello, World!')
         errors.textContent = text;
         errors.style.display = 'block';
         errors.scrollIntoView({ block: 'center' });
-        if (window.grecaptcha) { try { window.grecaptcha.reset(); } catch (e) {} }
+        var widget = form.querySelector('altcha-widget');
+        if (widget && typeof widget.reset === 'function') widget.reset();
     }
 
     updateCharCount();

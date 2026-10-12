@@ -50,3 +50,11 @@ b) the Mozilla Public License Version 2.0
 
 This project uses DOMPurify under the Apache License Version 2.0. A copy of
 the Apache License Version 2.0 is included in this repository's `LICENSE` file.
+
+## ALTCHA (optional vendored JavaScript)
+
+- Script: `static/js/altcha-3.2.1.min.js` (installed via
+  `python script/vendor_altcha_widget.py`, not bundled by default)
+- Source: https://github.com/altcha-org/altcha ; npm version 3.2.1
+- License: MIT. The corresponding upstream license text must be committed as
+  `static/js/altcha-3.2.1.LICENSE.txt` alongside the script if vendored.

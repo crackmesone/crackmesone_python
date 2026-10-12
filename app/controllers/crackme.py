@@ -30,7 +30,7 @@ from app.models.flag_submission import (
 )
 from app.models.user import user_by_name, users_by_hexids
 from app.models.errors import ErrNoResult
-from app.services.recaptcha import verify as verify_recaptcha
+from app.services.altcha import verify as verify_altcha
 from app.services.limiter import configured_limit, limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, FLASH_NOTICE, validate_required
 from app.services.labels import get_label_groups, get_dataset_url, normalize_labels
@@ -287,9 +287,9 @@ def upload_crackme_post():
     except (ValueError, TypeError):
         return _upload_rejected('Wrong difficulty')
 
-    # Validate reCAPTCHA
-    if not verify_recaptcha(request):
-        return _upload_rejected('reCAPTCHA invalid!')
+    # Validate ALTCHA
+    if not verify_altcha(request, 'Crackme'):
+        return _upload_rejected('ALTCHA invalid!')
 
     # Check for file
     if 'file' not in request.files:

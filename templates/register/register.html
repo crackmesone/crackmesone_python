@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Create an Account{% endblock %}
 {% block page_title %}Create an Account{% endblock %}
-{% block head %}{% endblock %}
+{% block head %}
+{% if ALTCHA_REGISTER %}<script type="module" src="{{ ALTCHA_WIDGET_URL }}"></script>{% endif %}
+{% endblock %}
 {% block content %}
 
 <div class="container grid-lg wrapper">
@@ -41,8 +43,8 @@
                         <input class="form-input" type="password" id="password_verify" name="password_verify" placeholder="password" required>
                     </div>
                 </div>
-                {% if RECAPTCHA_SITEKEY %}
-                <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
+                {% if ALTCHA_REGISTER %}
+                <altcha-widget challenge="{{ url_for('altcha_challenge', scope='Register') }}" auto="onload" language="en"></altcha-widget>
                 </br></br></br></br>
                 {% endif %}
                 <input type="submit" class="btn active float-right" value="Register a new account">

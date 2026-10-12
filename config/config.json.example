@@ -11,11 +11,6 @@
         "SecretKey": "change-this-to-a-secure-random-string",
         "CookieName": "crackmesone"
     },
-    "Recaptcha": {
-        "Enabled": false,
-        "SiteKey": "your-recaptcha-site-key",
-        "Secret": "your-recaptcha-secret"
-    },
     "RateLimiter": {
         "Enabled": true,
         "StorageUri": "memory://",
@@ -43,5 +38,21 @@
     },
     "Writeup": {
         "ObfuscationSalt": "change-this-to-a-secure-random-salt"
+    },
+    "Altcha": {
+        "Enabled": false,
+        "HmacSecret": "",
+        "HmacKeySecret": "",
+        "Cost": 500,
+        "MinCounter": 250,
+        "MaxCounter": 750,
+        "ExpiresMinutes": 20,
+        "Protect": {
+            "Crackme": true,
+            "Writeup": true,
+            "Register": false,
+            "Comment": false
+        },
+        "WidgetUrl": "https://cdn.jsdelivr.net/npm/altcha@3.2.1/dist/main/altcha.min.js"
     }
 }

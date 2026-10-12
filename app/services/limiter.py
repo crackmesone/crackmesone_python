@@ -25,14 +25,16 @@ Rate limiting can be enabled/disabled via config.json:
 
     "RateLimiter": {
         "Enabled": true,
-        "StorageUri": "memory://"
+        "StorageUri": "redis://127.0.0.1:6379/0"
     }
 
 Storage options:
-- "memory://" - In-memory storage (default, suitable for single instance)
+- "memory://" - In-memory storage (fallback, single-process development only)
 - "redis://localhost:6379" - Redis storage (recommended for production)
 - "mongodb://localhost:27017" - MongoDB storage
 """
+
+import logging
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -74,7 +76,12 @@ def init_limiter(app, config):
         )
         return
 
-    storage_uri = config.get('StorageUri', 'memory://')
+    storage_uri = limiter_config['StorageUri']
+    if storage_uri.startswith('memory://'):
+        logging.getLogger(__name__).warning(
+            'Rate limiting uses memory:// and is not shared across workers; '
+            'configure a Redis storage URI for production.'
+        )
 
     limiter = Limiter(
         key_func=get_remote_address,

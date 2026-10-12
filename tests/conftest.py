@@ -16,7 +16,7 @@ def _test_config(mongo_client, database_name):
             'Name': database_name,
             'Client': mongo_client,
         },
-        'Recaptcha': {'Enabled': False, 'SiteKey': '', 'Secret': ''},
+        'Altcha': {'Enabled': False},
         'Session': {'SecretKey': 'test-secret-key', 'CookieName': 'test-session'},
         'RateLimiter': {'Enabled': False, 'StorageUri': 'memory://'},
         'Discord': {'Enabled': False},
@@ -66,11 +66,11 @@ def client(app):
 @pytest.fixture(autouse=True)
 def reset_external_service_config(app):
     """Prevent tests that change process-global service config leaking state."""
-    from app.services.recaptcha import init_recaptcha
+    from app.services.altcha import init_altcha
     from review import auth, routes
     from app.services.labels import reload_vocabulary
 
-    init_recaptcha(app, app.config['APP_CONFIG']['Recaptcha'])
+    init_altcha(app, app.config['APP_CONFIG']['Altcha'])
     auth.configure(routes.users)
     # The label vocabulary is cached per-process; drop it so each test re-reads
     # the (usually empty -> default) vocabulary against its fresh database.

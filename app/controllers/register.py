@@ -8,7 +8,7 @@ from flask import Blueprint, render_template, request, redirect, flash, session
 from app.models.user import user_by_name, user_by_mail, user_create
 from app.models.errors import ErrNoResult
 from app.services.passhash import hash_string
-from app.services.recaptcha import verify as verify_recaptcha
+from app.services.altcha import verify as verify_altcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, authorized_chars_only
 from app.controllers.decorators import anonymous_required
@@ -65,9 +65,9 @@ def register_post():
         flash('Passwords do not match', FLASH_ERROR)
         return render_template('register/register.html', name=name, email=email)
 
-    # Validate reCAPTCHA
-    if not verify_recaptcha(request):
-        flash('reCAPTCHA invalid!', FLASH_ERROR)
+    # Validate ALTCHA
+    if not verify_altcha(request, 'Register'):
+        flash('ALTCHA invalid!', FLASH_ERROR)
         return render_template('register/register.html', name=name, email=email)
 
     # Check authorized characters

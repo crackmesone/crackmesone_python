@@ -17,7 +17,7 @@ from app.models.solution import solution_create, solution_exists, solution_by_he
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
 from app.services.database import get_collection
-from app.services.recaptcha import verify as verify_recaptcha
+from app.services.altcha import verify as verify_altcha
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, is_valid_hexid
 from app.services.archive import is_archive_password_protected, is_pe_file, is_single_file_archive, is_unsupported_archive
@@ -173,8 +173,8 @@ def upload_solution_post(hexidcrackme):
             "You've already submitted a solution to this crackme", redirect_url
         )
 
-    if not verify_recaptcha(request):
-        return _submission_rejected('reCAPTCHA invalid!', redirect_url)
+    if not verify_altcha(request, 'Writeup'):
+        return _submission_rejected('ALTCHA invalid!', redirect_url)
 
     # Summary
     info = bleach.clean(request.form.get('info', ''))

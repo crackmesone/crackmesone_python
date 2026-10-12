@@ -33,17 +33,17 @@ def test_flag_submission_limit_has_default_and_config_override(monkeypatch):
     })
     assert service.configured_limit('FlagSubmissions') == '2 per minute; 8 per hour'
 
-def test_recaptcha_configuration_accessors(app):
-    from app.services import recaptcha
+def test_altcha_configuration_accessors(app):
+    from app.services import altcha
 
-    recaptcha.init_recaptcha(app, {
-        'Enabled': True, 'SiteKey': 'site-key', 'Secret': 'secret',
+    altcha.init_altcha(app, {
+        'Enabled': True, 'HmacSecret': 'secret' * 8,
     })
-    assert recaptcha.read_config()['Secret'] == 'secret'
-    assert recaptcha.is_enabled() is True
-    assert recaptcha.get_site_key() == 'site-key'
-    recaptcha.init_recaptcha(app, {'Enabled': False})
-    assert recaptcha.get_site_key() == ''
+    assert altcha.read_config()['HmacSecret'] == 'secret' * 8
+    assert altcha.is_enabled() is True
+    assert altcha.is_enabled('Crackme') is True
+    altcha.init_altcha(app, {'Enabled': False})
+    assert altcha.is_enabled() is False
 
 
 def test_crypto_default_salt_and_key_are_deterministic():
