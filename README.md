@@ -228,6 +228,39 @@ Alternatively, an existing admin can add new reviewers through the web interface
 | Reset user passwords | No | Yes |
 | Manage reviewer accounts | No | Yes |
 
+#### Cleaning review files left by previous account deletions
+
+Account deletion removes both pending uploads and approved archives, including
+private source archives and attached solutions. A filesystem error stops the
+operation and reports an error so it can be retried after fixing permissions.
+Deletion is not transactional: items already removed are not rolled back.
+
+Older versions could delete a crackme's database record while leaving its file
+in `tmp/crackme`. This inflated the dashboard count and produced
+`uuid not found in db` errors in the review queue. No database migration is needed.
+
+Use the application virtual environment and the same `config/config.json` as
+the running site. From the project root, preview the affected files:
+
+```bash
+python script/cleanup_orphaned_pending_files.py
+```
+
+Pause uploads (for example, stop the application service and allow in-flight
+requests to finish), then apply the cleanup:
+
+```bash
+python script/cleanup_orphaned_pending_files.py --apply
+```
+
+Restart the application with the updated code. The script moves only files
+without a corresponding database record into a new private directory under
+`private/orphaned_submissions/`; it prints that directory and preserves relative
+paths for recovery. It never changes database documents or published archives.
+By default, files newer than five minutes are skipped to avoid uploads awaiting
+their database insert. With uploads stopped, add `--min-age-seconds 0` to include
+recent orphans. `--root` and `--config` support non-default deployment paths.
+
 ## Contributing
 
 Interested in contributing? Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. **Note:** You must contact the maintainer before starting any work.

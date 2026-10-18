@@ -202,6 +202,27 @@ def delete_source_archive(hexid):
         pass
 
 
+def _delete_submission_files(item_type, hexid):
+    """Remove pending and published files before deleting their DB record.
+
+    Missing files are harmless (including markdown-only solutions). Other
+    filesystem errors must stop deletion so the account can be retried.
+    """
+    hexid = str(ObjectId(hexid))
+    paths = [
+        os.path.join(get_tmp_dir(item_type), hexid),
+        os.path.join(get_static_dir(item_type), f'{hexid}.zip'),
+    ]
+    if item_type == 'crackme':
+        paths.append(os.path.join(get_source_dir(), hexid))
+
+    for path in paths:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+
+
 def find_pending_file(item_type, hexid):
     """
     Find a pending submission file by its hexid.
@@ -889,10 +910,10 @@ def approve_pending_solution(hexid):
 
 def delete_approved_solution(solution_uuid):
     """
-    Delete an already-approved solution.
+    Delete a solution, including pending submissions during account deletion.
 
-    Removes the solution from database, deletes the zip file,
-    and decrements the crackme's solution count.
+    Removes pending/published files and the database record. Only approved
+    solutions contribute to the crackme's public solution count.
 
     Args:
         solution_uuid: Solution's hex ID
@@ -911,22 +932,13 @@ def delete_approved_solution(solution_uuid):
         return "Solution not found in database"
 
     crackme_id = solution.get("crackmeid")
-    zip_path = os.path.join(
-        get_static_dir('solution'),
-        f"{solution_uuid}.zip"
-    )
-
-    # Delete zip file (if exists)
-    try:
-        os.remove(zip_path)
-    except Exception:
-        pass
+    _delete_submission_files('solution', solution_uuid)
 
     # Delete from database
     g_crackmesone_db.solution.delete_one({"_id": ObjectId(solution_uuid)})
 
-    # Decrement crackme solution count (always, as long as solution was in database)
-    if crackme_id:
+    # Legacy approved solutions may not have an explicit visibility field.
+    if crackme_id and solution.get('visible', True):
         try:
             g_crackmesone_db.crackme.update_one(
                 {"_id": crackme_id},
@@ -940,9 +952,10 @@ def delete_approved_solution(solution_uuid):
 
 def delete_approved_crackme(crackme_uuid):
     """
-    Delete an already-approved crackme with cascade deletion.
+    Delete a pending or approved crackme with cascade deletion.
 
-    Deletes the crackme, all its solutions, comments, and ratings.
+    Deletes pending/published files, private source, the crackme, and its
+    solutions, comments, ratings and solve records.
 
     Args:
         crackme_uuid: Crackme's hex ID
@@ -953,6 +966,7 @@ def delete_approved_crackme(crackme_uuid):
     if not ObjectId.is_valid(crackme_uuid):
         return "Invalid crackme uuid"
 
+    crackme_uuid = str(ObjectId(crackme_uuid))
     crackme = g_crackmesone_db.crackme.find_one({
         "_id": ObjectId(crackme_uuid)
     })
@@ -960,22 +974,13 @@ def delete_approved_crackme(crackme_uuid):
     if not crackme:
         return "Crackme uuid not found"
 
+    _delete_submission_files('crackme', crackme_uuid)
+
     # Cascade delete related data
     deleted = _cascade_delete_crackme_data(
         ObjectId(crackme_uuid),
         crackme_uuid
     )
-
-    # Delete zip file
-    try:
-        os.remove(os.path.join(
-            get_static_dir('crackme'),
-            f"{crackme_uuid}.zip"
-        ))
-    except Exception:
-        pass
-
-    delete_source_archive(crackme_uuid)
 
     # Delete crackme document
     g_crackmesone_db.crackme.delete_one({"_id": ObjectId(crackme_uuid)})
@@ -1012,11 +1017,9 @@ def _cascade_delete_crackme_data(crackme_id, crackme_hexid):
 
     # Delete solutions
     for solution in g_crackmesone_db.solution.find({'crackmeid': crackme_id}):
-        try:
-            delete_approved_solution(str(solution["_id"]))
-            deleted['solutions'] += 1
-        except Exception as e:
-            print(f"Warning: Failed to delete solution {solution['_id']}: {e}")
+        # Do not orphan a solution if its files could not be removed.
+        delete_approved_solution(str(solution["_id"]))
+        deleted['solutions'] += 1
 
     # Delete comments
     result = g_crackmesone_db.comment.delete_many({
