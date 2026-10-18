@@ -528,3 +528,8 @@ h3:hover .anchor-link {
     margin-top: 10px;
     margin-bottom: 8px;
 }
+
+/* Keep unbroken comment text inside its container, including revealed spoilers. */
+#comments {
+    overflow-wrap: anywhere;
+}
