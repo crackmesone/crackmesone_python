@@ -11,24 +11,24 @@ def init_session(app, config):
     app.config['SECRET_KEY'] = config.get('SecretKey', 'change-me-in-production')
     # Session options can be extended here
 
-
+# NOTE: Unused function (only tests)
 def get_session():
     """Get the current session."""
     return flask_session
 
-
+# NOTE: Unused function (only tests)
 def clear_session():
     """Clear main site auth session keys only."""
     flask_session.pop('name', None)
     flask_session.pop('email', None)
     flask_session.pop('login_attempt', None)
 
-
+# NOTE: Unused function (only tests)
 def get_username():
     """Get the current logged-in username."""
     return flask_session.get('name')
 
-
+# NOTE: Unused function (only tests)
 def is_authenticated():
     """Check if user is authenticated."""
     return flask_session.get('name') is not None

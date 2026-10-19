@@ -8,6 +8,9 @@ import os
 from flask import Flask
 from flask_wtf.csrf import CSRFProtect
 
+from flask import session
+from app.models.user import is_session_valid
+
 from app.services.database import init_db
 from app.services.session import init_session
 from app.services.recaptcha import init_recaptcha
@@ -104,6 +107,19 @@ def create_app(config_path=None, config=None):
             'ARCH_CHOICES': ARCH_CHOICES,
             'PLATFORM_CHOICES': PLATFORM_CHOICES,
         }
+
+    @app.before_request
+    def validate_session():
+        """Check the session before every request is handled"""
+        name = session.get("name")
+        sess_id = session.get("sess_id")
+
+        if not name or not sess_id:
+            return
+
+        # clear invalid session
+        if not is_session_valid(name, sess_id):
+            session.clear()
 
     # Register template filters
     register_filters(app)
