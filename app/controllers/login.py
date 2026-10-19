@@ -5,12 +5,13 @@ Login controller - User authentication.
 from urllib.parse import urlparse
 
 from flask import Blueprint, render_template, request, redirect, flash, session
-from app.models.user import user_by_name, user_by_mail
+from app.models.user import user_by_name, user_by_mail, add_user_session, remove_user_session
 from app.models.errors import ErrNoResult
 from app.services.passhash import match_string
 from app.services.limiter import limit
 from app.services.view import FLASH_ERROR, FLASH_SUCCESS, FLASH_WARNING, authorized_chars_only
 from app.controllers.decorators import anonymous_required
+from uuid import uuid4 # session id generator
 
 login_bp = Blueprint('login', __name__)
 
@@ -85,6 +86,11 @@ def login_post():
         if match_string(user['password'], password):
             # Login successful
             clear_main_auth()
+
+            sess_id = str(uuid4())
+            add_user_session(user['name'], sess_id)
+            
+            session["sess_id"] = sess_id
             session['email'] = user['email']
             session['name'] = user['name']
             flash('Login successful!', FLASH_SUCCESS)
@@ -111,6 +117,7 @@ def login_post():
 def logout():
     """Log out the user."""
     if session.get('name'):
+        remove_user_session(session.get('name'), session.get('sess_id'))
         clear_main_auth()
         flash('Goodbye!', 'alert-info')
 

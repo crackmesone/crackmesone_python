@@ -65,6 +65,8 @@ from app.models.account_deletion_request import (
 )
 from app.services.email import send_email
 from app.models.errors import ErrNoResult
+from app.models.user import user_by_mail
+from app.models.user import purge_user_sessions
 
 
 # =============================================================================
@@ -2610,14 +2612,22 @@ def resetuserpassword(current_user):
         validate_csrf_token()
         user_email = request.form.get('user_email')
         message = reset_user_password(user_email)
+        success: bool = "successful" in message.lower()
+
+        if success:
+            # Purge active sessions
+            # normally it shouldn't error because success would be false
+            user = user_by_mail(user_email)
+            if user and 'name' in user:
+                purge_user_sessions(user['name'])
 
         log_reviewer_operation(
             "reset_user_password", current_user['username'],
             {
                 "target_user_email": user_email,
-                "result": "success" if "successful" in message.lower() else "failed"
+                "result": "success" if success else "failed"
             },
-            "successful" in message.lower()
+            success
         )
 
     return render_template(

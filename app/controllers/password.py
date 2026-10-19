@@ -3,7 +3,7 @@ Password controller - Change password.
 """
 
 from flask import Blueprint, render_template, request, session
-from app.models.user import user_by_name, update_user_password
+from app.models.user import user_by_name, update_user_password, purge_user_sessions
 from app.services.passhash import hash_string, match_string
 from app.services.limiter import limit
 from app.controllers.decorators import login_required
@@ -65,4 +65,6 @@ def change_password_post():
         print(f"Error updating user password: {e}")
         return 'Could not update password', 500
 
+    # delete all sessions except the current one
+    purge_user_sessions(session.get('name'), [session.get('session')])
     return 'Password has been successfully updated', 200

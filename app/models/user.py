@@ -3,22 +3,20 @@ User model for database operations.
 """
 
 import re
-from datetime import datetime
 from bson import ObjectId
 from app.services.database import get_collection, check_connection
-from app.models.errors import ErrNoResult, ErrUnavailable
+from app.models.errors import ErrNoResult
+from app.controllers.db_decorators import check_db_con
 
-
+@check_db_con
 def count_users():
     """Return the total number of users."""
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
     return collection.count_documents({})
 
-
-def user_by_name(name):
+@check_db_con
+def user_by_name(name: str):
     """Get user by username (case-insensitive).
 
     Args:
@@ -31,8 +29,6 @@ def user_by_name(name):
         ErrNoResult: If user not found
         ErrUnavailable: If database unavailable
     """
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
     # Case-insensitive regex search
@@ -44,8 +40,8 @@ def user_by_name(name):
 
     return result
 
-
-def user_by_mail(email):
+@check_db_con
+def user_by_mail(email: str):
     """Get user by email (case-insensitive).
 
     Args:
@@ -58,8 +54,6 @@ def user_by_mail(email):
         ErrNoResult: If user not found
         ErrUnavailable: If database unavailable
     """
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
     pattern = re.compile(f'^{re.escape(email)}$', re.IGNORECASE)
@@ -70,8 +64,9 @@ def user_by_mail(email):
 
     return result
 
-
-def user_by_hexid(hexid):
+#NOTE: unused function
+@check_db_con
+def user_by_hexid(hexid: str):
     """Get user by hex ID.
 
     Args:
@@ -84,8 +79,6 @@ def user_by_hexid(hexid):
         ErrNoResult: If user not found
         ErrUnavailable: If database unavailable
     """
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
     result = collection.find_one({'hexid': hexid})
@@ -95,24 +88,21 @@ def user_by_hexid(hexid):
 
     return result
 
-
+#NOTE: unused function
+@check_db_con
 def all_users_visible():
     """Get all visible users.
 
     Returns:
         List of user documents
     """
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
     return list(collection.find({'visible': True}))
 
-
-def users_by_hexids(hexids):
+@check_db_con
+def users_by_hexids(hexids: list[str] | set[str]):
     """Return visible users keyed by immutable hexid."""
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     hexids = list(hexids)
     if not hexids:
@@ -129,8 +119,8 @@ def users_by_hexids(hexids):
         })
     }
 
-
-def user_create(name, email, password):
+@check_db_con
+def user_create(name: str, email: str, password: str):
     """Create a new user.
 
     Args:
@@ -141,8 +131,6 @@ def user_create(name, email, password):
     Raises:
         ErrUnavailable: If database unavailable
     """
-    if not check_connection():
-        raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('user')
     obj_id = ObjectId()
@@ -159,8 +147,8 @@ def user_create(name, email, password):
 
     collection.insert_one(user)
 
-
-def update_user_password(username, hashed_password):
+@check_db_con
+def update_user_password(username: str, hashed_password: str):
     """Update user password.
 
     Args:
@@ -186,8 +174,8 @@ def update_user_password(username, hashed_password):
     if result.matched_count == 0:
         raise ErrNoResult("No user found with the provided username")
 
-
-def user_get_unread_notifications(username):
+#don't use @check_db_con because this function returns a value
+def user_get_unread_notifications(username: str):
     """Get the count of unread notifications for a user.
 
     Args:
@@ -208,15 +196,13 @@ def user_get_unread_notifications(username):
     except Exception:
         return 0
 
-
-def user_increment_unread_notifications(username):
+@check_db_con
+def user_increment_unread_notifications(username: str):
     """Increment the unread notification count for a user.
 
     Args:
         username: The username (exact match)
     """
-    if not check_connection():
-        return
 
     collection = get_collection('user')
     collection.update_one(
@@ -224,16 +210,14 @@ def user_increment_unread_notifications(username):
         {'$inc': {'unread_notifications': 1}}
     )
 
-
-def user_decrement_unread_notifications(username, count=1):
+@check_db_con
+def user_decrement_unread_notifications(username: str, count: int = 1):
     """Decrement the unread notification count for a user.
 
     Args:
         username: The username (exact match)
         count: Number to decrement by (default 1)
     """
-    if not check_connection():
-        return
 
     collection = get_collection('user')
 
@@ -246,3 +230,87 @@ def user_decrement_unread_notifications(username, count=1):
             {'name': username},
             {'$set': {'unread_notifications': new_count}}
         )
+
+@check_db_con
+def is_session_valid(username: str | None, sess_id: str | None) -> bool:
+    """Check whether a session is valid
+
+    Args:
+        username: The username, used to bind user and session
+        sess_id: The UUIDv4 session key as str or None
+
+    Returns:
+        False if sess_id is None, or sess_id isn't valid
+        True if sess_id is valid for username 
+    """
+    if not sess_id or not username:
+        return False
+    
+    collection = get_collection('user')
+
+    pattern = re.compile(f'^{re.escape(username)}$', re.IGNORECASE)
+    target_user = collection.find_one({'name': pattern})
+
+    if not target_user:
+        return False
+
+    if not "active_sessions" in target_user: # expected for not migrated accounts
+        collection.update_one(
+            {"_id": target_user["_id"]},
+            {"$set": {"active_sessions": []}}
+        )
+        # non-migrated accounts should be logged out
+        return False
+    
+    return sess_id in target_user["active_sessions"]
+
+@check_db_con
+def add_user_session(username: str, sess_id: str) -> None:
+    """Add an active session key for a user
+    Args:
+        username: The username to add the session key to
+        sess_id: The UUIDv4 session key
+    """
+    collection = get_collection('user')
+
+    pattern = re.compile(f'^{re.escape(username)}$', re.IGNORECASE)
+    target_user = collection.find_one({'name': pattern})
+
+    collection.update_one(
+        {"_id": target_user["_id"]},
+        {"$addToSet": {"active_sessions": sess_id}}
+    )
+
+@check_db_con
+def remove_user_session(username: str, sess_id: str) -> None:
+    """Remove an active session key from a user
+    Args:
+        username: The target username
+        sess_id: The session id to invalidate/delete
+    """
+    collection = get_collection('user')
+
+    pattern = re.compile(f'^{re.escape(username)}$', re.IGNORECASE)
+    target_user = collection.find_one({'name': pattern})
+
+    collection.update_one(
+        {"_id": target_user["_id"]},
+        {"$pull": {"active_sessions": sess_id}}
+    )
+
+@check_db_con
+def purge_user_sessions(username: str, exclude: list[str] = []) -> None:
+    """Delete all sessions (exlcuding the ones in the exclude list)
+    Args:
+        username: Target username
+        exclude: A list of sessions to NOT delete, leave empty to delete ALL sessions
+    """
+    collection = get_collection('user')
+
+    pattern = re.compile(f'^{re.escape(username)}$', re.IGNORECASE)
+    target_user = collection.find_one({'name': pattern})
+
+    collection.update_one(
+        {"_id": target_user["_id"]},
+        {"$set": {"active_sessions": exclude}}
+    )
