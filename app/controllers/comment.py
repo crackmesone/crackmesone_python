@@ -7,10 +7,14 @@ import secrets
 from html import escape as html_escape
 from flask import Blueprint, request, redirect, flash, session, render_template
 import bleach
-from app.models.comment import comment_create, comment_by_id, comment_set_spoiler, get_thread_participants
+from app.models.comment import (
+    comment_create, comment_by_id, comment_set_spoiler,
+    comment_update, comment_delete, get_thread_participants
+)
 from app.models.solution import get_solution_authors
 from app.models.crackme import (
-    crackme_by_hexid, crackme_increment_comments, crackme_is_auto_validated
+    crackme_by_hexid, crackme_increment_comments, crackme_decrement_comments,
+    crackme_is_auto_validated
 )
 from app.models.notification import notification_add
 from app.models.errors import ErrNoResult
@@ -276,3 +280,118 @@ def mark_spoiler_by_token(comment_id, token):
         return render_template('comment/spoiler_marked.html',
                              success=False,
                              error="Comment not found.")
+
+
+@comment_bp.route('/comment/<comment_id>/edit', methods=['POST'])
+@login_required
+@limit("30 per hour", key_func=lambda: session.get('name'))
+def edit_comment(comment_id):
+    """Edit a comment.
+
+    Permissions:
+    - Comment author: can edit their own comment
+    """
+    username = session.get('name')
+
+    try:
+        comment = comment_by_id(comment_id)
+    except ErrNoResult:
+        flash('Comment not found.', FLASH_ERROR)
+        return redirect('/')
+
+    crackme_hexid = comment.get('crackmehexid')
+    comment_author = comment.get('author')
+
+    # Only comment author can edit
+    if comment_author != username:
+        flash('You can only edit your own comments.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+    # Validate required fields
+    is_valid, missing = validate_required(request.form, ['comment'])
+    if not is_valid:
+        flash(f'Field missing: {missing}', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+    comment_text = bleach.clean(request.form.get('comment', ''))
+    if not comment_text.strip():
+        flash('Comment cannot be empty.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+    old_content = comment.get('info', '')
+
+    try:
+        comment_update(comment_id, comment_text)
+    except Exception as e:
+        print(f"Error updating comment: {e}")
+        flash('Failed to update comment. Please try again later.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+    # Handle any new @mentions added during editing
+    try:
+        old_mentions = parse_mentions(old_content)
+        new_mentions = parse_mentions(comment_text) - old_mentions
+        if new_mentions and crackme_hexid:
+            crackme = crackme_by_hexid(crackme_hexid)
+            crackme_author = crackme.get('author')
+            crackme_name = crackme['name']
+
+            thread_participants = get_thread_participants(crackme_hexid)
+            solution_authors = get_solution_authors(crackme_hexid)
+            valid_targets = thread_participants | solution_authors | {crackme_author}
+
+            for mentioned_user in new_mentions:
+                if mentioned_user == username:
+                    continue
+                if mentioned_user in valid_targets:
+                    notification_add(
+                        mentioned_user,
+                        f"You were mentioned by <a href=\"/user/{html_escape(username)}\">{html_escape(username)}</a> in a comment on '<a href=\"/crackme/{crackme_hexid}\">{html_escape(crackme_name)}</a>'"
+                    )
+    except Exception as e:
+        print(f"Mention notification error on edit: {e}")
+
+    flash('Comment updated!', FLASH_SUCCESS)
+    return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+
+@comment_bp.route('/comment/<comment_id>/delete', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    """Delete a comment.
+
+    Permissions:
+    - Comment author: can delete their own comment
+    """
+    username = session.get('name')
+
+    try:
+        comment = comment_by_id(comment_id)
+    except ErrNoResult:
+        flash('Comment not found.', FLASH_ERROR)
+        return redirect('/')
+
+    crackme_hexid = comment.get('crackmehexid')
+    comment_author = comment.get('author')
+
+    # Only comment author can delete
+    if comment_author != username:
+        flash('You can only delete your own comments.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+    try:
+        comment_delete(comment_id)
+    except Exception as e:
+        print(f"Error deleting comment: {e}")
+        flash('Failed to delete comment. Please try again later.', FLASH_ERROR)
+        return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')
+
+    # Decrement comment count on crackme
+    if crackme_hexid:
+        try:
+            crackme_decrement_comments(crackme_hexid)
+        except Exception as e:
+            print(f"Failed to decrement comment count: {e}")
+
+    flash('Comment deleted.', FLASH_SUCCESS)
+    return redirect(f'/crackme/{crackme_hexid}' if crackme_hexid else '/')

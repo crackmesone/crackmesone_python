@@ -43,6 +43,17 @@
         }
     }
 
+    function openEditCommentModal(commentId) {
+        var raw = document.getElementById('comment-raw-' + commentId);
+        var textarea = document.getElementById('edit-comment-text');
+        var form = document.getElementById('form-edit-comment');
+        if (raw && textarea && form) {
+            textarea.value = raw.value;
+            form.action = '/comment/' + commentId + '/edit';
+            openModal('modal-edit-comment');
+        }
+    }
+
     function closeModal() {
         document.querySelectorAll('.modal.active').forEach(function(m) {
             m.classList.remove('active');
@@ -320,8 +331,29 @@
             {% endif %}
             {% for comment in comments %}
             <div style="margin-bottom: 1em;">
-                {% if usersess == username or (usersess == comment.author and not comment.spoiler) %}<form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline; float: right;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="btn btn-link btn-sm" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}" style="padding: 0;{% if comment.spoiler %} color: #e85600;{% else %} opacity: 0.4;{% endif %}"><i class="icon icon-flag"></i></button></form>{% endif %}
-                <a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}:
+                <div style="float: right; display: flex; gap: 8px; align-items: center;">
+                    {% if usersess == comment.author %}
+                    <button type="button" class="btn btn-link btn-sm" title="Edit comment" onclick="openEditCommentModal('{{ comment._id }}')" style="padding: 0; opacity: 0.5;">
+                        <i class="icon icon-edit"></i>
+                    </button>
+                    <form action="/comment/{{ comment._id }}/delete" method="post" style="display: inline; margin: 0;" onsubmit="return confirm('Are you sure you want to delete this comment?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-link btn-sm text-error" title="Delete comment" style="padding: 0; opacity: 0.5;">
+                            <i class="icon icon-delete"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if usersess == username or (usersess == comment.author and not comment.spoiler) %}
+                    <form action="/comment/{{ comment._id }}/spoiler" method="post" style="display: inline; margin: 0;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-link btn-sm" title="{{ 'Remove spoiler mark' if comment.spoiler else 'Mark as spoiler' }}" style="padding: 0;{% if comment.spoiler %} color: #e85600;{% else %} opacity: 0.4;{% endif %}">
+                            <i class="icon icon-flag"></i>
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                <textarea id="comment-raw-{{ comment._id }}" style="display: none;">{{ comment.info }}</textarea>
+                <a href="/user/{{ comment.author }}">{{ comment.author }}</a> on {{ comment.created_at|PRETTYTIME }}{% if comment.edited or comment.updated_at %} <span class="text-gray" style="font-size: 0.85em;" title="Edited{% if comment.updated_at %} on {{ comment.updated_at|PRETTYTIME }}{% endif %}">(edited)</span>{% endif %}:
                 {% if comment.spoiler %}
                 <span id="spoiler-hidden-{{ comment._id }}" class="spoiler-hidden" onclick="revealSpoiler('{{ comment._id }}')">[Click to reveal]</span><span id="spoiler-content-{{ comment._id }}" style="display: none; white-space: pre-line">{{ comment.info|render_mentions }}</span>{% else %}<span style="white-space: pre-line">{{ comment.info|render_mentions }}</span>{% endif %}
             </div>
@@ -379,6 +411,29 @@
                         {% if RECAPTCHA_SITEKEY %}
                         <div class="g-recaptcha float-right" data-sitekey="{{ RECAPTCHA_SITEKEY }}"></div>
                         {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not auto_validation %}
+    <div class="modal" id="modal-edit-comment">
+        <a href="#" onclick="closeModal(); return false;" class="modal-overlay" aria-label="Close"></a>
+        <div class="modal-container">
+            <div class="modal-header">
+                <a href="#" onclick="closeModal(); return false;" class="btn btn-clear float-right" aria-label="Close"></a>
+                <div class="modal-title h5">Edit comment</div>
+            </div>
+            <div class="modal-body">
+                <div class="content">
+                    <form id="form-edit-comment" action="" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div style="position: relative;">
+                            <textarea name="comment" id="edit-comment-text" placeholder="Edit your comment..." style="width: 100%;" rows="5"></textarea>
+                        </div>
+                        <input type="submit" class="btn active float-right" value="Save changes" style="margin-top: 10px;">
                     </form>
                 </div>
             </div>

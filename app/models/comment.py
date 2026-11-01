@@ -105,7 +105,10 @@ def comment_by_id(comment_id):
     collection = get_collection('comment')
 
     if isinstance(comment_id, str):
-        comment_id = ObjectId(comment_id)
+        try:
+            comment_id = ObjectId(comment_id)
+        except Exception:
+            raise ErrNoResult("Comment not found")
 
     comment = collection.find_one({'_id': comment_id})
     if not comment:
@@ -154,7 +157,10 @@ def comment_set_spoiler(comment_id, is_spoiler):
     collection = get_collection('comment')
 
     if isinstance(comment_id, str):
-        comment_id = ObjectId(comment_id)
+        try:
+            comment_id = ObjectId(comment_id)
+        except Exception:
+            raise ErrNoResult("Comment not found")
 
     result = collection.find_one_and_update(
         {'_id': comment_id},
@@ -166,3 +172,73 @@ def comment_set_spoiler(comment_id, is_spoiler):
         raise ErrNoResult("Comment not found")
 
     return result
+
+
+def comment_update(comment_id, content):
+    """Update a comment's content.
+
+    Args:
+        comment_id: The comment's ObjectId (string or ObjectId)
+        content: The new comment content
+
+    Returns:
+        Updated comment document
+
+    Raises:
+        ErrNoResult: If comment not found
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('comment')
+
+    if isinstance(comment_id, str):
+        try:
+            comment_id = ObjectId(comment_id)
+        except Exception:
+            raise ErrNoResult("Comment not found")
+
+    result = collection.find_one_and_update(
+        {'_id': comment_id},
+        {'$set': {
+            'info': content,
+            'edited': True,
+            'updated_at': datetime.utcnow()
+        }},
+        return_document=ReturnDocument.AFTER
+    )
+
+    if not result:
+        raise ErrNoResult("Comment not found")
+
+    return result
+
+
+def comment_delete(comment_id):
+    """Delete a comment by its ID.
+
+    Args:
+        comment_id: The comment's ObjectId (string or ObjectId)
+
+    Returns:
+        Deleted comment document
+
+    Raises:
+        ErrNoResult: If comment not found
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    collection = get_collection('comment')
+
+    if isinstance(comment_id, str):
+        try:
+            comment_id = ObjectId(comment_id)
+        except Exception:
+            raise ErrNoResult("Comment not found")
+
+    comment = collection.find_one_and_delete({'_id': comment_id})
+    if not comment:
+        raise ErrNoResult("Comment not found")
+
+    return comment
