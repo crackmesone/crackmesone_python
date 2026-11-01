@@ -117,3 +117,106 @@ def test_owner_can_edit_crackme_but_other_user_cannot(
     updated = db.crackme.find_one({'_id': sample_crackme['_id']})
     assert updated['info'] == 'Updated information'
     assert updated['lang'] == 'Rust'
+
+
+def test_comment_author_can_delete_own_comment(
+        bob_client, db, sample_crackme, bob):
+    from app.models.comment import comment_create
+    from app.models.crackme import crackme_increment_comments
+
+    comment = comment_create('To be deleted', 'bob', sample_crackme['hexid'])
+    crackme_increment_comments(sample_crackme['hexid'])
+
+    assert db.crackme.find_one({'_id': sample_crackme['_id']})['nbcomments'] == 1
+
+    response = bob_client.post(f"/comment/{comment['_id']}/delete")
+    assert response.status_code == 302
+    assert db.comment.find_one({'_id': comment['_id']}) is None
+    assert db.crackme.find_one({'_id': sample_crackme['_id']})['nbcomments'] == 0
+
+
+def test_other_user_cannot_delete_comment(
+        alice_client, db, sample_crackme, bob):
+    from app.models.comment import comment_create
+    from app.models.crackme import crackme_increment_comments
+
+    comment = comment_create('Bob comment', 'bob', sample_crackme['hexid'])
+    crackme_increment_comments(sample_crackme['hexid'])
+
+    response = alice_client.post(f"/comment/{comment['_id']}/delete")
+    assert response.status_code == 302
+    assert db.comment.find_one({'_id': comment['_id']}) is not None
+    assert db.crackme.find_one({'_id': sample_crackme['_id']})['nbcomments'] == 1
+
+
+def test_comment_author_can_edit_own_comment(
+        bob_client, db, sample_crackme, bob):
+    from app.models.comment import comment_create
+
+    comment = comment_create('Original comment text', 'bob', sample_crackme['hexid'])
+
+    response = bob_client.post(
+        f"/comment/{comment['_id']}/edit",
+        data={'comment': 'Updated comment text'}
+    )
+    assert response.status_code == 302
+    updated = db.comment.find_one({'_id': comment['_id']})
+    assert updated['info'] == 'Updated comment text'
+    assert updated.get('edited') is True
+    assert updated.get('updated_at') is not None
+
+
+def test_other_user_cannot_edit_comment(
+        alice_client, db, sample_crackme, bob):
+    from app.models.comment import comment_create
+
+    comment = comment_create('Bob original', 'bob', sample_crackme['hexid'])
+
+    response = alice_client.post(
+        f"/comment/{comment['_id']}/edit",
+        data={'comment': 'Alice tampering'}
+    )
+    assert response.status_code == 302
+    unchanged = db.comment.find_one({'_id': comment['_id']})
+    assert unchanged['info'] == 'Bob original'
+
+
+def test_comment_edit_empty_text_rejected(
+        bob_client, db, sample_crackme, bob):
+    from app.models.comment import comment_create
+
+    comment = comment_create('Valid text', 'bob', sample_crackme['hexid'])
+
+    response = bob_client.post(
+        f"/comment/{comment['_id']}/edit",
+        data={'comment': '   '}
+    )
+    assert response.status_code == 302
+    unchanged = db.comment.find_one({'_id': comment['_id']})
+    assert unchanged['info'] == 'Valid text'
+
+
+def test_comment_edit_notifies_new_mentions(
+        alice_client, bob_client, db, sample_crackme, bob):
+    from app.models.comment import comment_create
+
+    # Alice participates in thread
+    comment_create('Alice here', 'alice', sample_crackme['hexid'])
+    db.notifications.delete_many({})
+
+    # Bob creates comment without mention
+    comment = comment_create('Bob note', 'bob', sample_crackme['hexid'])
+
+    # Bob edits comment to mention Alice
+    response = bob_client.post(
+        f"/comment/{comment['_id']}/edit",
+        data={'comment': 'Bob note @alice check this'}
+    )
+    assert response.status_code == 302
+    assert db.notifications.count_documents({'user': 'alice'}) == 1
+
+
+def test_comment_delete_nonexistent_handled(bob_client):
+    response = bob_client.post("/comment/507f1f77bcf86cd799439011/delete")
+    assert response.status_code == 302
+

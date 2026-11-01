@@ -61,6 +61,7 @@ def test_crackme_prepare_insert_update_and_delete(app, db):
 def test_comment_query_participant_and_spoiler_helpers(app, db, sample_crackme):
     from app.models.comment import (
         comment_by_id, comment_create, comment_set_spoiler,
+        comment_update, comment_delete,
         comments_by_user, count_comments_by_crackme, count_comments_by_user,
         get_thread_participants,
     )
@@ -73,6 +74,22 @@ def test_comment_query_participant_and_spoiler_helpers(app, db, sample_crackme):
     assert get_thread_participants(sample_crackme['hexid']) == {'alice', 'bob'}
     assert comment_by_id(str(first['_id']))['info'] == 'First'
     assert comment_set_spoiler(first['_id'], True)['spoiler'] is True
+
+    updated = comment_update(first['_id'], 'First Edited')
+    assert updated['info'] == 'First Edited'
+    assert updated['edited'] is True
+    assert updated['updated_at'] is not None
+
+    deleted = comment_delete(first['_id'])
+    assert deleted['_id'] == first['_id']
+    assert count_comments_by_user('alice') == 0
+
+    import pytest
+    from app.models.errors import ErrNoResult
+    with pytest.raises(ErrNoResult):
+        comment_update(first['_id'], 'Should fail')
+    with pytest.raises(ErrNoResult):
+        comment_delete(first['_id'])
 
 
 def test_solution_query_counter_and_author_helpers(app, db, sample_crackme):
