@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Search a crackme{% endblock %}
 {% block page_title %}Search a crackme{% endblock %}
-{% block head %}{% endblock %}
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 {% block content %}
 
 
@@ -178,9 +180,27 @@
                 </select>
             </div>
         </div>
+        {% if is_logged_in %}
+        <div class="form-group">
+            <div class="col-3 col-sm-12">
+                <label class="form-label">My Progress</label>
+            </div>
+            <div class="col-9 col-sm-12">
+                <label class="form-checkbox" id="hide-solved-label">
+                    <input type="checkbox"
+                           id="hide-solved-checkbox"
+                           name="hide_solved"
+                           value="1"
+                           {{ 'checked' if search_params.get('hide_solved') else '' }}>
+                    <i class="form-icon"></i>
+                    Hide solved crackmes
+                </label>
+            </div>
+        </div>
+        {% endif %}
         <input type="submit" class="btn active float-right" value="Search">
         <a href="/search" class="btn active float-right" style="margin-right: 10px;">Clear</a>
-        <a href="/random?sort_by={{ search_params.get('sort_by', 'date') }}&sort_order={{ search_params.get('sort_order', 'desc') }}" class="btn active float-right" style="margin-right: 10px;">I'm feeling cracky</a>
+        <a href="/random?sort_by={{ search_params.get('sort_by', 'date') }}&sort_order={{ search_params.get('sort_order', 'desc') }}{{ '&hide_solved=1' if search_params.get('hide_solved') else '' }}" id="btn-random-cracky" class="btn active float-right" style="margin-right: 10px;">I'm feeling cracky</a>
     </form>
     <div style="clear: both; margin-top: 20px;"></div>
     <div class="table-responsive">
@@ -199,11 +219,13 @@
                     <th style="width: 5%; cursor: pointer;" onclick="sortBy('downloads')">Downloads {% if search_params.get('sort_by') == 'downloads' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
                     <th style="width: 5%; cursor: pointer;" onclick="sortBy('solutions')">Writeups {% if search_params.get('sort_by') == 'solutions' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
                     <th style="width: 5%; cursor: pointer;" onclick="sortBy('comments')">Comments {% if search_params.get('sort_by') == 'comments' %}{{ '▲' if search_params.get('sort_order') == 'asc' else '▼' }}{% endif %}</th>
+                    {% if is_logged_in %}<th style="width: 4%;">Done</th>{% endif %}
                 </tr>
             </thead>
             <tbody id="search-results">
                 {% for crackme in crackmes %}
-                <tr class="text-center">
+                <tr class="text-center crackme-row{% if crackme.hexid in all_solves %} crackme-row-solved{% endif %}"
+                    data-crackme-id="{{ crackme.hexid }}">
                     <td> <a href="/crackme/{{ crackme.hexid }}">{{ crackme.name }}</a></td>
                     <td> <a href="/user/{{ crackme.author }}">{{ crackme.author }}</a> </td>
                     <td> {{ crackme.lang }} </td>
@@ -216,6 +238,19 @@
                     <td> {{ crackme.nbdownloads|default(0) }} <a href="/download/crackme/{{ crackme.hexid }}" title="Download (password: crackmes.one)">[↓]</a></td>
                     <td> {{ crackme.nbsolutions }} </td>
                     <td> {{ crackme.nbcomments }} </td>
+                    {% if is_logged_in %}
+                    <td>
+                      {% if crackme.hexid in official_solves %}
+                        <span class="mark-solved-locked" title="Verified flag solve">&#x1F512;</span>
+                      {% else %}
+                        <button class="btn-mark-solved"
+                                data-crackme-id="{{ crackme.hexid }}"
+                                title="{{ 'Mark as undone' if crackme.hexid in manual_solves else 'Mark as done' }}"
+                                aria-label="{{ 'Mark as undone' if crackme.hexid in manual_solves else 'Mark as done' }}"
+                        >{% if crackme.hexid in manual_solves %}&#x2611;{% else %}&#x2610;{% endif %}</button>
+                      {% endif %}
+                    </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -248,6 +283,7 @@
             <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
             <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="page" value="1">
+            <input type="hidden" name="hide_solved" value="{{ '1' if search_params.get('hide_solved') else '' }}">
             <button type="submit" class="btn active">Show Pages</button>
         </form>
         <span class="pagination-info">Showing all {{ crackmes|length }} results</span>
@@ -278,6 +314,7 @@
             <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
             <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="show_all" value="1">
+            <input type="hidden" name="hide_solved" value="{{ '1' if search_params.get('hide_solved') else '' }}">
             <button type="submit" class="btn active">Show All</button>
         </form>
         {% if page > 1 %}
@@ -305,6 +342,7 @@
             <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
             <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="page" value="{{ page - 1 }}">
+            <input type="hidden" name="hide_solved" value="{{ '1' if search_params.get('hide_solved') else '' }}">
             <button type="submit" class="btn active">Previous</button>
         </form>
         {% else %}
@@ -336,6 +374,7 @@
             <input type="hidden" name="sort_by" value="{{ search_params.get('sort_by', 'date') }}">
             <input type="hidden" name="sort_order" value="{{ search_params.get('sort_order', 'desc') }}">
             <input type="hidden" name="page" value="{{ page + 1 }}">
+            <input type="hidden" name="hide_solved" value="{{ '1' if search_params.get('hide_solved') else '' }}">
             <button type="submit" class="btn active">Next</button>
         </form>
         {% else %}
@@ -349,6 +388,12 @@
 
 {% endblock %}
 {% block foot %}
+<script src="{{ url_for('static', filename='js/mark_solved.js') }}" defer></script>
+<script>
+// Expose CSRF token and login state to mark_solved.js
+window.CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+window.IS_LOGGED_IN = {{ 'true' if is_logged_in else 'false' }};
+</script>
 <script>
 function sortBy(field) {
     var currentSort = '{{ search_params.get("sort_by", "date") }}';

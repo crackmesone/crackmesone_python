@@ -131,7 +131,8 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
                    comments_min=0, comments_max=None,
                    size_min=0, size_max=None,
                    sort_by='date', sort_order='desc',
-                   page=1, per_page=50):
+                   page=1, per_page=50,
+                   exclude_hexids=None):       # Issue #182: hide solved crackmes
     """Search crackmes with filters, sorting, and pagination.
 
     Returns (results, has_more) where has_more indicates if there are more pages.
@@ -197,6 +198,13 @@ def search_crackme(name='', author='', lang='', arch='', platform='',
             labels = [labels]
         if labels:
             query['labels'] = {'$all': labels}
+
+    # Hide solved crackmes: exclude a caller-supplied set of hexids.
+    # This runs BEFORE .skip()/.limit() so page counts remain accurate.
+    if exclude_hexids:
+        exclude_list = list(set(exclude_hexids))
+        if exclude_list:
+            query['hexid'] = {'$nin': exclude_list}
 
     skip = (page - 1) * per_page
     # Determine sort field and direction
@@ -375,14 +383,20 @@ def crackme_delete_by_hexid(hexid):
     collection.delete_one({'hexid': hexid})
 
 
-def random_crackmes(count=50):
+def random_crackmes(count=50, exclude_hexids=None):
     """Get multiple random visible crackmes."""
     if not check_connection():
         raise ErrUnavailable("Database is unavailable")
 
     collection = get_collection('crackme')
+    match = {'visible': True}
+    if exclude_hexids:
+        exclude_list = list(set(exclude_hexids))
+        if exclude_list:
+            match['hexid'] = {'$nin': exclude_list}
+
     pipeline = [
-        {'$match': {'visible': True}},
+        {'$match': match},
         {'$sample': {'size': count}}
     ]
     return list(collection.aggregate(pipeline))

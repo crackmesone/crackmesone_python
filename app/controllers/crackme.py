@@ -28,11 +28,15 @@ from app.models.solve import (
 from app.models.flag_submission import (
     flag_submission_create, count_flag_submissions_by_crackme
 )
-from app.models.user import user_by_name, users_by_hexids
+from app.models.user import (
+    user_by_name, users_by_hexids,
+    user_all_solved_hexids,       # Issue #182
+    user_toggle_manual_solve,     # Issue #182
+)
 from app.models.errors import ErrNoResult
 from app.services.recaptcha import verify as verify_recaptcha
 from app.services.limiter import configured_limit, limit
-from app.services.view import FLASH_ERROR, FLASH_SUCCESS, FLASH_NOTICE, validate_required
+from app.services.view import FLASH_ERROR, FLASH_SUCCESS, FLASH_NOTICE, validate_required, is_valid_hexid
 from app.services.labels import get_label_groups, get_dataset_url, normalize_labels
 from app.services.archive import (
     is_archive_password_protected, is_single_file_archive,
@@ -107,6 +111,17 @@ def crackme_view(hexid):
         except Exception as e:
             print(f"Error getting solve data: {e}")
 
+    # Issue #182: Check solved state for manual and official solve tracking
+    is_officially_solved = False
+    is_manually_solved = False
+    if usersess:
+        try:
+            solved_sets = user_all_solved_hexids(usersess)
+            is_officially_solved = hexid in solved_sets['official']
+            is_manually_solved = hexid in solved_sets['manual']
+        except Exception as e:
+            print(f"Error checking solved state for {hexid}: {e}")
+
     # Build mention targets for @mention autocomplete (author + commenters + solution authors)
     mention_targets = {crackme.get('author', '')}
     for comment in comments:
@@ -144,7 +159,10 @@ def crackme_view(hexid):
                            user_solve=user_solve,
                            solve_points=points_for_solve(crackme) if auto_validation else 0,
                            flag_format_hint=FLAG_FORMAT_HINT,
-                           usersess=usersess)
+                           usersess=usersess,
+                           is_officially_solved=is_officially_solved,
+                           is_manually_solved=is_manually_solved,
+                           is_solved=(is_officially_solved or is_manually_solved))
 
 
 def _user_hexid(username):
@@ -178,10 +196,20 @@ def last_crackmes_page(page):
         print(f"Error getting crackmes: {e}")
         abort(500)
 
+    # Issue #182: pass solved sets so the template can grey-out done crackmes
+    username = session.get('name')
+    solved_sets = user_all_solved_hexids(username) if username else {
+        'official': frozenset(), 'manual': frozenset(), 'all': frozenset()
+    }
+
     return render_template('crackme/lasts.html',
                            crackmes=crackmes,
                            page=page,
-                           has_more=has_more)
+                           has_more=has_more,
+                           official_solves=solved_sets['official'],
+                           manual_solves=solved_sets['manual'],
+                           all_solves=solved_sets['all'],
+                           is_logged_in=bool(username))
 
 
 @crackme_bp.route('/download/crackme/<hexid>')
@@ -565,6 +593,48 @@ def submit_flag(hexid):
 
     flash(f'Correct! You earned {points} points.', FLASH_SUCCESS)
     return redirect(f'/crackme/{hexid}')
+
+
+@crackme_bp.route('/crackme/<hexid>/toggle-manual-solve', methods=['POST'])
+@login_required
+@limit(configured_limit('ManualSolveToggle'), key_func=lambda: session.get('name'))
+def toggle_manual_solve(hexid):
+    """Toggle a manual 'done' mark for the authenticated user.
+
+    Manual marks are personal progress tracking only. They have zero impact
+    on points, ratings, or the public scoreboard.
+
+    Returns JSON: {"ok": true, "solved": bool}
+    or            {"ok": false, "error": str}  with appropriate HTTP status.
+    """
+    username = session.get('name')
+
+    # Validate the hexid from the URL using the existing project utility
+    if not is_valid_hexid(hexid):
+        return jsonify({'ok': False, 'error': 'Invalid crackme ID'}), 400
+
+    # Guard: official solves cannot be manually unmarked (server-side enforcement)
+    user_hexid = _user_hexid(username)
+    if user_hexid:
+        try:
+            if solve_by_user_and_crackme(user_hexid, hexid):
+                return jsonify({
+                    'ok': False,
+                    'error': 'Official flag solves cannot be manually unmarked',
+                    'locked': True,
+                }), 403
+        except Exception:
+            pass  # If we can't check, proceed -- the UI enforces this too
+
+    try:
+        is_solved = user_toggle_manual_solve(username, hexid)
+        return jsonify({'ok': True, 'solved': is_solved})
+    except ValueError as e:
+        # Covers: invalid hexid, crackme not found/visible, cap exceeded
+        return jsonify({'ok': False, 'error': str(e)}), 400
+    except Exception as e:
+        print(f"Error toggling manual solve for {username}/{hexid}: {e}")
+        return jsonify({'ok': False, 'error': 'Server error'}), 500
 
 
 @crackme_bp.route('/crackme/<hexid>/edit', methods=['GET'])

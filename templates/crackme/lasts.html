@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Latest crackmes{% endblock %}
 {% block page_title %}Latest crackmes{% endblock %}
-{% block head %}{% endblock %}
+{% block head %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
 {% block content %}
 
 <div style="max-width: 80%" class="container d-flex-row wrapper">
@@ -23,11 +25,13 @@
                     <th style="width: 5%;">Downloads</th>
                     <th style="width: 5%;">Writeups</th>
                     <th style="width: 5%;">Comments</th>
+                    {% if is_logged_in %}<th style="width: 4%;">Done</th>{% endif %}
                 </tr>
             </thead>
             <tbody id="content-list">
                 {% for crackme in crackmes %}
-                <tr class="text-center">
+                <tr class="text-center crackme-row{% if crackme.hexid in all_solves %} crackme-row-solved{% endif %}"
+                    data-crackme-id="{{ crackme.hexid }}">
                     <td> <a href="/crackme/{{ crackme.hexid }}">{{ crackme.name }}</a></td>
                     <td> <a href="/user/{{ crackme.author }}">{{ crackme.author }}</a> </td>
                     <td> {{ crackme.lang }} </td>
@@ -40,6 +44,19 @@
                     <td> {{ crackme.nbdownloads|default(0) }} <a href="/download/crackme/{{ crackme.hexid }}" title="Download (password: crackmes.one)">[↓]</a></td>
                     <td> {{ crackme.nbsolutions }} </td>
                     <td> {{ crackme.nbcomments }} </td>
+                    {% if is_logged_in %}
+                    <td>
+                      {% if crackme.hexid in official_solves %}
+                        <span class="mark-solved-locked" title="Verified flag solve">&#x1F512;</span>
+                      {% else %}
+                        <button class="btn-mark-solved"
+                                data-crackme-id="{{ crackme.hexid }}"
+                                title="{{ 'Mark as undone' if crackme.hexid in manual_solves else 'Mark as done' }}"
+                                aria-label="{{ 'Mark as undone' if crackme.hexid in manual_solves else 'Mark as done' }}"
+                        >{% if crackme.hexid in manual_solves %}&#x2611;{% else %}&#x2610;{% endif %}</button>
+                      {% endif %}
+                    </td>
+                    {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
@@ -63,4 +80,10 @@
 
 {% include 'partial/footer.html' %}
 {% endblock %}
-{% block foot %}{% endblock %}
+{% block foot %}
+<script src="{{ url_for('static', filename='js/mark_solved.js') }}" defer></script>
+<script>
+window.CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+window.IS_LOGGED_IN = {{ 'true' if is_logged_in else 'false' }};
+</script>
+{% endblock %}

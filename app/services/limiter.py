@@ -43,6 +43,7 @@ limiter_config = {}
 
 DEFAULT_LIMITS = {
     'FlagSubmissions': '5 per minute; 20 per hour',
+    'ManualSolveToggle': '30 per minute',   # Issue #182: manual solve toggle
 }
 
 

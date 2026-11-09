@@ -246,3 +246,121 @@ def user_decrement_unread_notifications(username, count=1):
             {'name': username},
             {'$set': {'unread_notifications': new_count}}
         )
+
+
+# -- Manual solve tracking (Issue #182) ------------------------------------
+
+_HEXID_RE = re.compile(r'^[a-f0-9]{24}$')
+_MANUAL_SOLVE_HARD_CAP = 5_000
+
+
+def user_toggle_manual_solve(username: str, crackme_hexid: str) -> bool:
+    """Atomically toggle a manual solve mark for a user.
+
+    Manual solves are strictly for personal progress tracking. They do NOT
+    touch points, ratings, or any scoreboard field -- only the manual_solves
+    array on the user document.
+
+    Args:
+        username:      The session username (session['name']).
+        crackme_hexid: 24-char hex ID of the crackme to toggle.
+
+    Returns:
+        True  if crackme is now manually marked as done.
+        False if crackme has been unmarked.
+
+    Raises:
+        ValueError:     Invalid hex ID format, or crackme doesn't exist /
+                        isn't visible.
+        ErrUnavailable: Database is not reachable.
+    """
+    if not check_connection():
+        raise ErrUnavailable("Database is unavailable")
+
+    # --- Input validation ---
+    if not username or not isinstance(username, str):
+        raise ValueError("username must be a non-empty string")
+
+    if not _HEXID_RE.match(crackme_hexid or ''):
+        raise ValueError("crackme_hexid must be a 24-character hex string")
+
+    # --- Crackme existence check (1 query, limit=1 is O(1) on the index) ---
+    crackme_exists = get_collection('crackme').count_documents(
+        {'hexid': crackme_hexid, 'visible': True}, limit=1
+    )
+    if not crackme_exists:
+        raise ValueError(f"Crackme '{crackme_hexid}' not found or not visible")
+
+    user_col = get_collection('user')
+
+    # --- Determine current state: projection fetches only what we need ---
+    user = user_col.find_one({'name': username}, {'manual_solves': 1})
+    if user is None:
+        raise ValueError(f"User '{username}' not found")
+
+    current_solves = set(user.get('manual_solves') or [])
+    already_solved = crackme_hexid in current_solves
+
+    if already_solved:
+        # Unmark: atomic pull
+        user_col.update_one(
+            {'name': username},
+            {'$pull': {'manual_solves': crackme_hexid}}
+        )
+        return False
+    else:
+        # Guard: prevent document bloat beyond hard cap
+        if len(current_solves) >= _MANUAL_SOLVE_HARD_CAP:
+            raise ValueError(
+                f"Manual solve limit of {_MANUAL_SOLVE_HARD_CAP} reached"
+            )
+        # Mark: atomic addToSet prevents duplicates under any race condition
+        user_col.update_one(
+            {'name': username},
+            {'$addToSet': {'manual_solves': crackme_hexid}}
+        )
+        return True
+
+
+def user_all_solved_hexids(username: str) -> dict:
+    """Return all crackme hexids a user has completed, by source.
+
+    Makes exactly TWO database reads:
+    1. User document projection  -> manual_solves list
+    2. Solve collection filter   -> official flag-validated solves
+
+    Returns a dict::
+
+        {
+            "official": frozenset of hexids (flag-submitted, immutable),
+            "manual":   frozenset of hexids (manually toggled),
+            "all":      frozenset union (use this for grey-out + hide logic),
+        }
+
+    If the user doesn't exist or the database is unreachable, returns empty
+    sets -- the caller must handle the graceful degradation itself.
+    """
+    if not check_connection():
+        return {"official": frozenset(), "manual": frozenset(), "all": frozenset()}
+
+    # 1. Manual solves -- single projection read on the user document
+    user = get_collection('user').find_one(
+        {'name': username}, {'hexid': 1, 'manual_solves': 1}
+    )
+    if not user:
+        return {"official": frozenset(), "manual": frozenset(), "all": frozenset()}
+
+    manual = frozenset(user.get('manual_solves') or [])
+
+    # 2. Official flag solves -- keyed by user hexid (immutable, rename-safe)
+    user_hexid = user.get('hexid') or str(user['_id'])
+    solve_docs = get_collection('solve').find(
+        {'user_hexid': user_hexid}, {'crackme_hexid': 1}
+    )
+    official = frozenset(doc['crackme_hexid'] for doc in solve_docs)
+
+    return {
+        "official": official,
+        "manual":   manual,
+        "all":      official | manual,
+    }
