@@ -3,6 +3,7 @@
 {% block page_title %}{{ username }}'s {{ name }}{% endblock %}
 {% block head %}
 <meta property="og:description" content="{{ info }}"/>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 {% endblock %}
 {% block content %}
 <script language="javascript" type="text/javascript">
@@ -138,20 +139,39 @@
 <div class="container grid-lg wrapper">
     <h3><a href="/user/{{ username }}">{{ username }}</a>'s {{ name }}</h3>
     <div class="columns panel-background">
-        <div class="column col-3">
+        <div class="column col-2 col-md-3">
             <p>Author:<br> <a href="/user/{{ username }}">{{ username }}</a></p>
         </div>
-        <div class="column col-3">
+        <div class="column col-2 col-md-3">
             <p>Language:<br> {{ lang }}</p>
         </div>
-        <div class="column col-3">
+        <div class="column col-3 col-md-6">
             <p>Upload:<br> {{ createdat|PRETTYTIME }}</p>
         </div>
-        <div class="column col-3" style="padding-right: 0rem; text-align: right;">
-            {% if usersess == username %}
-            <a href="/crackme/{{ hexid }}/edit" class="btn active btn-lg" style="margin-right: 10px;">Edit</a>
-            {% endif %}
+        <div class="column col-5 col-md-12" style="padding-right: 0rem; text-align: right;">
             <a href="/download/crackme/{{ hexid }}" class="btn active btn-lg btn-download" title="Password: crackmes.one">Download</a>
+            {% if usersess == username %}
+            <a href="/crackme/{{ hexid }}/edit" class="btn active btn-lg btn-page-action" style="margin-right: 10px;">Edit</a>
+            {% endif %}
+            {% if is_officially_solved %}
+            <span class="btn active btn-lg btn-page-action mark-solved-locked-badge" title="Verified flag solve" style="margin-right: 10px; cursor: default;">Solved</span>
+            {% elif AuthLevel == "auth" %}
+            <button class="btn active {% if is_manually_solved %}is-solved {% endif %}btn-lg btn-page-action"
+                    id="page-mark-solved-btn"
+                    data-crackme-id="{{ hexid }}"
+                    title="{{ 'Mark it as undone. Only visible to yourself' if is_manually_solved else 'Mark as done. Only visible to yourself' }}"
+                    style="margin-right: 10px;">
+                <span class="mark-label">{{ 'Done' if is_manually_solved else 'Mark as done' }}</span>
+            </button>
+            {% else %}
+            <button class="btn active btn-lg btn-page-action"
+                    id="page-mark-solved-btn"
+                    data-crackme-id="{{ hexid }}"
+                    title="Mark as done. Only visible to yourself"
+                    style="margin-right: 10px;">
+                <span class="mark-label">Mark as done</span>
+            </button>
+            {% endif %}
         </div>
 
         <div class="column col-3">
@@ -198,6 +218,7 @@
             <p>Comments:<br> {{ nbcomments }}</p>
             {% endif %}
         </div>
+
         <div class="column col-12">
             <div class="divider"></div>
         </div>
@@ -678,4 +699,10 @@
 })();
 </script>
 {% endblock %}
-{% block foot %}{% endblock %}
+{% block foot %}
+<script src="{{ url_for('static', filename='js/mark_solved.js') }}" defer></script>
+<script>
+window.CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || '';
+window.IS_LOGGED_IN = {{ 'true' if AuthLevel == 'auth' else 'false' }};
+</script>
+{% endblock %}

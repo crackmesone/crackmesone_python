@@ -528,3 +528,76 @@ h3:hover .anchor-link {
     margin-top: 10px;
     margin-bottom: 8px;
 }
+
+/* -- Issue #182: Manual Mark as Done ----------------------------------------
+   Affects search/lasts tables only. No impact on scoreboard, profile, or
+   any other page. Official solves (flag-submitted) share the same grey-out
+   but show a locked indicator instead of a toggle button.              */
+
+/* Solved row: greyed out but still readable */
+tr.crackme-row-solved {
+    opacity: 0.45;
+    filter: grayscale(65%);
+    /* NOTE: CSS `order` has no effect on <tr> inside <tbody>.
+       Row reordering is done via DOM appendChild() in mark_solved.js */
+}
+
+/* The toggle button: minimal, matches site accent colour */
+.btn-mark-solved {
+    padding: 0 5px;
+    font-size: 1rem;
+    line-height: 1;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #9acc14;
+    transition: transform 0.1s ease;
+    vertical-align: middle;
+}
+.btn-mark-solved:hover  { transform: scale(1.25); color: #b8f016; }
+.btn-mark-solved:focus  { outline: 1px dotted #9acc14; }
+
+/* Challenge detail page action buttons - identical to .btn-download */
+.btn-page-action {
+    border-radius: 0% !important;
+    float: right;
+    height: 2rem !important;
+    font-size: 0.9rem !important;
+    padding: 0.45rem 0.6rem !important;
+    line-height: 1rem !important;
+    box-sizing: border-box !important;
+    transition: all 0.15s ease-in-out !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+    cursor: pointer !important;
+    background: #9acc14 !important;
+    border: 1px solid #9acc14 !important;
+    color: #ffffff !important;
+}
+.btn-page-action:hover {
+    background: #86b310 !important;
+    border-color: #86b310 !important;
+    color: #ffffff !important;
+}
+
+/* Locked official solve badge on detail page */
+.mark-solved-locked-badge {
+    border-radius: 0% !important;
+    float: right;
+    cursor: default;
+    background: #9acc14 !important;
+    border: 1px solid #9acc14 !important;
+    color: #ffffff !important;
+}
+
+/* Locked official solve: same grey + lock icon, not clickable */
+.mark-solved-locked {
+    color: #6b6b6b;
+    font-size: 0.85rem;
+    cursor: not-allowed;
+    vertical-align: middle;
+}
+
+/* When a row is solved, dim the toggle button further */
+tr.crackme-row-solved .btn-mark-solved { color: #6b6b6b; }
+/* -- End Issue #182 ------------------------------------------------------- */

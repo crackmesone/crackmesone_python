@@ -2,8 +2,9 @@
 Search controller - Searching crackmes.
 """
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, session
 from app.models.crackme import search_crackme, random_crackmes
+from app.models.user import user_all_solved_hexids  # Issue #182
 from app.models.errors import ErrUnavailable
 from app.services.labels import get_label_groups, normalize_labels
 
@@ -18,9 +19,23 @@ def search_get():
     shareable (issue #162). A bare ``/search`` with no parameters shows the empty
     form; any parameter (e.g. ``/search?labels=Packer``) runs a search.
     """
+    username = session.get('name')
     if not request.args:
-        return render_template('search/search.html', crackmes=[], page=1, has_more=False,
-                               show_all=False, search_params={}, label_groups=get_label_groups())
+        solved_sets = user_all_solved_hexids(username) if username else {
+            'official': frozenset(), 'manual': frozenset(), 'all': frozenset()
+        }
+        return render_template('search/search.html',
+                               crackmes=[],
+                               page=1,
+                               has_more=False,
+                               show_all=False,
+                               search_params={},
+                               label_groups=get_label_groups(),
+                               official_solves=solved_sets['official'],
+                               manual_solves=solved_sets['manual'],
+                               all_solves=solved_sets['all'],
+                               hide_solved=False,
+                               is_logged_in=bool(username))
     return _render_search(request.args)
 
 
@@ -174,6 +189,22 @@ def _render_search(source):
     if sort_order not in ('asc', 'desc'):
         sort_order = 'desc'
 
+    # --- Solved crackmes (Issue #182) ---
+    # For logged-in users: build a unified set of solved hexids (official +
+    # manual) in a single function call (2 DB reads total, not N+1).
+    # For guests: empty sets -- the feature is invisible but the page still works.
+    username = session.get('name')
+    solved_sets = user_all_solved_hexids(username) if username else {
+        'official': frozenset(), 'manual': frozenset(), 'all': frozenset()
+    }
+    official_solves = solved_sets['official']
+    manual_solves   = solved_sets['manual']
+    all_solves      = solved_sets['all']
+
+    # Hide solved: only active for logged-in users
+    hide_solved = bool(source.get('hide_solved')) and bool(username)
+    exclude_hexids = list(all_solves) if hide_solved else None
+
     # Store search params for pagination
     # lang, arch, platform are lists for multi-select support
     search_params = {
@@ -198,7 +229,8 @@ def _render_search(source):
         'size-max': size_max_str,
         'size-max-unit': size_max_unit,
         'sort_by': sort_by,
-        'sort_order': sort_order
+        'sort_order': sort_order,
+        'hide_solved': hide_solved,    # Issue #182
     }
 
     try:
@@ -225,7 +257,8 @@ def _render_search(source):
                 sort_by=sort_by,
                 sort_order=sort_order,
                 page=1,
-                per_page=10000
+                per_page=10000,
+                exclude_hexids=exclude_hexids   # Issue #182
             )
             has_more = False
         else:
@@ -250,7 +283,8 @@ def _render_search(source):
                 size_max=size_max,
                 sort_by=sort_by,
                 sort_order=sort_order,
-                page=page
+                page=page,
+                exclude_hexids=exclude_hexids   # Issue #182
             )
     except Exception as e:
         print(f"Search error: {e}")
@@ -263,7 +297,12 @@ def _render_search(source):
                            has_more=has_more,
                            show_all=show_all,
                            search_params=search_params,
-                           label_groups=get_label_groups())
+                           label_groups=get_label_groups(),
+                           official_solves=official_solves,   # Issue #182
+                           manual_solves=manual_solves,       # Issue #182
+                           all_solves=all_solves,             # Issue #182
+                           hide_solved=hide_solved,           # Issue #182
+                           is_logged_in=bool(username))       # Issue #182
 
 
 @search_bp.route('/random', methods=['GET'])
@@ -277,8 +316,24 @@ def random_get():
     if sort_order not in ('asc', 'desc'):
         sort_order = 'desc'
 
+    username = session.get('name')
+    hide_solved = bool(request.args.get('hide_solved'))
+
+    if username:
+        solved_sets = user_all_solved_hexids(username)
+        official_solves = solved_sets['official']
+        manual_solves   = solved_sets['manual']
+        all_solves      = solved_sets['all']
+        exclude_hexids  = all_solves if (hide_solved and all_solves) else None
+    else:
+        official_solves = frozenset()
+        manual_solves   = frozenset()
+        all_solves      = frozenset()
+        exclude_hexids  = None
+        hide_solved     = False
+
     try:
-        crackmes = random_crackmes(50)
+        crackmes = random_crackmes(50, exclude_hexids=exclude_hexids)
         # Sort the random results
         sort_key_map = {
             'date': 'created_at',
@@ -294,7 +349,11 @@ def random_get():
     except ErrUnavailable:
         crackmes = []
 
-    search_params = {'sort_by': sort_by, 'sort_order': sort_order}
+    search_params = {
+        'sort_by': sort_by,
+        'sort_order': sort_order,
+        'hide_solved': '1' if hide_solved else '',
+    }
 
     return render_template('search/search.html',
                            crackmes=crackmes,
@@ -302,4 +361,9 @@ def random_get():
                            has_more=False,
                            show_all=True,
                            search_params=search_params,
-                           label_groups=get_label_groups())
+                           label_groups=get_label_groups(),
+                           official_solves=official_solves,
+                           manual_solves=manual_solves,
+                           all_solves=all_solves,
+                           hide_solved=hide_solved,
+                           is_logged_in=bool(username))
